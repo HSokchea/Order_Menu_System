@@ -3,10 +3,55 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
+import MenuManagement from "./pages/admin/MenuManagement";
+import OrderDashboard from "./pages/admin/OrderDashboard";
+import QRGenerator from "./pages/admin/QRGenerator";
+import MenuView from "./pages/customer/MenuView";
+import CartSummary from "./pages/customer/CartSummary";
+import OrderSuccess from "./pages/customer/OrderSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  return (
+    <Routes>
+      {/* Public customer routes */}
+      <Route path="/menu/:tableId" element={<MenuView />} />
+      <Route path="/cart/:tableId" element={<CartSummary />} />
+      <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+      
+      {/* Auth routes */}
+      {!user ? (
+        <>
+          <Route path="/" element={<Auth />} />
+          <Route path="/auth" element={<Auth />} />
+        </>
+      ) : (
+        <>
+          {/* Protected admin routes */}
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin/menu" element={<MenuManagement />} />
+          <Route path="/admin/orders" element={<OrderDashboard />} />
+          <Route path="/admin/qr-codes" element={<QRGenerator />} />
+        </>
+      )}
+      
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -14,11 +59,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
