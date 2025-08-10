@@ -23,10 +23,9 @@ interface MenuItem {
   id: string;
   name: string;
   description?: string;
-  price: number;
+  price_usd: number;
   category_id: string;
-  available: boolean;
-  display_order: number;
+  is_available: boolean;
   category?: Category;
 }
 
@@ -112,9 +111,9 @@ const MenuManagement = () => {
     const itemData = {
       name: itemName,
       description: itemDescription || null,
-      price: parseFloat(itemPrice),
+      price_usd: parseFloat(itemPrice),
       category_id: itemCategory,
-      available: itemAvailable,
+      is_available: itemAvailable,
       restaurant_id: restaurant.id,
     };
 
@@ -152,9 +151,9 @@ const MenuManagement = () => {
     setEditingItem(item);
     setItemName(item.name);
     setItemDescription(item.description || '');
-    setItemPrice(item.price.toString());
+    setItemPrice(item.price_usd.toString());
     setItemCategory(item.category_id);
-    setItemAvailable(item.available);
+    setItemAvailable(item.is_available);
     setDialogOpen(true);
   };
 
@@ -277,14 +276,14 @@ const MenuManagement = () => {
                   <h3 className="font-semibold">{item.name}</h3>
                   <p className="text-sm text-muted-foreground">{item.description}</p>
                   <div className="flex items-center gap-4 mt-2">
-                    <span className="font-medium">${item.price.toFixed(2)}</span>
+                    <span className="font-medium">${item.price_usd.toFixed(2)}</span>
                     <span className="text-sm text-muted-foreground">
                       Category: {item.category?.name}
                     </span>
                     <span className={`text-sm px-2 py-1 rounded ${
-                      item.available ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
+                      item.is_available ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
                     }`}>
-                      {item.available ? 'Available' : 'Unavailable'}
+                      {item.is_available ? 'Available' : 'Unavailable'}
                     </span>
                   </div>
                 </div>

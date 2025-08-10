@@ -7,8 +7,8 @@ import { CheckCircle, Clock } from 'lucide-react';
 
 interface OrderDetails {
   id: string;
-  table_number: number;
-  total_amount: number;
+  table_number: string;
+  total_usd: number;
   status: string;
   created_at: string;
   restaurant: {
@@ -129,7 +129,7 @@ const OrderSuccess = () => {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Order Total:</span>
-              <span className="font-semibold">${order.total_amount.toFixed(2)}</span>
+              <span className="font-semibold">${order.total_usd.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Order Time:</span>

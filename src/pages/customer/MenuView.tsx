@@ -12,8 +12,8 @@ interface MenuItem {
   id: string;
   name: string;
   description?: string;
-  price: number;
-  available: boolean;
+  price_usd: number;
+  is_available: boolean;
   category_id: string;
 }
 
@@ -69,8 +69,9 @@ const MenuView = () => {
             id,
             name,
             description,
-            price,
-            available
+            price_usd,
+            is_available,
+            category_id
           )
         `)
         .eq('restaurant_id', tableData.restaurant.id)
@@ -112,7 +113,7 @@ const MenuView = () => {
   };
 
   const getTotalAmount = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => total + (item.price_usd * item.quantity), 0);
   };
 
   const getTotalItems = () => {
@@ -158,7 +159,7 @@ const MenuView = () => {
           {categories.map((category) => (
             <TabsContent key={category.id} value={category.id} className="space-y-4">
               {category.menu_items.map((item) => (
-                <Card key={item.id} className={!item.available ? 'opacity-50' : ''}>
+                <Card key={item.id} className={!item.is_available ? 'opacity-50' : ''}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -169,8 +170,8 @@ const MenuView = () => {
                           </p>
                         )}
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="font-bold">${item.price.toFixed(2)}</span>
-                          {!item.available && (
+                          <span className="font-bold">${item.price_usd.toFixed(2)}</span>
+                          {!item.is_available && (
                             <Badge variant="secondary">Unavailable</Badge>
                           )}
                         </div>
@@ -191,7 +192,7 @@ const MenuView = () => {
                             <Button
                               size="sm"
                               onClick={() => addToCart(item)}
-                              disabled={!item.available}
+                              disabled={!item.is_available}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
@@ -200,7 +201,7 @@ const MenuView = () => {
                           <Button
                             size="sm"
                             onClick={() => addToCart(item)}
-                            disabled={!item.available}
+                            disabled={!item.is_available}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>

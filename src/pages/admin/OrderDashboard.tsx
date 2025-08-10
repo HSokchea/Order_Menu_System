@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 interface OrderItem {
   id: string;
   quantity: number;
-  price: number;
+  price_usd: number;
   menu_item: {
     name: string;
   };
@@ -19,10 +19,10 @@ interface OrderItem {
 
 interface Order {
   id: string;
-  table_number: number;
+  table_number: string;
   status: string;
-  total_amount: number;
-  notes?: string;
+  total_usd: number;
+  customer_notes?: string;
   created_at: string;
   order_items: OrderItem[];
 }
@@ -52,7 +52,7 @@ const OrderDashboard = () => {
         order_items (
           id,
           quantity,
-          price,
+          price_usd,
           menu_item:menu_items (name)
         )
       `)
@@ -183,7 +183,7 @@ const OrderDashboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-semibold">${order.total_amount.toFixed(2)}</p>
+                      <p className="text-lg font-semibold">${order.total_usd.toFixed(2)}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -192,14 +192,14 @@ const OrderDashboard = () => {
                     {order.order_items.map((item) => (
                       <div key={item.id} className="flex justify-between">
                         <span>{item.quantity}x {item.menu_item.name}</span>
-                        <span>${(item.quantity * item.price).toFixed(2)}</span>
+                        <span>${(item.quantity * item.price_usd).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
                   
-                  {order.notes && (
+                  {order.customer_notes && (
                     <div className="mb-4 p-3 bg-muted rounded">
-                      <p className="text-sm"><strong>Notes:</strong> {order.notes}</p>
+                      <p className="text-sm"><strong>Notes:</strong> {order.customer_notes}</p>
                     </div>
                   )}
 

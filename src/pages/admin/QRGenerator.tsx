@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface Table {
   id: string;
-  table_number: number;
+  table_number: string;
   restaurant_id: string;
 }
 
@@ -67,7 +67,7 @@ const QRGenerator = () => {
     const { error } = await supabase
       .from('tables')
       .insert({
-        table_number: tableNumber,
+        table_number: tableNumber.toString(),
         restaurant_id: restaurantId,
       });
 
@@ -87,7 +87,7 @@ const QRGenerator = () => {
     }
   };
 
-  const generateQRCode = (tableId: string, tableNumber: number) => {
+  const generateQRCode = (tableId: string, tableNumber: string) => {
     const menuUrl = `${window.location.origin}/menu/${tableId}`;
     
     // Create QR code SVG
