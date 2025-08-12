@@ -10,8 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import CategoryManager from '@/components/admin/CategoryManager';
+import ImageUpload from '@/components/admin/ImageUpload';
+import MenuItemCard from '@/components/admin/MenuItemCard';
 
 interface Category {
   id: string;
@@ -26,6 +30,7 @@ interface MenuItem {
   price_usd: number;
   category_id: string;
   is_available: boolean;
+  image_url?: string;
   category?: Category;
 }
 
@@ -38,6 +43,7 @@ const MenuManagement = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string>('');
 
   // Form state
   const [itemName, setItemName] = useState('');
@@ -45,36 +51,50 @@ const MenuManagement = () => {
   const [itemPrice, setItemPrice] = useState('');
   const [itemCategory, setItemCategory] = useState('');
   const [itemAvailable, setItemAvailable] = useState(true);
+  const [itemImageUrl, setItemImageUrl] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
 
-    // Fetch restaurant
-    const { data: restaurant } = await supabase
-      .from('restaurants')
-      .select('id')
-      .eq('owner_id', user.id)
-      .single();
+    try {
+      // Fetch restaurant
+      const { data: restaurant } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
 
-    if (!restaurant) return;
+      if (!restaurant) return;
+      
+      setRestaurantId(restaurant.id);
 
-    // Fetch categories
-    const { data: categoriesData } = await supabase
-      .from('menu_categories')
-      .select('*')
-      .eq('restaurant_id', restaurant.id)
-      .order('display_order');
+      // Fetch categories
+      const { data: categoriesData } = await supabase
+        .from('menu_categories')
+        .select('*')
+        .eq('restaurant_id', restaurant.id)
+        .order('display_order');
 
-    // Fetch menu items
-    const { data: itemsData } = await supabase
-      .from('menu_items')
-      .select('*, category:menu_categories(*)')
-      .eq('restaurant_id', restaurant.id)
-      .order('display_order');
+      // Fetch menu items with proper category join
+      const { data: itemsData } = await supabase
+        .from('menu_items')
+        .select(`
+          *,
+          category:menu_categories(id, name, display_order)
+        `)
+        .eq('restaurant_id', restaurant.id)
+        .order('name');
 
-    setCategories(categoriesData || []);
-    setMenuItems(itemsData || []);
-    setLoading(false);
+      setCategories(categoriesData || []);
+      setMenuItems((itemsData || []).map(item => ({
+        ...item,
+        category: Array.isArray(item.category) ? item.category[0] : item.category
+      })));
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -87,6 +107,7 @@ const MenuManagement = () => {
     setItemPrice('');
     setItemCategory('');
     setItemAvailable(true);
+    setItemImageUrl(null);
     setEditingItem(null);
   };
 
@@ -100,13 +121,7 @@ const MenuManagement = () => {
       return;
     }
 
-    const { data: restaurant } = await supabase
-      .from('restaurants')
-      .select('id')
-      .eq('owner_id', user.id)
-      .single();
-
-    if (!restaurant) return;
+    if (!restaurantId) return;
 
     const itemData = {
       name: itemName,
@@ -114,7 +129,8 @@ const MenuManagement = () => {
       price_usd: parseFloat(itemPrice),
       category_id: itemCategory,
       is_available: itemAvailable,
-      restaurant_id: restaurant.id,
+      image_url: itemImageUrl,
+      restaurant_id: restaurantId,
     };
 
     let error;
@@ -154,6 +170,7 @@ const MenuManagement = () => {
     setItemPrice(item.price_usd.toString());
     setItemCategory(item.category_id);
     setItemAvailable(item.is_available);
+    setItemImageUrl(item.image_url || null);
     setDialogOpen(true);
   };
 
@@ -178,6 +195,20 @@ const MenuManagement = () => {
     }
   };
 
+  const handleMenuItemDragEnd = async (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(menuItems);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update local state immediately for better UX
+    setMenuItems(items);
+
+    // You could implement display_order updates here if needed
+    // This would require adding a display_order column to menu_items table
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -191,113 +222,165 @@ const MenuManagement = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Menu Management</h1>
-            <p className="text-muted-foreground">Add and manage your menu items</p>
+            <p className="text-muted-foreground">Manage your menu categories and items</p>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Menu Items</h2>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Menu Item
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Item Name</Label>
-                  <Input
-                    id="name"
-                    value={itemName}
-                    onChange={(e) => setItemName(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={itemDescription}
-                    onChange={(e) => setItemDescription(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="price">Price (USD)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={itemPrice}
-                    onChange={(e) => setItemPrice(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={itemCategory} onValueChange={setItemCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="available"
-                    checked={itemAvailable}
-                    onCheckedChange={setItemAvailable}
-                  />
-                  <Label htmlFor="available">Available</Label>
-                </div>
-                <Button onClick={handleSaveItem} className="w-full">
-                  {editingItem ? 'Update Item' : 'Add Item'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        {/* Category Management */}
+        <CategoryManager
+          categories={categories}
+          restaurantId={restaurantId}
+          onCategoriesUpdate={fetchData}
+        />
 
-        <div className="grid gap-4">
-          {menuItems.map((item) => (
-            <Card key={item.id}>
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold">{item.name}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                  <div className="flex items-center gap-4 mt-2">
-                    <span className="font-medium">${item.price_usd.toFixed(2)}</span>
-                    <span className="text-sm text-muted-foreground">
-                      Category: {item.category?.name}
-                    </span>
-                    <span className={`text-sm px-2 py-1 rounded ${
-                      item.is_available ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {item.is_available ? 'Available' : 'Unavailable'}
-                    </span>
+        {/* Menu Items Section */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-semibold">Menu Items</h2>
+              <p className="text-sm text-muted-foreground">
+                {menuItems.length} items • Drag to reorder
+              </p>
+            </div>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Menu Item
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <ImageUpload
+                    currentImageUrl={itemImageUrl}
+                    onImageChange={setItemImageUrl}
+                    restaurantId={restaurantId}
+                  />
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Item Name *</Label>
+                    <Input
+                      id="name"
+                      value={itemName}
+                      onChange={(e) => setItemName(e.target.value)}
+                      placeholder="e.g. Grilled Salmon"
+                    />
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleEditItem(item)}>
-                    <Edit className="h-4 w-4" />
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={itemDescription}
+                      onChange={(e) => setItemDescription(e.target.value)}
+                      placeholder="Describe the dish, ingredients, and preparation..."
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="price">Price (USD) *</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={itemPrice}
+                        onChange={(e) => setItemPrice(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    
+                    <div className="grid gap-2">
+                      <Label htmlFor="category">Category *</Label>
+                      <Select value={itemCategory} onValueChange={setItemCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="available"
+                      checked={itemAvailable}
+                      onCheckedChange={setItemAvailable}
+                    />
+                    <Label htmlFor="available">Available for ordering</Label>
+                  </div>
+                  
+                  <Button onClick={handleSaveItem} className="w-full" size="lg">
+                    {editingItem ? 'Update Item' : 'Add Item'}
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDeleteItem(item.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Menu Items List */}
+          {menuItems.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <p className="text-muted-foreground text-center">
+                  No menu items yet.<br />
+                  Add your first menu item to get started.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setDialogOpen(true)}
+                  className="mt-4"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Menu Item
+                </Button>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            <DragDropContext onDragEnd={handleMenuItemDragEnd}>
+              <Droppable droppableId="menu-items">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-3"
+                  >
+                    {menuItems.map((item, index) => (
+                      <Draggable key={item.id} draggableId={item.id} index={index}>
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                          >
+                            <MenuItemCard
+                              item={item}
+                              onEdit={handleEditItem}
+                              onDelete={handleDeleteItem}
+                              dragProps={provided}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          )}
         </div>
       </main>
     </div>
