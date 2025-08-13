@@ -232,19 +232,24 @@ const QRGenerator = () => {
                     <QRCodeThumbnail 
                       tableId={table.id}
                       onClick={() => openQRDialog(table)}
-                      className="mb-2"
+                      className="mb-4"
                     />
-                    <p className="text-sm text-muted-foreground">
-                      Menu URL: /menu/{table.id}
-                    </p>
                   </div>
-                  <Button 
-                    className="w-full" 
-                    onClick={() => generateQRCode(table.id, table.table_number)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download QR Code
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => copyMenuUrl(table.id)}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Link
+                    </Button>
+                    <Button 
+                      onClick={() => generateQRCode(table.id, table.table_number)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download QR Code
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
