@@ -3,12 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Download, Plus } from 'lucide-react';
+import { ArrowLeft, Download, Plus, Copy, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
+import QRCodeThumbnail from '@/components/QRCodeThumbnail';
+import QRCodeDialog from '@/components/QRCodeDialog';
 
 interface Table {
   id: string;
@@ -24,6 +27,9 @@ const QRGenerator = () => {
   const [loading, setLoading] = useState(true);
   const [newTableNumber, setNewTableNumber] = useState('');
   const [restaurantId, setRestaurantId] = useState<string>('');
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [qrCodeCache, setQrCodeCache] = useState<Record<string, string>>({});
 
   const fetchTables = async () => {
     if (!user) return;
@@ -51,6 +57,50 @@ const QRGenerator = () => {
   useEffect(() => {
     fetchTables();
   }, [user]);
+
+  const generateQRCodeForDisplay = async (tableId: string) => {
+    if (qrCodeCache[tableId]) return qrCodeCache[tableId];
+    
+    try {
+      const menuUrl = `${window.location.origin}/menu/${tableId}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(menuUrl, {
+        width: 128,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      
+      setQrCodeCache(prev => ({ ...prev, [tableId]: qrCodeDataUrl }));
+      return qrCodeDataUrl;
+    } catch (error) {
+      console.error('Error generating QR code for display:', error);
+      return '';
+    }
+  };
+
+  const openQRDialog = (table: Table) => {
+    setSelectedTable(table);
+    setIsDialogOpen(true);
+  };
+
+  const copyMenuUrl = async (tableId: string) => {
+    const menuUrl = `${window.location.origin}/menu/${tableId}`;
+    try {
+      await navigator.clipboard.writeText(menuUrl);
+      toast({
+        title: "URL Copied",
+        description: "Menu URL has been copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy URL. Please copy manually.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const addTable = async () => {
     if (!newTableNumber || !restaurantId) return;
@@ -177,15 +227,17 @@ const QRGenerator = () => {
                 <CardTitle>Table {table.table_number}</CardTitle>
               </CardHeader>
               <CardContent>
-                  <div className="space-y-4">
-                    <div className="bg-muted p-4 rounded text-center">
-                      <div className="w-24 h-24 bg-primary/20 rounded mx-auto mb-2 flex items-center justify-center">
-                        <span className="text-xs font-bold">QR CODE</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Menu URL: /menu/{table.id}
-                      </p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="bg-muted p-4 rounded text-center">
+                    <QRCodeThumbnail 
+                      tableId={table.id}
+                      onClick={() => openQRDialog(table)}
+                      className="mb-2"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Menu URL: /menu/{table.id}
+                    </p>
+                  </div>
                   <Button 
                     className="w-full" 
                     onClick={() => generateQRCode(table.id, table.table_number)}
@@ -207,6 +259,18 @@ const QRGenerator = () => {
           </Card>
         )}
       </main>
+
+      {selectedTable && (
+        <QRCodeDialog
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+            setSelectedTable(null);
+          }}
+          tableId={selectedTable.id}
+          tableNumber={selectedTable.table_number}
+        />
+      )}
     </div>
   );
 };
