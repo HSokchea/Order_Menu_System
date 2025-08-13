@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Download, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import QRCode from 'qrcode';
 
 interface Table {
   id: string;
@@ -87,37 +88,43 @@ const QRGenerator = () => {
     }
   };
 
-  const generateQRCode = (tableId: string, tableNumber: string) => {
-    const menuUrl = `${window.location.origin}/menu/${tableId}`;
-    
-    // Create QR code SVG
-    const qrCodeSVG = `
-      <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-        <rect width="200" height="200" fill="white"/>
-        <rect x="20" y="20" width="160" height="160" fill="black"/>
-        <rect x="30" y="30" width="140" height="140" fill="white"/>
-        <text x="100" y="105" text-anchor="middle" font-family="Arial" font-size="12" fill="black">
-          Table ${tableNumber}
-        </text>
-        <text x="100" y="125" text-anchor="middle" font-family="Arial" font-size="8" fill="black">
-          Scan to view menu
-        </text>
-      </svg>
-    `;
+  const generateQRCode = async (tableId: string, tableNumber: string) => {
+    try {
+      const menuUrl = `${window.location.origin}/menu/${tableId}`;
+      
+      // Generate QR code as data URL
+      const qrCodeDataUrl = await QRCode.toDataURL(menuUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
 
-    // Create downloadable file
-    const blob = new Blob([qrCodeSVG], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `table-${tableNumber}-qr.svg`;
-    a.click();
-    URL.revokeObjectURL(url);
+      // Convert data URL to blob and download
+      const response = await fetch(qrCodeDataUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `table-${tableNumber}-qr.png`;
+      a.click();
+      URL.revokeObjectURL(url);
 
-    toast({
-      title: "QR Code Downloaded",
-      description: `QR code for Table ${tableNumber} has been downloaded`,
-    });
+      toast({
+        title: "QR Code Downloaded",
+        description: `QR code for Table ${tableNumber} has been downloaded`,
+      });
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate QR code. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -170,15 +177,15 @@ const QRGenerator = () => {
                 <CardTitle>Table {table.table_number}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="bg-muted p-4 rounded text-center">
-                    <div className="w-24 h-24 bg-primary/20 rounded mx-auto mb-2 flex items-center justify-center">
-                      <span className="text-2xl font-bold">QR</span>
+                  <div className="space-y-4">
+                    <div className="bg-muted p-4 rounded text-center">
+                      <div className="w-24 h-24 bg-primary/20 rounded mx-auto mb-2 flex items-center justify-center">
+                        <span className="text-xs font-bold">QR CODE</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Menu URL: /menu/{table.id}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Menu URL: /menu/{table.id}
-                    </p>
-                  </div>
                   <Button 
                     className="w-full" 
                     onClick={() => generateQRCode(table.id, table.table_number)}
