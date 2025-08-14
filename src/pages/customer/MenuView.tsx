@@ -177,10 +177,10 @@ const MenuView = () => {
           {!isSearchExpanded ? (
             // Normal view - Restaurant name and icons
             <div className="flex items-center justify-between gap-4">
-              <div className="flex-shrink-0">
-                <h1 className="text-xl font-bold text-primary">{restaurant.name}</h1>
-                <p className="text-xs text-muted-foreground">Table {table.table_number}</p>
-              </div>
+          <div className="flex-shrink-0">
+            <h1 className="text-2xl font-bold text-primary">{restaurant.name}</h1>
+            <p className="text-xs text-muted-foreground font-medium">Table {table.table_number}</p>
+          </div>
               
               <div className="flex items-center gap-2">
                 {/* Search Icon */}
@@ -258,17 +258,19 @@ const MenuView = () => {
       <main className="container mx-auto px-4 py-6 pb-24">
         {searchQuery ? (
           // Search Results
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold">Search Results for "{searchQuery}"</h2>
+          <div className="space-y-8">
+            <h2 className="text-xl font-semibold text-foreground">Search Results for "{searchQuery}"</h2>
             {filteredCategories.map((category) => (
               category.menu_items.length > 0 && (
-                <div key={category.id} className="space-y-3">
-                  <h3 className="text-md font-medium text-muted-foreground border-b pb-2">
-                    {category.name}
-                  </h3>
-                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                     {category.menu_items.map((item) => (
-                       <div key={item.id} className={`bg-card rounded-xl shadow-sm border border-border hover:shadow-lg transition-all duration-200 overflow-hidden ${!item.is_available ? 'opacity-50' : ''}`}>
+                <div key={category.id} className="space-y-6">
+                  <div className="flex items-center">
+                    <h3 className="text-lg font-semibold text-foreground bg-muted/30 px-4 py-2 rounded-full border">
+                      {category.name}
+                    </h3>
+                  </div>
+                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {category.menu_items.map((item) => (
+                        <div key={item.id} className={`bg-card/70 backdrop-blur-sm rounded-xl shadow-sm border border-border/50 hover:shadow-md hover:bg-card transition-all duration-200 overflow-hidden max-w-sm mx-auto ${!item.is_available ? 'opacity-50' : ''}`}>
                          {/* Product Image */}
                          <div className="aspect-[4/3] bg-muted relative overflow-hidden">
                            {item.image_url ? (
@@ -284,18 +286,18 @@ const MenuView = () => {
                            )}
                          </div>
                          
-                         {/* Card Content */}
-                         <div className="p-4 space-y-3">
-                           <div className="space-y-1">
-                             <h4 className="font-semibold text-card-foreground text-base leading-tight">{item.name}</h4>
-                             {item.description && (
-                               <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
-                             )}
-                           </div>
+                          {/* Card Content */}
+                          <div className="p-4 space-y-4">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-card-foreground text-lg leading-tight">{item.name}</h4>
+                              {item.description && (
+                                <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
+                              )}
+                            </div>
                            
-                           <div className="flex items-center justify-between pt-1">
-                             <div className="flex items-center gap-2">
-                               <span className="text-primary font-bold text-lg">${item.price_usd.toFixed(2)}</span>
+                            <div className="flex items-center justify-between pt-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-primary font-bold text-xl">${item.price_usd.toFixed(2)}</span>
                                {!item.is_available && (
                                  <Badge variant="secondary" className="text-xs">Unavailable</Badge>
                                )}
@@ -349,11 +351,11 @@ const MenuView = () => {
           </div>
         ) : (
           // Category View
-          <div className="space-y-6">
+          <div className="space-y-8">
             {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items && (
-               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                  {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
-                   <div key={item.id} className={`bg-card rounded-xl shadow-sm border border-border hover:shadow-lg transition-all duration-200 overflow-hidden ${!item.is_available ? 'opacity-50' : ''}`}>
+                   <div key={item.id} className={`bg-card/70 backdrop-blur-sm rounded-xl shadow-sm border border-border/50 hover:shadow-md hover:bg-card transition-all duration-200 overflow-hidden max-w-sm mx-auto ${!item.is_available ? 'opacity-50' : ''}`}>
                      {/* Product Image */}
                      <div className="aspect-[4/3] bg-muted relative overflow-hidden">
                        {item.image_url ? (
@@ -369,18 +371,18 @@ const MenuView = () => {
                        )}
                      </div>
                      
-                     {/* Card Content */}
-                     <div className="p-4 space-y-3">
-                       <div className="space-y-1">
-                         <h4 className="font-semibold text-card-foreground text-base leading-tight">{item.name}</h4>
-                         {item.description && (
-                           <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
-                         )}
-                       </div>
+                      {/* Card Content */}
+                      <div className="p-4 space-y-4">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-card-foreground text-lg leading-tight">{item.name}</h4>
+                          {item.description && (
+                            <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
+                          )}
+                        </div>
                        
-                       <div className="flex items-center justify-between pt-1">
-                         <div className="flex items-center gap-2">
-                           <span className="text-primary font-bold text-lg">${item.price_usd.toFixed(2)}</span>
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-primary font-bold text-xl">${item.price_usd.toFixed(2)}</span>
                            {!item.is_available && (
                              <Badge variant="secondary" className="text-xs">Unavailable</Badge>
                            )}
