@@ -15,6 +15,7 @@ interface MenuItem {
   price_usd: number;
   is_available: boolean;
   category_id: string;
+  image_url?: string;
 }
 
 interface Category {
@@ -74,7 +75,8 @@ const MenuView = () => {
             description,
             price_usd,
             is_available,
-            category_id
+            category_id,
+            image_url
           )
         `)
         .eq('restaurant_id', tableData.restaurant.id)
@@ -264,68 +266,77 @@ const MenuView = () => {
                   <h3 className="text-md font-medium text-muted-foreground border-b pb-2">
                     {category.name}
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {category.menu_items.map((item) => (
-                      <Card key={item.id} className={`group hover:shadow-lg transition-all duration-200 ${!item.is_available ? 'opacity-50' : ''}`}>
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            <div>
-                              <h4 className="font-semibold text-lg">{item.name}</h4>
-                              {item.description && (
-                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                  {item.description}
-                                </p>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg font-bold text-primary">${item.price_usd.toFixed(2)}</span>
-                                {!item.is_available && (
-                                  <Badge variant="secondary" className="text-xs">Unavailable</Badge>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                {cart.find(cartItem => cartItem.id === item.id) ? (
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => removeFromCart(item.id)}
-                                      className="h-8 w-8 p-0 rounded-full"
-                                    >
-                                      <Minus className="h-3 w-3" />
-                                    </Button>
-                                    <span className="font-semibold min-w-[2rem] text-center">
-                                      {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
-                                    </span>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => addToCart(item)}
-                                      disabled={!item.is_available}
-                                      className="h-8 w-8 p-0 rounded-full"
-                                    >
-                                      <Plus className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => addToCart(item)}
-                                    disabled={!item.is_available}
-                                    className="rounded-full px-4"
-                                  >
-                                    <Plus className="h-3 w-3 mr-1" />
-                                    Add
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                     {category.menu_items.map((item) => (
+                       <div key={item.id} className={`bg-card rounded-xl shadow-sm border border-border hover:shadow-lg transition-all duration-200 overflow-hidden ${!item.is_available ? 'opacity-50' : ''}`}>
+                         {/* Product Image */}
+                         <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+                           {item.image_url ? (
+                             <img 
+                               src={item.image_url} 
+                               alt={item.name}
+                               className="w-full h-full object-cover"
+                             />
+                           ) : (
+                             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80">
+                               <span className="text-muted-foreground text-2xl">🍽️</span>
+                             </div>
+                           )}
+                         </div>
+                         
+                         {/* Card Content */}
+                         <div className="p-4 space-y-3">
+                           <div className="space-y-1">
+                             <h4 className="font-semibold text-card-foreground text-base leading-tight">{item.name}</h4>
+                             {item.description && (
+                               <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
+                             )}
+                           </div>
+                           
+                           <div className="flex items-center justify-between pt-1">
+                             <div className="flex items-center gap-2">
+                               <span className="text-primary font-bold text-lg">${item.price_usd.toFixed(2)}</span>
+                               {!item.is_available && (
+                                 <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                               )}
+                             </div>
+                             
+                             {cart.find(cartItem => cartItem.id === item.id) ? (
+                               <div className="flex items-center space-x-2">
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => removeFromCart(item.id)}
+                                   className="h-9 w-9 p-0 rounded-full"
+                                 >
+                                   <Minus className="h-4 w-4" />
+                                 </Button>
+                                 <span className="text-base font-semibold min-w-[24px] text-center">
+                                   {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
+                                 </span>
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={() => addToCart(item)}
+                                   disabled={!item.is_available}
+                                   className="h-9 w-9 p-0 rounded-full"
+                                 >
+                                   <Plus className="h-4 w-4" />
+                                 </Button>
+                               </div>
+                             ) : (
+                               <Button
+                                 onClick={() => addToCart(item)}
+                                 disabled={!item.is_available}
+                                 className="h-9 px-4 rounded-full font-medium"
+                               >
+                                 Add to Cart
+                               </Button>
+                             )}
+                           </div>
+                         </div>
+                       </div>
+                     ))}
                   </div>
                 </div>
               )
@@ -340,68 +351,77 @@ const MenuView = () => {
           // Category View
           <div className="space-y-6">
             {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items && (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
-                  <Card key={item.id} className={`group hover:shadow-lg transition-all duration-200 ${!item.is_available ? 'opacity-50' : ''}`}>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div>
-                          <h4 className="font-semibold text-lg">{item.name}</h4>
-                          {item.description && (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {item.description}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-primary">${item.price_usd.toFixed(2)}</span>
-                            {!item.is_available && (
-                              <Badge variant="secondary" className="text-xs">Unavailable</Badge>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {cart.find(cartItem => cartItem.id === item.id) ? (
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => removeFromCart(item.id)}
-                                  className="h-8 w-8 p-0 rounded-full"
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                <span className="font-semibold min-w-[2rem] text-center">
-                                  {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
-                                </span>
-                                <Button
-                                  size="sm"
-                                  onClick={() => addToCart(item)}
-                                  disabled={!item.is_available}
-                                  className="h-8 w-8 p-0 rounded-full"
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button
-                                size="sm"
-                                onClick={() => addToCart(item)}
-                                disabled={!item.is_available}
-                                className="rounded-full px-4"
-                              >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Add
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                 {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
+                   <div key={item.id} className={`bg-card rounded-xl shadow-sm border border-border hover:shadow-lg transition-all duration-200 overflow-hidden ${!item.is_available ? 'opacity-50' : ''}`}>
+                     {/* Product Image */}
+                     <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+                       {item.image_url ? (
+                         <img 
+                           src={item.image_url} 
+                           alt={item.name}
+                           className="w-full h-full object-cover"
+                         />
+                       ) : (
+                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80">
+                           <span className="text-muted-foreground text-2xl">🍽️</span>
+                         </div>
+                       )}
+                     </div>
+                     
+                     {/* Card Content */}
+                     <div className="p-4 space-y-3">
+                       <div className="space-y-1">
+                         <h4 className="font-semibold text-card-foreground text-base leading-tight">{item.name}</h4>
+                         {item.description && (
+                           <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
+                         )}
+                       </div>
+                       
+                       <div className="flex items-center justify-between pt-1">
+                         <div className="flex items-center gap-2">
+                           <span className="text-primary font-bold text-lg">${item.price_usd.toFixed(2)}</span>
+                           {!item.is_available && (
+                             <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                           )}
+                         </div>
+                         
+                         {cart.find(cartItem => cartItem.id === item.id) ? (
+                           <div className="flex items-center space-x-2">
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               onClick={() => removeFromCart(item.id)}
+                               className="h-9 w-9 p-0 rounded-full"
+                             >
+                               <Minus className="h-4 w-4" />
+                             </Button>
+                             <span className="text-base font-semibold min-w-[24px] text-center">
+                               {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
+                             </span>
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               onClick={() => addToCart(item)}
+                               disabled={!item.is_available}
+                               className="h-9 w-9 p-0 rounded-full"
+                             >
+                               <Plus className="h-4 w-4" />
+                             </Button>
+                           </div>
+                         ) : (
+                           <Button
+                             onClick={() => addToCart(item)}
+                             disabled={!item.is_available}
+                             className="h-9 px-4 rounded-full font-medium"
+                           >
+                             Add to Cart
+                           </Button>
+                         )}
+                       </div>
+                     </div>
+                   </div>
+                 ))}
               </div>
             )}
           </div>
