@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Search } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Search, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MenuItem {
@@ -38,6 +38,7 @@ const MenuView = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -123,6 +124,26 @@ const MenuView = () => {
     return cart.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const handleSearchExpand = () => {
+    setIsSearchExpanded(true);
+    // Focus will be handled by useEffect
+  };
+
+  const handleSearchClose = () => {
+    setIsSearchExpanded(false);
+    setSearchQuery('');
+  };
+
+  // Auto focus when search expands
+  useEffect(() => {
+    if (isSearchExpanded) {
+      const searchInput = document.querySelector('input[placeholder="Search menu items..."]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }
+  }, [isSearchExpanded]);
+
   const filteredCategories = categories.map(category => ({
     ...category,
     menu_items: category.menu_items.filter(item =>
@@ -151,40 +172,64 @@ const MenuView = () => {
       {/* Top Navigation */}
       <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            {/* Restaurant Name */}
-            <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-primary">{restaurant.name}</h1>
-              <p className="text-xs text-muted-foreground">Table {table.table_number}</p>
+          {!isSearchExpanded ? (
+            // Normal view - Restaurant name and icons
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-shrink-0">
+                <h1 className="text-xl font-bold text-primary">{restaurant.name}</h1>
+                <p className="text-xs text-muted-foreground">Table {table.table_number}</p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Search Icon */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSearchExpand}
+                  className="h-9 w-9 p-0"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+                
+                {/* Cart Icon */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/cart/${tableId}`)}
+                  className="relative h-9 w-9 p-0"
+                  disabled={cart.length === 0}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  {cart.length > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {getTotalItems()}
+                    </span>
+                  )}
+                </Button>
+              </div>
             </div>
-            
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search menu items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-9 bg-white dark:bg-muted"
-              />
+          ) : (
+            // Search expanded view
+            <div className="flex items-center gap-3 animate-fade-in">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search menu items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-10 bg-white dark:bg-muted text-base"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSearchClose}
+                className="h-10 w-10 p-0 flex-shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            
-            {/* Cart Icon */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/cart/${tableId}`)}
-              className="relative"
-              disabled={cart.length === 0}
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {cart.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {getTotalItems()}
-                </span>
-              )}
-            </Button>
-          </div>
+          )}
         </div>
       </header>
 
