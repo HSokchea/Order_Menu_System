@@ -236,30 +236,31 @@ const MenuView = () => {
       </header>
 
       {/* Category Navigation */}
-      <div className="sticky top-[73px] z-9 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {filteredCategories.map((category) => (
-              <Button
-                key={category.id}
-                variant={activeCategory === category.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveCategory(category.id)}
-                className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all"
-              >
-                {category.name}
-              </Button>
-            ))}
+      {!searchQuery && (
+        <div className="sticky top-[73px] z-9 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {filteredCategories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={activeCategory === category.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveCategory(category.id)}
+                  className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all"
+                >
+                  {category.name}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 pb-24">
         {searchQuery ? (
           // Search Results
           <div className="space-y-8">
-            <h2 className="text-xl font-semibold text-foreground">Search Results for "{searchQuery}"</h2>
             {filteredCategories.map((category) => (
               category.menu_items.length > 0 && (
                 <div key={category.id} className="space-y-6">
