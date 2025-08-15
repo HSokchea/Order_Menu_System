@@ -13,7 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Plus, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import CategoryManager from '@/components/admin/CategoryManager';
 import ImageUpload from '@/components/admin/ImageUpload';
 import MenuItemCard from '@/components/admin/MenuItemCard';
@@ -203,20 +202,6 @@ const MenuManagement = () => {
       });
       fetchData();
     }
-  };
-
-  const handleMenuItemDragEnd = async (result: any) => {
-    if (!result.destination) return;
-
-    const items = Array.from(menuItems);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    // Update local state immediately for better UX
-    setMenuItems(items);
-
-    // You could implement display_order updates here if needed
-    // This would require adding a display_order column to menu_items table
   };
 
   // Filter and paginate items
