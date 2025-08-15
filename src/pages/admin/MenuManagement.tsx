@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,11 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import type { TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Wand2 } from 'lucide-react';
+import { ArrowLeft, Plus, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import CategoryManager from '@/components/admin/CategoryManager';
@@ -46,7 +46,14 @@ const MenuManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [restaurantId, setRestaurantId] = useState<string>('');
-  const [seeding, setSeeding] = useState(false);
+
+  // Filter state
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedAvailability, setSelectedAvailability] = useState<string>('all');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   // Form state
   const [itemName, setItemName] = useState('');
@@ -212,124 +219,42 @@ const MenuManagement = () => {
     // This would require adding a display_order column to menu_items table
   };
 
-  // Generate 5 realistic items based on category name
-  const getTemplatesForCategory = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes('appet')) {
-      return [
-        { name: 'Crispy Spring Rolls', price: 4.5, description: 'Vegetable spring rolls with sweet chili sauce' },
-        { name: 'Bruschetta Trio', price: 5.0, description: 'Tomato-basil, mushroom, and olive tapenade' },
-        { name: 'Chicken Satay', price: 6.0, description: 'Grilled skewers with peanut dipping sauce' },
-        { name: 'Stuffed Mushrooms', price: 5.5, description: 'Garlic-herb cream cheese filling' },
-        { name: 'Calamari Fritti', price: 7.5, description: 'Crispy squid with lemon aioli' },
-      ];
-    }
-    if (n.includes('main') || n.includes('entree') || n.includes('entrée')) {
-      return [
-        { name: 'Grilled Chicken Plate', price: 11.9, description: 'Herb-marinated chicken, roasted veggies, jus' },
-        { name: 'Beef Stir-Fry', price: 12.5, description: 'Wok-tossed beef, mixed peppers, soy glaze' },
-        { name: 'Creamy Veggie Pasta', price: 10.5, description: 'Seasonal vegetables, garlic cream sauce' },
-        { name: 'BBQ Pork Ribs', price: 14.9, description: 'Slow-cooked ribs, house BBQ, slaw' },
-        { name: 'Salmon Teriyaki', price: 15.5, description: 'Seared salmon, teriyaki glaze, sesame' },
-      ];
-    }
-    if (n.includes('dessert') || n.includes('sweet')) {
-      return [
-        { name: 'Chocolate Lava Cake', price: 5.9, description: 'Warm chocolate cake with molten center' },
-        { name: 'Classic Cheesecake', price: 5.5, description: 'Creamy cheesecake, berry compote' },
-        { name: 'Fresh Fruit Salad', price: 4.5, description: 'Seasonal fruits, mint, citrus syrup' },
-        { name: 'Tiramisu', price: 5.9, description: 'Coffee-soaked ladyfingers, mascarpone' },
-        { name: 'Ice Cream Sundae', price: 4.0, description: 'Vanilla ice cream, chocolate sauce, nuts' },
-      ];
-    }
-    if (n.includes('beverage') || n.includes('drink') || n.includes('drinks')) {
-      return [
-        { name: 'Iced Latte', price: 3.5, description: 'Double shot over milk and ice' },
-        { name: 'Fresh Lemonade', price: 2.5, description: 'Hand-squeezed lemons, cane sugar' },
-        { name: 'Iced Tea', price: 2.2, description: 'Brewed black tea, lemon' },
-        { name: 'Sparkling Water', price: 1.8, description: 'Chilled, with lime' },
-        { name: 'Mango Smoothie', price: 3.9, description: 'Ripe mango, yogurt, honey' },
-      ];
-    }
-    if (n.includes('side') || n.includes('snack')) {
-      return [
-        { name: 'Garlic Bread', price: 2.8, description: 'Toasted baguette, garlic butter' },
-        { name: 'French Fries', price: 2.9, description: 'Crispy fries, sea salt' },
-        { name: 'Side Salad', price: 3.2, description: 'Mixed greens, vinaigrette' },
-        { name: 'Steamed Rice', price: 1.5, description: 'Fluffy jasmine rice' },
-        { name: 'Mashed Potatoes', price: 3.0, description: 'Creamy, buttery mash' },
-      ];
-    }
-    // Default generic items
-    return [
-      { name: 'Chef Special I', price: 8.5, description: 'House favorite, ever-changing' },
-      { name: 'Chef Special II', price: 9.0, description: 'Seasonal ingredients' },
-      { name: 'Chef Special III', price: 9.5, description: 'Flavorful and hearty' },
-      { name: 'Chef Special IV', price: 10.0, description: 'Balanced and satisfying' },
-      { name: 'Chef Special V', price: 10.5, description: 'Generous portion' },
-    ];
-  };
+  // Filter and paginate items
+  const filteredAndPaginatedItems = useMemo(() => {
+    let filtered = menuItems;
 
-  const handleSeedItems = async () => {
-    if (!user) return;
-    try {
-      setSeeding(true);
-      toast({ title: 'Seeding started', description: 'Adding 5 items per category...' });
-
-      // Get all restaurants owned by the current user
-      const { data: restaurants, error: restErr } = await supabase
-        .from('restaurants')
-        .select('id')
-        .eq('owner_id', user.id);
-      if (restErr) throw restErr;
-      const restIds = (restaurants || []).map((r: any) => r.id);
-      if (restIds.length === 0) {
-        toast({ title: 'No restaurants found', description: 'Create a restaurant first.', variant: 'destructive' });
-        return;
-      }
-
-      // Get categories for those restaurants
-      const { data: cats, error: catErr } = await supabase
-        .from('menu_categories')
-        .select('id, name, restaurant_id')
-        .in('restaurant_id', restIds);
-      if (catErr) throw catErr;
-
-      let totalAdded = 0;
-      let failed = 0;
-      for (const category of cats || []) {
-        const templates = getTemplatesForCategory(category.name);
-        const items: TablesInsert<'menu_items'>[] = templates.map((t) => ({
-          name: t.name,
-          description: t.description,
-          price_usd: t.price,
-          price_khr: Math.round(t.price * 4100),
-          category_id: category.id,
-          is_available: true,
-          image_url: null,
-          restaurant_id: category.restaurant_id,
-        }));
-
-        const { error } = await supabase.from('menu_items').insert(items);
-        if (error) {
-          console.error('Seed insert error for category', category.id, error.message);
-          failed += 1;
-        } else {
-          totalAdded += items.length;
-        }
-      }
-
-      toast({
-        title: 'Seeding complete',
-        description: `Added ${totalAdded} items${failed ? ` • ${failed} categories failed` : ''}.`,
-      });
-      fetchData();
-    } catch (err: any) {
-      toast({ title: 'Error seeding items', description: err.message, variant: 'destructive' });
-    } finally {
-      setSeeding(false);
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(item => item.category_id === selectedCategory);
     }
-  };
+
+    // Apply availability filter
+    if (selectedAvailability !== 'all') {
+      const isAvailable = selectedAvailability === 'available';
+      filtered = filtered.filter(item => item.is_available === isAvailable);
+    }
+
+    // Calculate pagination
+    const totalItems = filtered.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    const paginatedItems = filtered.slice(startIndex, endIndex);
+
+    return {
+      items: paginatedItems,
+      totalItems,
+      totalPages,
+      startIndex: startIndex + 1,
+      endIndex,
+      currentPage,
+    };
+  }, [menuItems, selectedCategory, selectedAvailability, currentPage, itemsPerPage]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedAvailability]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -359,21 +284,52 @@ const MenuManagement = () => {
 
         {/* Menu Items Section */}
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
+          {/* Header with filters and controls */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
               <h2 className="text-xl font-semibold">Menu Items</h2>
               <p className="text-sm text-muted-foreground">
-                {menuItems.length} items • Drag to reorder
+                Showing {filteredAndPaginatedItems.totalItems > 0 ? filteredAndPaginatedItems.startIndex : 0}–{filteredAndPaginatedItems.endIndex} of {filteredAndPaginatedItems.totalItems} items
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleSeedItems} disabled={seeding}>
-                <Wand2 className="h-4 w-4 mr-2" />
-                {seeding ? 'Seeding...' : 'Seed 5 per category'}
-              </Button>
+            
+            {/* Filters and Add Button */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span>Filters:</span>
+              </div>
+              
+              {/* Category Filter */}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Availability Filter */}
+              <Select value={selectedAvailability} onValueChange={setSelectedAvailability}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="All Items" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Items</SelectItem>
+                  <SelectItem value="available">Available</SelectItem>
+                  <SelectItem value="unavailable">Unavailable</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={resetForm}>
+                  <Button onClick={resetForm} className="w-full sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Menu Item
                   </Button>
@@ -460,54 +416,112 @@ const MenuManagement = () => {
           </div>
 
           {/* Menu Items List */}
-          {menuItems.length === 0 ? (
+          {filteredAndPaginatedItems.totalItems === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground text-center">
-                  No menu items yet.<br />
-                  Add your first menu item to get started.
+                  {menuItems.length === 0 
+                    ? "No menu items yet. Add your first menu item to get started."
+                    : "No items match your current filters. Try adjusting the filters above."
+                  }
                 </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setDialogOpen(true)}
-                  className="mt-4"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Menu Item
-                </Button>
+                {menuItems.length === 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setDialogOpen(true)}
+                    className="mt-4"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Menu Item
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
-            <DragDropContext onDragEnd={handleMenuItemDragEnd}>
-              <Droppable droppableId="menu-items">
-                {(provided) => (
-                  <div
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className="space-y-3"
-                  >
-                    {menuItems.map((item, index) => (
-                      <Draggable key={item.id} draggableId={item.id} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                          >
-                            <MenuItemCard
-                              item={item}
-                              onEdit={handleEditItem}
-                              onDelete={handleDeleteItem}
-                              dragProps={provided}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
+            <>
+              {/* Items Grid */}
+              <div className="space-y-3">
+                {filteredAndPaginatedItems.items.map((item, index) => (
+                  <MenuItemCard
+                    key={item.id}
+                    item={item}
+                    onEdit={handleEditItem}
+                    onDelete={handleDeleteItem}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {filteredAndPaginatedItems.totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
+                  <div className="text-sm text-muted-foreground">
+                    Page {filteredAndPaginatedItems.currentPage} of {filteredAndPaginatedItems.totalPages}
                   </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+                  
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentPage > 1) setCurrentPage(currentPage - 1);
+                          }}
+                          className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: filteredAndPaginatedItems.totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          // Show first page, last page, current page, and pages around current
+                          return page === 1 || 
+                                 page === filteredAndPaginatedItems.totalPages || 
+                                 Math.abs(page - currentPage) <= 1;
+                        })
+                        .map((page, index, array) => {
+                          // Add ellipsis if there's a gap
+                          const shouldShowEllipsis = index > 0 && page - array[index - 1] > 1;
+                          
+                          return (
+                            <div key={page} className="flex items-center">
+                              {shouldShowEllipsis && (
+                                <PaginationItem>
+                                  <span className="px-3 py-2 text-muted-foreground">...</span>
+                                </PaginationItem>
+                              )}
+                              <PaginationItem>
+                                <PaginationLink
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setCurrentPage(page);
+                                  }}
+                                  isActive={page === currentPage}
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            </div>
+                          );
+                        })}
+                      
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentPage < filteredAndPaginatedItems.totalPages) {
+                              setCurrentPage(currentPage + 1);
+                            }
+                          }}
+                          className={currentPage >= filteredAndPaginatedItems.totalPages ? "pointer-events-none opacity-50" : ""}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
