@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import type { TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import CategoryManager from '@/components/admin/CategoryManager';
@@ -21,6 +22,7 @@ interface Category {
   id: string;
   name: string;
   display_order: number;
+  restaurant_id: string;
 }
 
 interface MenuItem {
@@ -44,6 +46,7 @@ const MenuManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [restaurantId, setRestaurantId] = useState<string>('');
+  const [seeding, setSeeding] = useState(false);
 
   // Form state
   const [itemName, setItemName] = useState('');
@@ -209,6 +212,125 @@ const MenuManagement = () => {
     // This would require adding a display_order column to menu_items table
   };
 
+  // Generate 5 realistic items based on category name
+  const getTemplatesForCategory = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes('appet')) {
+      return [
+        { name: 'Crispy Spring Rolls', price: 4.5, description: 'Vegetable spring rolls with sweet chili sauce' },
+        { name: 'Bruschetta Trio', price: 5.0, description: 'Tomato-basil, mushroom, and olive tapenade' },
+        { name: 'Chicken Satay', price: 6.0, description: 'Grilled skewers with peanut dipping sauce' },
+        { name: 'Stuffed Mushrooms', price: 5.5, description: 'Garlic-herb cream cheese filling' },
+        { name: 'Calamari Fritti', price: 7.5, description: 'Crispy squid with lemon aioli' },
+      ];
+    }
+    if (n.includes('main') || n.includes('entree') || n.includes('entrée')) {
+      return [
+        { name: 'Grilled Chicken Plate', price: 11.9, description: 'Herb-marinated chicken, roasted veggies, jus' },
+        { name: 'Beef Stir-Fry', price: 12.5, description: 'Wok-tossed beef, mixed peppers, soy glaze' },
+        { name: 'Creamy Veggie Pasta', price: 10.5, description: 'Seasonal vegetables, garlic cream sauce' },
+        { name: 'BBQ Pork Ribs', price: 14.9, description: 'Slow-cooked ribs, house BBQ, slaw' },
+        { name: 'Salmon Teriyaki', price: 15.5, description: 'Seared salmon, teriyaki glaze, sesame' },
+      ];
+    }
+    if (n.includes('dessert') || n.includes('sweet')) {
+      return [
+        { name: 'Chocolate Lava Cake', price: 5.9, description: 'Warm chocolate cake with molten center' },
+        { name: 'Classic Cheesecake', price: 5.5, description: 'Creamy cheesecake, berry compote' },
+        { name: 'Fresh Fruit Salad', price: 4.5, description: 'Seasonal fruits, mint, citrus syrup' },
+        { name: 'Tiramisu', price: 5.9, description: 'Coffee-soaked ladyfingers, mascarpone' },
+        { name: 'Ice Cream Sundae', price: 4.0, description: 'Vanilla ice cream, chocolate sauce, nuts' },
+      ];
+    }
+    if (n.includes('beverage') || n.includes('drink') || n.includes('drinks')) {
+      return [
+        { name: 'Iced Latte', price: 3.5, description: 'Double shot over milk and ice' },
+        { name: 'Fresh Lemonade', price: 2.5, description: 'Hand-squeezed lemons, cane sugar' },
+        { name: 'Iced Tea', price: 2.2, description: 'Brewed black tea, lemon' },
+        { name: 'Sparkling Water', price: 1.8, description: 'Chilled, with lime' },
+        { name: 'Mango Smoothie', price: 3.9, description: 'Ripe mango, yogurt, honey' },
+      ];
+    }
+    if (n.includes('side') || n.includes('snack')) {
+      return [
+        { name: 'Garlic Bread', price: 2.8, description: 'Toasted baguette, garlic butter' },
+        { name: 'French Fries', price: 2.9, description: 'Crispy fries, sea salt' },
+        { name: 'Side Salad', price: 3.2, description: 'Mixed greens, vinaigrette' },
+        { name: 'Steamed Rice', price: 1.5, description: 'Fluffy jasmine rice' },
+        { name: 'Mashed Potatoes', price: 3.0, description: 'Creamy, buttery mash' },
+      ];
+    }
+    // Default generic items
+    return [
+      { name: 'Chef Special I', price: 8.5, description: 'House favorite, ever-changing' },
+      { name: 'Chef Special II', price: 9.0, description: 'Seasonal ingredients' },
+      { name: 'Chef Special III', price: 9.5, description: 'Flavorful and hearty' },
+      { name: 'Chef Special IV', price: 10.0, description: 'Balanced and satisfying' },
+      { name: 'Chef Special V', price: 10.5, description: 'Generous portion' },
+    ];
+  };
+
+  const handleSeedItems = async () => {
+    if (!user) return;
+    try {
+      setSeeding(true);
+      toast({ title: 'Seeding started', description: 'Adding 5 items per category...' });
+
+      // Get all restaurants owned by the current user
+      const { data: restaurants, error: restErr } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('owner_id', user.id);
+      if (restErr) throw restErr;
+      const restIds = (restaurants || []).map((r: any) => r.id);
+      if (restIds.length === 0) {
+        toast({ title: 'No restaurants found', description: 'Create a restaurant first.', variant: 'destructive' });
+        return;
+      }
+
+      // Get categories for those restaurants
+      const { data: cats, error: catErr } = await supabase
+        .from('menu_categories')
+        .select('id, name, restaurant_id')
+        .in('restaurant_id', restIds);
+      if (catErr) throw catErr;
+
+      let totalAdded = 0;
+      let failed = 0;
+      for (const category of cats || []) {
+        const templates = getTemplatesForCategory(category.name);
+        const items: TablesInsert<'menu_items'>[] = templates.map((t) => ({
+          name: t.name,
+          description: t.description,
+          price_usd: t.price,
+          price_khr: Math.round(t.price * 4100),
+          category_id: category.id,
+          is_available: true,
+          image_url: null,
+          restaurant_id: category.restaurant_id,
+        }));
+
+        const { error } = await supabase.from('menu_items').insert(items);
+        if (error) {
+          console.error('Seed insert error for category', category.id, error.message);
+          failed += 1;
+        } else {
+          totalAdded += items.length;
+        }
+      }
+
+      toast({
+        title: 'Seeding complete',
+        description: `Added ${totalAdded} items${failed ? ` • ${failed} categories failed` : ''}.`,
+      });
+      fetchData();
+    } catch (err: any) {
+      toast({ title: 'Error seeding items', description: err.message, variant: 'destructive' });
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -244,91 +366,97 @@ const MenuManagement = () => {
                 {menuItems.length} items • Drag to reorder
               </p>
             </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Menu Item
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <ImageUpload
-                    currentImageUrl={itemImageUrl}
-                    onImageChange={setItemImageUrl}
-                    restaurantId={restaurantId}
-                  />
-                  
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Item Name *</Label>
-                    <Input
-                      id="name"
-                      value={itemName}
-                      onChange={(e) => setItemName(e.target.value)}
-                      placeholder="e.g. Grilled Salmon"
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={handleSeedItems} disabled={seeding}>
+                <Wand2 className="h-4 w-4 mr-2" />
+                {seeding ? 'Seeding...' : 'Seed 5 per category'}
+              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={resetForm}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Menu Item
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <ImageUpload
+                      currentImageUrl={itemImageUrl}
+                      onImageChange={setItemImageUrl}
+                      restaurantId={restaurantId}
                     />
-                  </div>
-                  
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={itemDescription}
-                      onChange={(e) => setItemDescription(e.target.value)}
-                      placeholder="Describe the dish, ingredients, and preparation..."
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
+                    
                     <div className="grid gap-2">
-                      <Label htmlFor="price">Price (USD) *</Label>
+                      <Label htmlFor="name">Item Name *</Label>
                       <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={itemPrice}
-                        onChange={(e) => setItemPrice(e.target.value)}
-                        placeholder="0.00"
+                        id="name"
+                        value={itemName}
+                        onChange={(e) => setItemName(e.target.value)}
+                        placeholder="e.g. Grilled Salmon"
                       />
                     </div>
                     
                     <div className="grid gap-2">
-                      <Label htmlFor="category">Category *</Label>
-                      <Select value={itemCategory} onValueChange={setItemCategory}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={itemDescription}
+                        onChange={(e) => setItemDescription(e.target.value)}
+                        placeholder="Describe the dish, ingredients, and preparation..."
+                        rows={3}
+                      />
                     </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="price">Price (USD) *</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={itemPrice}
+                          onChange={(e) => setItemPrice(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="category">Category *</Label>
+                        <Select value={itemCategory} onValueChange={setItemCategory}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="available"
+                        checked={itemAvailable}
+                        onCheckedChange={setItemAvailable}
+                      />
+                      <Label htmlFor="available">Available for ordering</Label>
+                    </div>
+                    
+                    <Button onClick={handleSaveItem} className="w-full" size="lg">
+                      {editingItem ? 'Update Item' : 'Add Item'}
+                    </Button>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="available"
-                      checked={itemAvailable}
-                      onCheckedChange={setItemAvailable}
-                    />
-                    <Label htmlFor="available">Available for ordering</Label>
-                  </div>
-                  
-                  <Button onClick={handleSaveItem} className="w-full" size="lg">
-                    {editingItem ? 'Update Item' : 'Add Item'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           {/* Menu Items List */}
