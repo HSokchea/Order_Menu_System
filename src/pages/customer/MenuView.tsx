@@ -234,14 +234,14 @@ const MenuView = () => {
               {/* Desktop Search Field - Centered */}
               <div className="hidden md:flex flex-1 justify-center">
                 <div className="relative max-w-md w-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer" 
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer" 
                     onClick={handleSearch} />
                   <Input
                     placeholder="Search menu items..."
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    className="pl-10 h-10 bg-white dark:bg-muted text-sm"
+                    className="pr-10 h-10 bg-white dark:bg-muted text-sm"
                   />
                 </div>
               </div>
@@ -278,13 +278,14 @@ const MenuView = () => {
             // Mobile Search expanded view
             <div className="flex items-center gap-3 animate-fade-in md:hidden">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer" 
+                  onClick={handleSearch} />
                 <Input
                   placeholder="Search menu items..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pl-10 h-10 bg-white dark:bg-muted text-base"
+                  className="pr-10 h-10 bg-white dark:bg-muted text-base"
                 />
               </div>
               <Button
