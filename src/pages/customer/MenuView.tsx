@@ -218,20 +218,30 @@ const MenuView = () => {
       <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
           {!isSearchExpanded ? (
-            // Normal view - Restaurant name and icons
+            // Normal view - Restaurant name and search/cart
             <div className="flex items-center justify-between gap-4">
-          <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-primary">{restaurant.name}</h1>
-            <p className="text-xs text-muted-foreground font-medium">Table {table.table_number}</p>
-          </div>
+              <div className="flex-shrink-0">
+                <h1 className="text-2xl font-bold text-primary">{restaurant.name}</h1>
+                <p className="text-xs text-muted-foreground font-medium">Table {table.table_number}</p>
+              </div>
               
               <div className="flex items-center gap-2">
-                {/* Search Icon */}
+                {/* Desktop Search Field */}
+                <div className="hidden md:block flex-1 relative max-w-xs">
+                  <Input
+                    placeholder="Search menu items..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-9 bg-white dark:bg-muted text-sm"
+                  />
+                </div>
+                
+                {/* Mobile Search Icon */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleSearchExpand}
-                  className="h-9 w-9 p-0"
+                  className="h-9 w-9 p-0 md:hidden"
                 >
                   <Search className="h-4 w-4" />
                 </Button>
@@ -254,8 +264,8 @@ const MenuView = () => {
               </div>
             </div>
           ) : (
-            // Search expanded view
-            <div className="flex items-center gap-3 animate-fade-in">
+            // Mobile Search expanded view
+            <div className="flex items-center gap-3 animate-fade-in md:hidden">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
