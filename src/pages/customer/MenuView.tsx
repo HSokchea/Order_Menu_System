@@ -225,7 +225,7 @@ const MenuView = () => {
         <div className="container mx-auto px-4 py-3">
           {!isSearchExpanded ? (
             // Normal view - Restaurant name and search/cart
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex-shrink-0">
                 <h1 className="text-2xl font-bold text-primary">{restaurant.name}</h1>
                 <p className="text-xs text-muted-foreground font-medium">Table {table.table_number}</p>
@@ -246,7 +246,8 @@ const MenuView = () => {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              {/* Mobile and Desktop Icons - Right Aligned */}
+              <div className="flex items-center gap-2 ml-auto md:ml-0">
                 {/* Mobile Search Icon */}
                 <Button
                   variant="outline"
