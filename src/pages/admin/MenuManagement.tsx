@@ -11,7 +11,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, Filter, ChevronDown, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CategoryManager from '@/components/admin/CategoryManager';
 import ImageUpload from '@/components/admin/ImageUpload';
@@ -53,6 +53,9 @@ const MenuManagement = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
+
+  // Category collapsible state
+  const [categoryBarExpanded, setCategoryBarExpanded] = useState(true);
 
   // Form state
   const [itemName, setItemName] = useState('');
@@ -259,20 +262,50 @@ const MenuManagement = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Category Management */}
-        <CategoryManager
-          categories={categories}
-          restaurantId={restaurantId}
-          onCategoriesUpdate={fetchData}
-        />
+      {/* Sticky Top Section */}
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="container mx-auto px-4 py-4 space-y-4">
+          {/* Category Bar (Collapsible) */}
+          <div className="space-y-3">
+            <div 
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setCategoryBarExpanded(!categoryBarExpanded)}
+            >
+              <div className="flex items-center gap-2">
+                {categoryBarExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                <h2 className="text-lg font-semibold">Categories</h2>
+                <span className="text-sm text-muted-foreground">({categories.length})</span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Add category functionality can be added here
+                }}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Category
+              </Button>
+            </div>
+            
+            {categoryBarExpanded && (
+              <CategoryManager
+                categories={categories}
+                restaurantId={restaurantId}
+                onCategoriesUpdate={fetchData}
+              />
+            )}
+          </div>
 
-        {/* Menu Items Section */}
-        <div className="space-y-6">
-          {/* Header with filters and controls */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          {/* Menu Items Filter Bar */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pt-4 border-t">
             <div>
-              <h2 className="text-xl font-semibold">Menu Items</h2>
+              <h3 className="text-lg font-semibold">Menu Items</h3>
               <p className="text-sm text-muted-foreground">
                 Showing {filteredAndPaginatedItems.totalItems > 0 ? filteredAndPaginatedItems.startIndex : 0}–{filteredAndPaginatedItems.endIndex} of {filteredAndPaginatedItems.totalItems} items
               </p>
@@ -399,7 +432,12 @@ const MenuManagement = () => {
               </Dialog>
             </div>
           </div>
+        </div>
+      </div>
 
+      <main className="container mx-auto px-4 py-8">
+        {/* Menu Items Section */}
+        <div className="space-y-6">
           {/* Menu Items List */}
           {filteredAndPaginatedItems.totalItems === 0 ? (
             <Card>
