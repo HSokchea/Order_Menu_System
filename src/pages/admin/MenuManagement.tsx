@@ -8,10 +8,11 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, Filter, ChevronRight, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CategoryManager from '@/components/admin/CategoryManager';
 import ImageUpload from '@/components/admin/ImageUpload';
@@ -53,6 +54,9 @@ const MenuManagement = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
+  
+  // Collapsible categories state
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Form state
   const [itemName, setItemName] = useState('');
@@ -241,6 +245,55 @@ const MenuManagement = () => {
     setCurrentPage(1);
   }, [selectedCategory, selectedAvailability]);
 
+  // Helper functions for collapsible categories
+  const toggleCategory = (categoryId: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const openCategoryDialog = (categoryId: string) => {
+    setItemCategory(categoryId);
+    resetForm();
+    setItemCategory(categoryId);
+    setDialogOpen(true);
+  };
+
+  // Get items grouped by category with applied filters
+  const categorizedItems = useMemo(() => {
+    const filtered = menuItems.filter(item => {
+      // Apply availability filter
+      if (selectedAvailability !== 'all') {
+        const isAvailable = selectedAvailability === 'available';
+        if (item.is_available !== isAvailable) return false;
+      }
+      
+      // Apply category filter
+      if (selectedCategory !== 'all') {
+        return item.category_id === selectedCategory;
+      }
+      
+      return true;
+    });
+
+    // Group by category
+    const grouped = categories.map(category => ({
+      category,
+      items: filtered.filter(item => item.category_id === category.id)
+    }));
+
+    return grouped;
+  }, [menuItems, categories, selectedAvailability, selectedCategory]);
+
+  // Get total count for display
+  const totalFilteredItems = useMemo(() => {
+    return categorizedItems.reduce((total, group) => total + group.items.length, 0);
+  }, [categorizedItems]);
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -267,14 +320,14 @@ const MenuManagement = () => {
           onCategoriesUpdate={fetchData}
         />
 
-        {/* Menu Items Section */}
-        <div className="space-y-6">
-          {/* Header with filters and controls */}
+        {/* Sticky Header with Filters */}
+        <div className="sticky top-0 z-10 bg-background border-b pb-4 space-y-4">
+          {/* Header with Total Count */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
               <h2 className="text-xl font-semibold">Menu Items</h2>
               <p className="text-sm text-muted-foreground">
-                Showing {filteredAndPaginatedItems.totalItems > 0 ? filteredAndPaginatedItems.startIndex : 0}–{filteredAndPaginatedItems.endIndex} of {filteredAndPaginatedItems.totalItems} items
+                Total: {totalFilteredItems} items
               </p>
             </div>
             
@@ -399,114 +452,99 @@ const MenuManagement = () => {
               </Dialog>
             </div>
           </div>
+        </div>
 
-          {/* Menu Items List */}
-          {filteredAndPaginatedItems.totalItems === 0 ? (
+        {/* Collapsible Categories Section */}
+        <div className="space-y-4">
+          {categorizedItems.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground text-center">
-                  {menuItems.length === 0 
-                    ? "No menu items yet. Add your first menu item to get started."
+                  {categories.length === 0 
+                    ? "No categories yet. Add your first category to get started."
                     : "No items match your current filters. Try adjusting the filters above."
                   }
                 </p>
-                {menuItems.length === 0 && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setDialogOpen(true)}
-                    className="mt-4"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Menu Item
-                  </Button>
-                )}
               </CardContent>
             </Card>
           ) : (
-            <>
-              {/* Items Grid */}
-              <div className="space-y-3">
-                {filteredAndPaginatedItems.items.map((item, index) => (
-                  <MenuItemCard
-                    key={item.id}
-                    item={item}
-                    onEdit={handleEditItem}
-                    onDelete={handleDeleteItem}
-                  />
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {filteredAndPaginatedItems.totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
-                  <div className="text-sm text-muted-foreground">
-                    Page {filteredAndPaginatedItems.currentPage} of {filteredAndPaginatedItems.totalPages}
-                  </div>
-                  
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious 
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentPage > 1) setCurrentPage(currentPage - 1);
-                          }}
-                          className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
-                      
-                      {Array.from({ length: filteredAndPaginatedItems.totalPages }, (_, i) => i + 1)
-                        .filter(page => {
-                          // Show first page, last page, current page, and pages around current
-                          return page === 1 || 
-                                 page === filteredAndPaginatedItems.totalPages || 
-                                 Math.abs(page - currentPage) <= 1;
-                        })
-                        .map((page, index, array) => {
-                          // Add ellipsis if there's a gap
-                          const shouldShowEllipsis = index > 0 && page - array[index - 1] > 1;
-                          
-                          return (
-                            <div key={page} className="flex items-center">
-                              {shouldShowEllipsis && (
-                                <PaginationItem>
-                                  <span className="px-3 py-2 text-muted-foreground">...</span>
-                                </PaginationItem>
-                              )}
-                              <PaginationItem>
-                                <PaginationLink
-                                  href="#"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    setCurrentPage(page);
-                                  }}
-                                  isActive={page === currentPage}
-                                >
-                                  {page}
-                                </PaginationLink>
-                              </PaginationItem>
+            categorizedItems.map(({ category, items }) => {
+              const isExpanded = expandedCategories.has(category.id);
+              const categoryItemCount = items.length;
+              
+              return (
+                <Card key={category.id} className="overflow-hidden">
+                  <Collapsible
+                    open={isExpanded}
+                    onOpenChange={() => toggleCategory(category.id)}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="hover:bg-muted/50 cursor-pointer transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <div>
+                              <CardTitle className="text-lg">{category.name}</CardTitle>
+                              <p className="text-sm text-muted-foreground">
+                                {categoryItemCount} item{categoryItemCount !== 1 ? 's' : ''}
+                              </p>
                             </div>
-                          );
-                        })}
-                      
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (currentPage < filteredAndPaginatedItems.totalPages) {
-                              setCurrentPage(currentPage + 1);
-                            }
-                          }}
-                          className={currentPage >= filteredAndPaginatedItems.totalPages ? "pointer-events-none opacity-50" : ""}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-            </>
+                          </div>
+                          
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openCategoryDialog(category.id);
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="shrink-0"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Item
+                          </Button>
+                        </div>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent>
+                      <CardContent className="pt-0">
+                        {categoryItemCount === 0 ? (
+                          <div className="text-center py-8">
+                            <p className="text-muted-foreground mb-4">
+                              No items yet. Add your first item.
+                            </p>
+                            <Button
+                              onClick={() => openCategoryDialog(category.id)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Item to {category.name}
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {items.map((item) => (
+                              <MenuItemCard
+                                key={item.id}
+                                item={item}
+                                onEdit={handleEditItem}
+                                onDelete={handleDeleteItem}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+              );
+            })
           )}
         </div>
       </main>
