@@ -38,6 +38,7 @@ const MenuView = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
@@ -174,9 +175,14 @@ const MenuView = () => {
     // Focus will be handled by useEffect
   };
 
+  const handleSearch = () => {
+    setSearchQuery(searchInput);
+  };
+
   const handleSearchClose = () => {
     setIsSearchExpanded(false);
     setSearchQuery('');
+    setSearchInput('');
   };
 
   // Auto focus when search expands
@@ -219,23 +225,28 @@ const MenuView = () => {
         <div className="container mx-auto px-4 py-3">
           {!isSearchExpanded ? (
             // Normal view - Restaurant name and search/cart
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
                 <h1 className="text-2xl font-bold text-primary">{restaurant.name}</h1>
                 <p className="text-xs text-muted-foreground font-medium">Table {table.table_number}</p>
               </div>
               
-              <div className="flex items-center gap-2">
-                {/* Desktop Search Field */}
-                <div className="hidden md:block flex-1 relative max-w-xs">
+              {/* Desktop Search Field - Centered */}
+              <div className="hidden md:flex flex-1 justify-center">
+                <div className="relative max-w-md w-full">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer" 
+                    onClick={handleSearch} />
                   <Input
                     placeholder="Search menu items..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-9 bg-white dark:bg-muted text-sm"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    className="pl-10 h-10 bg-white dark:bg-muted text-sm"
                   />
                 </div>
-                
+              </div>
+              
+              <div className="flex items-center gap-2">
                 {/* Mobile Search Icon */}
                 <Button
                   variant="outline"
@@ -270,8 +281,9 @@ const MenuView = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search menu items..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   className="pl-10 h-10 bg-white dark:bg-muted text-base"
                 />
               </div>
