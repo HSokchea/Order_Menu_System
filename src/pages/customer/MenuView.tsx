@@ -43,52 +43,76 @@ const MenuView = () => {
 
   useEffect(() => {
     const fetchMenuData = async () => {
-      if (!tableId) return;
-
-      // Fetch table info
-      const { data: tableData } = await supabase
-        .from('tables')
-        .select('*, restaurant:restaurants(*)')
-        .eq('id', tableId)
-        .single();
-
-      if (!tableData) {
-        toast({
-          title: "Table Not Found",
-          description: "The QR code may be invalid",
-          variant: "destructive",
-        });
+      if (!tableId) {
+        setLoading(false);
         return;
       }
 
-      setTable(tableData);
-      setRestaurant(tableData.restaurant);
+      try {
+        // Fetch table info
+        const { data: tableData, error: tableError } = await supabase
+          .from('tables')
+          .select('*, restaurant:restaurants(*)')
+          .eq('id', tableId)
+          .maybeSingle();
 
-      // Fetch menu categories and items
-      const { data: categoriesData } = await supabase
-        .from('menu_categories')
-        .select(`
-          *,
-          menu_items (
-            id,
-            name,
-            description,
-            price_usd,
-            is_available,
-            category_id,
-            image_url
-          )
-        `)
-        .eq('restaurant_id', tableData.restaurant.id)
-        .order('display_order');
+        if (tableError || !tableData) {
+          console.error('Table fetch error:', tableError);
+          setLoading(false);
+          toast({
+            title: "Table Not Found",
+            description: tableError?.message || "The QR code may be invalid",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      setCategories(categoriesData || []);
-      setActiveCategory(categoriesData?.[0]?.id || '');
-      setLoading(false);
+        setTable(tableData);
+        setRestaurant(tableData.restaurant);
+
+        // Fetch menu categories and items
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('menu_categories')
+          .select(`
+            *,
+            menu_items (
+              id,
+              name,
+              description,
+              price_usd,
+              is_available,
+              category_id,
+              image_url
+            )
+          `)
+          .eq('restaurant_id', tableData.restaurant.id)
+          .order('display_order');
+
+        if (categoriesError) {
+          console.error('Categories fetch error:', categoriesError);
+          toast({
+            title: "Error Loading Menu",
+            description: "Unable to load menu items. Please try again.",
+            variant: "destructive",
+          });
+        }
+
+        setCategories(categoriesData || []);
+        setActiveCategory(categoriesData?.[0]?.id || '');
+        setLoading(false);
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        setLoading(false);
+        toast({
+          title: "Error",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
     };
 
     fetchMenuData();
-  }, [tableId]);
+  }, [tableId, toast]);
 
   const addToCart = (item: MenuItem) => {
     setCart(prev => {
