@@ -52,7 +52,7 @@ const MenuView = () => {
         // Fetch table info
         const { data: tableData, error: tableError } = await supabase
           .from('tables')
-          .select('*, restaurant:restaurants(*)')
+          .select('*')
           .eq('id', tableId)
           .maybeSingle();
 
@@ -68,7 +68,26 @@ const MenuView = () => {
         }
 
         setTable(tableData);
-        setRestaurant(tableData.restaurant);
+
+        // Fetch restaurant info
+        const { data: restaurantData, error: restaurantError } = await supabase
+          .from('restaurants')
+          .select('*')
+          .eq('id', tableData.restaurant_id)
+          .maybeSingle();
+
+        if (restaurantError || !restaurantData) {
+          console.error('Restaurant fetch error:', restaurantError);
+          setLoading(false);
+          toast({
+            title: "Restaurant Not Found",
+            description: "Unable to load restaurant information",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setRestaurant(restaurantData);
 
         // Fetch menu categories and items
         const { data: categoriesData, error: categoriesError } = await supabase
@@ -85,7 +104,7 @@ const MenuView = () => {
               image_url
             )
           `)
-          .eq('restaurant_id', tableData.restaurant.id)
+          .eq('restaurant_id', restaurantData.id)
           .order('display_order');
 
         if (categoriesError) {
