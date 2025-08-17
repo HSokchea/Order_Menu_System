@@ -77,35 +77,29 @@ const CartSummary = () => {
     try {
       const totalAmount = getTotalAmount();
 
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          restaurant_id: restaurant.id,
-          table_id: tableId,
-          table_number: table.table_number,
-          total_usd: totalAmount,
-          customer_notes: notes || null,
-          status: 'new'
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
+      // Prepare order items payload for RPC function
+      const orderItemsPayload = cart.map((item) => ({
         menu_item_id: item.id,
         quantity: item.quantity,
-        price_usd: item.price_usd || item.price || 0
+        price_usd: item.price_usd || item.price || 0,
+        notes: null,
       }));
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+      // Use secure RPC to create order + items in one transaction (bypasses RLS safely)
+      const { data: orderId, error: rpcError } = await supabase.rpc(
+        'create_order_with_items',
+        {
+          p_restaurant_id: restaurant.id,
+          p_table_id: tableId,
+          p_table_number: table.table_number,
+          p_total_usd: totalAmount,
+          p_customer_notes: notes || null,
+          p_items: orderItemsPayload as any,
+        }
+      );
 
-      if (itemsError) throw itemsError;
+      if (rpcError) throw rpcError;
+      if (!orderId) throw new Error('Failed to create order.');
 
       // Clear cart
       localStorage.removeItem(`cart_${tableId}`);
@@ -116,7 +110,7 @@ const CartSummary = () => {
         description: "Your order has been sent to the kitchen.",
       });
 
-      navigate(`/order-success/${order.id}`);
+      navigate(`/order-success/${orderId}`);
     } catch (error: any) {
       toast({
         title: "Order Failed",
