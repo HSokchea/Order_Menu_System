@@ -322,6 +322,17 @@ export type Database = {
         }
         Returns: string
       }
+      get_order_details: {
+        Args: { p_order_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          restaurant_name: string
+          status: string
+          table_number: string
+          total_usd: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

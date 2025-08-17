@@ -26,16 +26,25 @@ const OrderSuccess = () => {
     const fetchOrder = async () => {
       if (!orderId) return;
 
-      const { data: orderData } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          restaurant:restaurants (name)
-        `)
-        .eq('id', orderId)
-        .single();
+      const { data, error } = await supabase.rpc('get_order_details', { p_order_id: orderId });
 
-      setOrder(orderData);
+      if (error || !data || (Array.isArray(data) && data.length === 0)) {
+        setOrder(null);
+        setLoading(false);
+        return;
+      }
+
+      const details: any = Array.isArray(data) ? data[0] : data;
+      const mapped: OrderDetails = {
+        id: details.id,
+        table_number: details.table_number,
+        total_usd: Number(details.total_usd || 0),
+        status: details.status,
+        created_at: details.created_at,
+        restaurant: { name: details.restaurant_name }
+      };
+
+      setOrder(mapped);
       setLoading(false);
     };
 
