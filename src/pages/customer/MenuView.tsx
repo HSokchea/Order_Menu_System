@@ -170,6 +170,27 @@ const MenuView = () => {
     });
   };
 
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (tableId) {
+      if (cart.length > 0) {
+        localStorage.setItem(`cart_${tableId}`, JSON.stringify(cart));
+      } else {
+        localStorage.removeItem(`cart_${tableId}`);
+      }
+    }
+  }, [cart, tableId]);
+
+  // Load cart from localStorage on component mount
+  useEffect(() => {
+    if (tableId) {
+      const savedCart = localStorage.getItem(`cart_${tableId}`);
+      if (savedCart) {
+        setCart(JSON.parse(savedCart));
+      }
+    }
+  }, [tableId]);
+
   const removeFromCart = (itemId: string) => {
     setCart(prev => {
       const existing = prev.find(cartItem => cartItem.id === itemId);

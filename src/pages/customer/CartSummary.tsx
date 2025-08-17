@@ -11,7 +11,12 @@ import { useToast } from '@/hooks/use-toast';
 interface CartItem {
   id: string;
   name: string;
+  description?: string;
   price: number;
+  price_usd?: number;
+  price_khr?: number;
+  is_available?: boolean;
+  image_url?: string;
   quantity: number;
 }
 
@@ -61,7 +66,7 @@ const CartSummary = () => {
   };
 
   const getTotalAmount = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => total + ((item.price_usd || item.price || 0) * item.quantity), 0);
   };
 
   const placeOrder = async () => {
@@ -79,9 +84,9 @@ const CartSummary = () => {
           restaurant_id: restaurant.id,
           table_id: tableId,
           table_number: table.table_number,
-          total_amount: totalAmount,
-          notes: notes || null,
-          status: 'pending'
+          total_usd: totalAmount,
+          customer_notes: notes || null,
+          status: 'new'
         })
         .select()
         .single();
@@ -93,7 +98,7 @@ const CartSummary = () => {
         order_id: order.id,
         menu_item_id: item.id,
         quantity: item.quantity,
-        price: item.price
+        price_usd: item.price_usd || item.price || 0
       }));
 
       const { error: itemsError } = await supabase
@@ -173,7 +178,7 @@ const CartSummary = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold">{item.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          ${item.price.toFixed(2)} each
+                          ${(item.price_usd || item.price || 0).toFixed(2)} each
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -195,7 +200,7 @@ const CartSummary = () => {
                         </Button>
                         <div className="ml-4 text-right min-w-[4rem]">
                           <span className="font-semibold">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            ${((item.price_usd || item.price || 0) * item.quantity).toFixed(2)}
                           </span>
                         </div>
                       </div>
