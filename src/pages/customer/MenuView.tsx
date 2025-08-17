@@ -50,19 +50,41 @@ const MenuView = () => {
       }
 
       try {
-        // Fetch table info
-        const { data: tableData, error: tableError } = await supabase
-          .from('tables')
-          .select('*')
-          .eq('id', tableId)
-          .maybeSingle();
+        // Fetch table info (robust: support both UUID id and plain table number)
+        const isUuid = (val: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
 
-        if (tableError || !tableData) {
+        let tableData: any = null;
+        let tableError: any = null;
+
+        if (isUuid(tableId)) {
+          const { data, error } = await supabase
+            .from('tables')
+            .select('*')
+            .eq('id', tableId)
+            .maybeSingle();
+          tableData = data;
+          tableError = error;
+        }
+
+        // Fallback: if not a UUID, or lookup by id failed, try by table_number
+        if (!tableData) {
+          const { data, error } = await supabase
+            .from('tables')
+            .select('*')
+            .eq('table_number', tableId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          tableData = data;
+          tableError = tableError ?? error;
+        }
+
+        if (!tableData) {
           console.error('Table fetch error:', tableError);
           setLoading(false);
           toast({
             title: "Table Not Found",
-            description: tableError?.message || "The QR code may be invalid",
+            description: tableError?.message || "The QR code may be invalid or the table was removed.",
             variant: "destructive",
           });
           return;
