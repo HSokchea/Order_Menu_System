@@ -79,7 +79,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin/orders')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin/order-dashboard')}>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <ClipboardList className="h-5 w-5 mr-2 text-primary" />

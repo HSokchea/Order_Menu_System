@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Clock, ChefHat, CheckCircle, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface OrderItem {
@@ -110,33 +110,61 @@ const OrderDashboard = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-warning text-warning-foreground';
+      case 'new':
+        return {
+          color: 'bg-warning text-warning-foreground',
+          label: 'New Order',
+          icon: <Clock className="h-4 w-4" />,
+          next: 'preparing'
+        };
       case 'preparing':
-        return 'bg-primary text-primary-foreground';
+        return {
+          color: 'bg-primary text-primary-foreground',
+          label: 'Preparing',
+          icon: <ChefHat className="h-4 w-4" />,
+          next: 'ready'
+        };
       case 'ready':
-        return 'bg-success text-success-foreground';
+        return {
+          color: 'bg-success text-success-foreground',
+          label: 'Ready',
+          icon: <Truck className="h-4 w-4" />,
+          next: 'completed'
+        };
       case 'completed':
-        return 'bg-muted text-muted-foreground';
+        return {
+          color: 'bg-muted text-muted-foreground',
+          label: 'Completed',
+          icon: <CheckCircle className="h-4 w-4" />,
+          next: null
+        };
       default:
-        return 'bg-secondary text-secondary-foreground';
+        return {
+          color: 'bg-secondary text-secondary-foreground',
+          label: 'Unknown',
+          icon: <Clock className="h-4 w-4" />,
+          next: null
+        };
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="h-4 w-4" />;
+  const getNextStepLabel = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'new':
+        return 'Start Preparing';
       case 'preparing':
-        return <Clock className="h-4 w-4" />;
+        return 'Mark Ready';
       case 'ready':
-      case 'completed':
-        return <CheckCircle className="h-4 w-4" />;
+        return 'Mark Completed';
       default:
-        return <XCircle className="h-4 w-4" />;
+        return null;
     }
+  };
+
+  const isOrderActive = (status: string) => {
+    return ['new', 'preparing', 'ready'].includes(status);
   };
 
   if (loading) {
@@ -158,82 +186,129 @@ const OrderDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-6">
-          {orders.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-8">
-                <p className="text-muted-foreground">No orders yet</p>
-              </CardContent>
-            </Card>
-          ) : (
-            orders.map((order) => (
-              <Card key={order.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        Table {order.table_number}
-                        <Badge className={getStatusColor(order.status)}>
-                          {getStatusIcon(order.status)}
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </Badge>
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(order.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold">${order.total_usd.toFixed(2)}</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 mb-4">
-                    {order.order_items.map((item) => (
-                      <div key={item.id} className="flex justify-between">
-                        <span>{item.quantity}x {item.menu_item.name}</span>
-                        <span>${(item.quantity * item.price_usd).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {order.customer_notes && (
-                    <div className="mb-4 p-3 bg-muted rounded">
-                      <p className="text-sm"><strong>Notes:</strong> {order.customer_notes}</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    {order.status === 'pending' && (
-                      <Button
-                        size="sm"
-                        onClick={() => updateOrderStatus(order.id, 'preparing')}
-                      >
-                        Start Preparing
-                      </Button>
-                    )}
-                    {order.status === 'preparing' && (
-                      <Button
-                        size="sm"
-                        onClick={() => updateOrderStatus(order.id, 'ready')}
-                      >
-                        Mark Ready
-                      </Button>
-                    )}
-                    {order.status === 'ready' && (
-                      <Button
-                        size="sm"
-                        onClick={() => updateOrderStatus(order.id, 'completed')}
-                      >
-                        Mark Completed
-                      </Button>
-                    )}
-                  </div>
+        {/* Active Orders Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Active Orders</h2>
+          <div className="grid gap-4">
+            {orders.filter(order => isOrderActive(order.status)).length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No active orders</p>
+                  <p className="text-sm text-muted-foreground">New orders will appear here</p>
                 </CardContent>
               </Card>
-            ))
-          )}
+            ) : (
+              orders
+                .filter(order => isOrderActive(order.status))
+                .map((order) => {
+                  const statusConfig = getStatusConfig(order.status);
+                  const nextStepLabel = getNextStepLabel(order.status);
+                  
+                  return (
+                    <Card key={order.id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <CardTitle className="flex items-center gap-3">
+                              <span className="text-lg">Table {order.table_number}</span>
+                              <Badge className={`${statusConfig.color} gap-1.5 px-3 py-1`}>
+                                {statusConfig.icon}
+                                {statusConfig.label}
+                              </Badge>
+                            </CardTitle>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>{new Date(order.created_at).toLocaleTimeString()}</span>
+                              <span>Order #{order.id.slice(-6).toUpperCase()}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-foreground">${order.total_usd.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        {/* Order Items */}
+                        <div className="bg-muted/50 rounded-lg p-4">
+                          <h4 className="font-medium text-sm mb-3 text-muted-foreground uppercase tracking-wider">Items</h4>
+                          <div className="space-y-2">
+                            {order.order_items.map((item) => (
+                              <div key={item.id} className="flex justify-between items-center">
+                                <span className="font-medium">
+                                  <span className="inline-flex items-center justify-center w-6 h-6 bg-primary/10 text-primary rounded-full text-sm mr-2">
+                                    {item.quantity}
+                                  </span>
+                                  {item.menu_item.name}
+                                </span>
+                                <span className="font-semibold">${(item.quantity * item.price_usd).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Customer Notes */}
+                        {order.customer_notes && (
+                          <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                            <h4 className="font-medium text-sm mb-2 text-warning-foreground">Customer Notes</h4>
+                            <p className="text-sm text-foreground">{order.customer_notes}</p>
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        {nextStepLabel && statusConfig.next && (
+                          <div className="pt-2">
+                            <Button
+                              className="w-full h-12 text-base font-semibold"
+                              onClick={() => updateOrderStatus(order.id, statusConfig.next!)}
+                            >
+                              {nextStepLabel}
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })
+            )}
+          </div>
         </div>
+
+        {/* Completed Orders Section */}
+        {orders.filter(order => order.status === 'completed').length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Recently Completed</h2>
+            <div className="grid gap-3">
+              {orders
+                .filter(order => order.status === 'completed')
+                .slice(0, 5)
+                .map((order) => {
+                  const statusConfig = getStatusConfig(order.status);
+                  
+                  return (
+                    <Card key={order.id} className="opacity-75 hover:opacity-100 transition-opacity">
+                      <CardContent className="py-4">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <Badge className={`${statusConfig.color} gap-1`}>
+                              {statusConfig.icon}
+                              {statusConfig.label}
+                            </Badge>
+                            <span className="font-medium">Table {order.table_number}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(order.created_at).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          <span className="font-semibold">${order.total_usd.toFixed(2)}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              }
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
