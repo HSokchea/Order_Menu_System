@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Plus, Minus, Search, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useActiveOrders } from '@/hooks/useActiveOrders';
+import OrderStatusTracker from '@/components/OrderStatusTracker';
 
 interface MenuItem {
   id: string;
@@ -41,6 +43,9 @@ const MenuView = () => {
   const [searchInput, setSearchInput] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  
+  // Track active orders for this table
+  const { activeOrders } = useActiveOrders(tableId || '');
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -554,6 +559,12 @@ const MenuView = () => {
           </Button>
         </div>
       )}
+
+      {/* Order Status Tracker */}
+      <OrderStatusTracker 
+        orders={activeOrders} 
+        onViewDetails={(orderId) => navigate(`/order-success/${orderId}`)}
+      />
     </div>
   );
 };
