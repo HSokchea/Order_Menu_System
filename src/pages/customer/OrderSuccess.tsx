@@ -19,6 +19,7 @@ interface OrderDetails {
 const OrderSuccess = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const [tableId, setTableId] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +46,7 @@ const OrderSuccess = () => {
       };
 
       setOrder(mapped);
+      setTableId(details.table_id || details.table_number);
       setLoading(false);
     };
 
@@ -157,9 +159,9 @@ const OrderSuccess = () => {
           <Button
             className="w-full"
             variant="outline"
-            onClick={() => navigate('/')}
+            onClick={() => navigate(tableId ? `/menu/${tableId}` : '/')}
           >
-            Back to Home
+            Back to Menu
           </Button>
         </CardContent>
       </Card>
