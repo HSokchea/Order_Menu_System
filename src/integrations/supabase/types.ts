@@ -329,6 +329,7 @@ export type Database = {
           id: string
           restaurant_name: string
           status: string
+          table_id: string
           table_number: string
           total_usd: number
         }[]
