@@ -33,8 +33,47 @@ const OrderStatusTracker = ({ orders, onViewDetails }: OrderStatusTrackerProps) 
   const [isMinimized, setIsMinimized] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
+  const [showNoOrdersPrompt, setShowNoOrdersPrompt] = useState(false);
 
-  if (orders.length === 0) return null;
+  // Show a small prompt if no active orders but user has been on this page for a while
+  useEffect(() => {
+    if (orders.length === 0) {
+      const timer = setTimeout(() => {
+        setShowNoOrdersPrompt(true);
+      }, 3000); // Show after 3 seconds of browsing without orders
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowNoOrdersPrompt(false);
+    }
+  }, [orders.length]);
+
+  // Show minimized prompt when no active orders but user has been browsing
+  if (orders.length === 0) {
+    if (showNoOrdersPrompt) {
+      return (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Card className="bg-card/95 backdrop-blur-md border shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Package2 className="h-4 w-4" />
+                <span>No active orders</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowNoOrdersPrompt(false)}
+                  className="h-5 w-5 p-0 ml-1"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    return null;
+  }
 
   // Fetch order items for each order
   useEffect(() => {
