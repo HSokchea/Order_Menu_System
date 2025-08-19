@@ -22,6 +22,8 @@ export const useActiveOrders = (tableId: string) => {
       }
 
       try {
+        console.log('Fetching active orders for tableId:', tableId);
+        
         // Fetch active orders for this table (not completed orders)
         const { data: orders, error } = await supabase
           .from('orders')
@@ -36,6 +38,8 @@ export const useActiveOrders = (tableId: string) => {
           .or(`table_id.eq.${tableId},table_number.eq.${tableId}`)
           .not('status', 'eq', 'completed')
           .order('created_at', { ascending: false });
+
+        console.log('Orders query result:', { orders, error, tableId });
 
         if (error) {
           console.error('Error fetching active orders:', error);
