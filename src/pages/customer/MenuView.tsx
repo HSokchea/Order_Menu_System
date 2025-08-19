@@ -548,7 +548,7 @@ const MenuView = () => {
 
       {/* Fixed Cart Button */}
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8">
+        <div className={`fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 ${activeOrders.length > 0 ? 'pb-32' : 'pb-4'}`}>
           <Button
             className="w-full h-12 text-base font-semibold rounded-full shadow-lg"
             size="lg"
