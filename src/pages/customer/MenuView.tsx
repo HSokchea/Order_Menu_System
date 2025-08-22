@@ -5,10 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Search, X } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useActiveOrders } from '@/hooks/useActiveOrders';
-import OrderStatusTracker from '@/components/OrderStatusTracker';
 
 interface MenuItem {
   id: string;
@@ -43,9 +41,6 @@ const MenuView = () => {
   const [searchInput, setSearchInput] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  
-  // Track active orders for this table
-  const { activeOrders } = useActiveOrders(tableId || '');
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -306,6 +301,16 @@ const MenuView = () => {
                   <Search className="h-4 w-4" />
                 </Button>
                 
+                {/* My Orders Icon */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/my-orders/${tableId}`)}
+                  className="h-9 w-9 p-0"
+                >
+                  <Package2 className="h-4 w-4" />
+                </Button>
+                
                 {/* Cart Icon */}
                 <Button
                   variant="outline"
@@ -548,7 +553,7 @@ const MenuView = () => {
 
       {/* Fixed Cart Button */}
       {cart.length > 0 && (
-        <div className={`fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 ${activeOrders.length > 0 ? 'pb-32' : 'pb-4'}`}>
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4">
           <Button
             className="w-full h-12 text-base font-semibold rounded-full shadow-lg"
             size="lg"
@@ -560,11 +565,6 @@ const MenuView = () => {
         </div>
       )}
 
-      {/* Order Status Tracker */}
-      <OrderStatusTracker 
-        orders={activeOrders} 
-        onViewDetails={(orderId) => navigate(`/order-success/${orderId}`)}
-      />
     </div>
   );
 };

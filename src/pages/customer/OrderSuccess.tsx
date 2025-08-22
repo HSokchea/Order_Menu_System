@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock } from 'lucide-react';
-import OrderStatusTracker from '@/components/OrderStatusTracker';
-import { useActiveOrders } from '@/hooks/useActiveOrders';
 
 interface OrderDetails {
   id: string;
@@ -21,12 +19,9 @@ interface OrderDetails {
 const OrderSuccess = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const [tableId, setTableId] = useState<string | null>(null);
+  const [tableId, setTableId] = useState<string>('');
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // Use the active orders hook for real-time updates
-  const { activeOrders } = useActiveOrders(tableId || '');
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -178,13 +173,6 @@ const OrderSuccess = () => {
           </Card>
         </div>
 
-        {/* Real-time Order Status Tracker */}
-        {tableId && (
-          <OrderStatusTracker 
-            orders={activeOrders}
-            onViewDetails={() => {}} 
-          />
-        )}
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import QRGenerator from "./pages/admin/QRGenerator";
 import MenuView from "./pages/customer/MenuView";
 import CartSummary from "./pages/customer/CartSummary";
 import OrderSuccess from "./pages/customer/OrderSuccess";
+import MyOrders from "./pages/customer/MyOrders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const AppContent = () => {
       {/* Public customer routes */}
       <Route path="/menu/:tableId" element={<MenuView />} />
       <Route path="/cart/:tableId" element={<CartSummary />} />
+      <Route path="/my-orders/:tableId" element={<MyOrders />} />
       <Route path="/order-success/:orderId" element={<OrderSuccess />} />
       
       {/* Auth routes */}
