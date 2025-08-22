@@ -17,6 +17,7 @@ export const useActiveOrders = (tableId: string) => {
   useEffect(() => {
     const fetchActiveOrders = async () => {
       if (!tableId) {
+        console.log('No tableId provided to useActiveOrders');
         setLoading(false);
         return;
       }
@@ -24,22 +25,23 @@ export const useActiveOrders = (tableId: string) => {
       try {
         console.log('Fetching active orders for tableId:', tableId);
         
-        // Fetch active orders for this table (not completed orders)
+        // Try to match by table_number first (string comparison), then by table_id (UUID)
         const { data: orders, error } = await supabase
           .from('orders')
           .select(`
             id,
             table_number,
+            table_id,
             total_usd,
             status,
             created_at,
             restaurants:restaurant_id (name)
           `)
-          .or(`table_id.eq.${tableId},table_number.eq.${tableId}`)
-          .not('status', 'eq', 'completed')
+          .or(`table_number.eq.${tableId},table_id.eq.${tableId}`)
+          .neq('status', 'completed')
           .order('created_at', { ascending: false });
 
-        console.log('Orders query result:', { orders, error, tableId });
+        console.log('Orders query result:', { orders, error, tableId, queryUsed: `table_number.eq.${tableId},table_id.eq.${tableId}` });
 
         if (error) {
           console.error('Error fetching active orders:', error);
@@ -53,6 +55,8 @@ export const useActiveOrders = (tableId: string) => {
             created_at: order.created_at,
             restaurant_name: (order.restaurants as any)?.name || 'Restaurant'
           }));
+          
+          console.log('Mapped orders:', mappedOrders);
           setActiveOrders(mappedOrders);
         }
       } catch (error) {
