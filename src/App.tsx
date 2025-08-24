@@ -7,7 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import MenuManagement from "./pages/admin/MenuManagement";
+import Categories from "./pages/admin/Categories";
+import MenuItems from "./pages/admin/MenuItems";
 import OrderDashboard from "./pages/admin/OrderDashboard";
 import QRGenerator from "./pages/admin/QRGenerator";
 import MenuView from "./pages/customer/MenuView";
@@ -44,7 +45,9 @@ const AppContent = () => {
           {/* Protected admin routes */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/admin/menu" element={<MenuManagement />} />
+          <Route path="/admin" element={<Dashboard />} />
+          <Route path="/admin/categories" element={<Categories />} />
+          <Route path="/admin/menu-items" element={<MenuItems />} />
           <Route path="/admin/order-dashboard" element={<OrderDashboard />} />
           <Route path="/admin/qr-codes" element={<QRGenerator />} />
         </>
