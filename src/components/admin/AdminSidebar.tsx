@@ -4,7 +4,10 @@ import {
   UtensilsCrossed,
   ClipboardList,
   QrCode,
-  Store
+  Store,
+  BarChart3,
+  Package,
+  Gift
 } from "lucide-react";
 
 import {
@@ -20,6 +23,12 @@ import {
 } from "@/components/ui/sidebar";
 
 const navigationItems = [
+  {
+    title: "Dashboard",
+    url: "/admin",
+    icon: LayoutGrid,
+    description: "Overview and statistics"
+  },
   {
     title: "Categories",
     url: "/admin/menu",
@@ -39,10 +48,22 @@ const navigationItems = [
     description: "Monitor live orders"
   },
   {
-    title: "QR Codes",
-    url: "/admin/qr-codes",
-    icon: QrCode,
-    description: "Generate table QR codes"
+    title: "Analytics",
+    url: "/admin/analytics",
+    icon: BarChart3,
+    description: "Advanced insights and metrics"
+  },
+  {
+    title: "Stock Management",
+    url: "/admin/stock",
+    icon: Package,
+    description: "Track inventory levels"
+  },
+  {
+    title: "Promotions & Discounts",
+    url: "/admin/promotions",
+    icon: Gift,
+    description: "Manage special offers"
   }
 ];
 
