@@ -46,10 +46,9 @@ const OrderSuccess = () => {
       };
 
       setOrder(mapped);
-      // Use table_number for matching active orders since that's what customers use
-      const tableIdForOrders = details.table_number || details.table_id;
-      console.log('Setting tableId for OrderSuccess:', tableIdForOrders, 'from details:', details);
-      setTableId(tableIdForOrders);
+      // Use the actual table_id for navigation, not table_number
+      console.log('Setting tableId for OrderSuccess:', details.table_id, 'from details:', details);
+      setTableId(details.table_id);
       setLoading(false);
     };
 
