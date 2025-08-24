@@ -15,6 +15,7 @@ interface OrderItem {
   price_usd: number;
   menu_item_name: string;
   notes?: string;
+  is_available: boolean;
 }
 
 const MyOrders = () => {
@@ -38,7 +39,7 @@ const MyOrders = () => {
               quantity,
               price_usd,
               notes,
-              menu_items:menu_item_id (name)
+              menu_items:menu_item_id (name, is_available)
             `)
             .eq('order_id', order.id);
 
@@ -48,7 +49,8 @@ const MyOrders = () => {
               quantity: item.quantity,
               price_usd: Number(item.price_usd || 0),
               menu_item_name: (item.menu_items as any)?.name || 'Unknown Item',
-              notes: item.notes || undefined
+              notes: item.notes || undefined,
+              is_available: (item.menu_items as any)?.is_available ?? true
             }));
           }
         } catch (error) {
@@ -285,18 +287,32 @@ const MyOrders = () => {
                           <h4 className="font-medium">Order Items</h4>
                           <div className="space-y-2">
                             {items.map((item) => (
-                              <div key={item.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                              <div key={item.id} className={`flex items-center justify-between p-3 rounded-lg ${
+                                item.is_available ? 'bg-muted/20' : 'bg-destructive/10 border border-destructive/20'
+                              }`}>
                                 <div className="flex-1">
-                                  <p className="font-medium">
-                                    {item.quantity}x {item.menu_item_name}
-                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <p className={`font-medium ${!item.is_available ? 'line-through text-muted-foreground' : ''}`}>
+                                      {item.quantity}x {item.menu_item_name}
+                                    </p>
+                                    {!item.is_available && (
+                                      <Badge variant="destructive" className="text-xs">
+                                        Unavailable
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {!item.is_available && (
+                                    <p className="text-sm text-destructive mt-1">
+                                      This item is no longer available. Staff will handle this.
+                                    </p>
+                                  )}
                                   {item.notes && (
                                     <p className="text-sm text-muted-foreground mt-1">
                                       Note: {item.notes}
                                     </p>
                                   )}
                                 </div>
-                                <span className="font-semibold text-primary">
+                                <span className={`font-semibold ${item.is_available ? 'text-primary' : 'text-muted-foreground'}`}>
                                   ${(item.price_usd * item.quantity).toFixed(2)}
                                 </span>
                               </div>
