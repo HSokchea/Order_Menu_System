@@ -72,9 +72,9 @@ export function AdminSidebar() {
   const location = useLocation();
   
   const isActive = (path: string) => {
-    // Handle the case where both Categories and Menu Items point to the same route
-    if (path === "/admin/menu") {
-      return location.pathname === "/admin/menu";
+    // Make Dashboard active for root paths
+    if (path === "/admin") {
+      return location.pathname === "/admin" || location.pathname === "/" || location.pathname === "/dashboard";
     }
     return location.pathname === path;
   };
