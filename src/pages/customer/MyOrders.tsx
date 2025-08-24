@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { ChefHat, Clock, CheckCircle, ArrowLeft, Package2, RefreshCw } from 'lucide-react';
+import { ChefHat, Clock, CheckCircle, ArrowLeft, Package2, RefreshCw, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useActiveOrders } from '@/hooks/useActiveOrders';
 
@@ -92,6 +92,25 @@ const MyOrders = () => {
           color: 'bg-green-500',
           variant: 'default' as const,
           description: 'Your order is ready! Please collect it from the counter'
+        };
+      case 'cancelled':
+      case 'disabled':
+        return {
+          label: 'Order Cancelled',
+          icon: <XCircle className="h-5 w-5" />,
+          progress: 0,
+          color: 'bg-destructive',
+          variant: 'destructive' as const,
+          description: 'This order has been cancelled. Please contact staff for assistance.'
+        };
+      case 'completed':
+        return {
+          label: 'Completed',
+          icon: <CheckCircle className="h-5 w-5" />,
+          progress: 100,
+          color: 'bg-green-500',
+          variant: 'default' as const,
+          description: 'Your order has been completed successfully'
         };
       default:
         return {

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock } from 'lucide-react';
+import { CheckCircle, Clock, XCircle } from 'lucide-react';
 
 interface OrderDetails {
   id: string;
@@ -87,6 +87,9 @@ const OrderSuccess = () => {
         return 'Your order is ready for pickup!';
       case 'completed':
         return 'Your order has been completed.';
+      case 'cancelled':
+      case 'disabled':
+        return 'This order has been cancelled. Please contact staff for assistance.';
       default:
         return 'Processing your order...';
     }
@@ -97,6 +100,9 @@ const OrderSuccess = () => {
       case 'ready':
       case 'completed':
         return <CheckCircle className="h-8 w-8 text-success" />;
+      case 'cancelled':
+      case 'disabled':
+        return <XCircle className="h-8 w-8 text-destructive" />;
       default:
         return <Clock className="h-8 w-8 text-primary" />;
     }
