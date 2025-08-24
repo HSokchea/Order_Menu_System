@@ -31,13 +31,13 @@ const navigationItems = [
   },
   {
     title: "Categories",
-    url: "/admin/menu",
+    url: "/admin/categories",
     icon: LayoutGrid,
     description: "Manage menu categories"
   },
   {
     title: "Menu Items", 
-    url: "/admin/menu",
+    url: "/admin/menu-items",
     icon: UtensilsCrossed,
     description: "Add and edit menu items"
   },
@@ -108,9 +108,6 @@ export function AdminSidebar() {
 
         {/* Navigation */}
         <SidebarGroup className="px-4 py-6">
-          <SidebarGroupLabel className={`text-xs font-medium text-muted-foreground mb-4 ${state === "collapsed" ? 'text-center' : ''}`}>
-            {state === "collapsed" ? "•••" : "Main Navigation"}
-          </SidebarGroupLabel>
           
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
