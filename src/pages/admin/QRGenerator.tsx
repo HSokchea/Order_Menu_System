@@ -7,11 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Download, Plus, Copy, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Download, Plus, Copy } from 'lucide-react';
 import QRCode from 'qrcode';
 import QRCodeThumbnail from '@/components/QRCodeThumbnail';
 import QRCodeDialog from '@/components/QRCodeDialog';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface Table {
   id: string;
@@ -22,7 +22,6 @@ interface Table {
 const QRGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTableNumber, setNewTableNumber] = useState('');
@@ -182,20 +181,11 @@ const QRGenerator = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mr-4">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">QR Code Generator</h1>
-            <p className="text-muted-foreground">Generate QR codes for your tables</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
+    <AdminLayout 
+      title="QR Code Generator"
+      description="Generate QR codes for your restaurant tables"
+    >
+      <div className="space-y-6">
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Add New Table</CardTitle>
@@ -263,7 +253,6 @@ const QRGenerator = () => {
             </CardContent>
           </Card>
         )}
-      </main>
 
       {selectedTable && (
         <QRCodeDialog
@@ -276,7 +265,8 @@ const QRGenerator = () => {
           tableNumber={selectedTable.table_number}
         />
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 

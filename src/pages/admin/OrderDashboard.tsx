@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Clock, ChefHat, CheckCircle, Truck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Clock, ChefHat, CheckCircle, Truck } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface OrderItem {
   id: string;
@@ -30,7 +30,6 @@ interface Order {
 const OrderDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -172,20 +171,11 @@ const OrderDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mr-4">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Order Dashboard</h1>
-            <p className="text-muted-foreground">Monitor and manage incoming orders</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
+    <AdminLayout 
+      title="Order Dashboard"
+      description="Monitor and manage incoming orders"
+    >
+      <div className="space-y-6">
         {/* Active Orders Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-foreground">Active Orders</h2>
@@ -309,8 +299,8 @@ const OrderDashboard = () => {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 

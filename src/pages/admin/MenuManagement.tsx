@@ -11,11 +11,11 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Filter } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Filter } from 'lucide-react';
 import CategoryManager from '@/components/admin/CategoryManager';
 import ImageUpload from '@/components/admin/ImageUpload';
 import MenuItemCard from '@/components/admin/MenuItemCard';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface Category {
   id: string;
@@ -38,7 +38,6 @@ interface MenuItem {
 const MenuManagement = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -246,20 +245,11 @@ const MenuManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mr-4">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Menu Management</h1>
-            <p className="text-muted-foreground">Manage your menu categories and items</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 space-y-8">
+    <AdminLayout 
+      title="Menu Management"
+      description="Manage your menu categories and items"
+    >
+      <div className="space-y-8">
         {/* Category Management */}
         <CategoryManager
           categories={categories}
@@ -509,8 +499,8 @@ const MenuManagement = () => {
             </>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 
