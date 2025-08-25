@@ -503,7 +503,7 @@ const MenuItems = () => {
                   <TableRow>
                     <TableHead className="w-[80px]">Image</TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      className="cursor-pointer hover:bg-muted/50 select-none min-w-[120px]"
                       onClick={() => handleSort('name')}
                     >
                       <div className="flex items-center">
@@ -511,9 +511,9 @@ const MenuItems = () => {
                         {getSortIcon('name')}
                       </div>
                     </TableHead>
-                    <TableHead className="max-w-[200px] hidden md:table-cell">Description</TableHead>
+                    <TableHead className="w-[200px] hidden md:table-cell">Description</TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none text-right"
+                      className="cursor-pointer hover:bg-muted/50 select-none w-[100px] text-right"
                       onClick={() => handleSort('price_usd')}
                     >
                       <div className="flex items-center justify-end">
@@ -522,7 +522,7 @@ const MenuItems = () => {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none hidden sm:table-cell"
+                      className="cursor-pointer hover:bg-muted/50 select-none w-[120px] hidden sm:table-cell"
                       onClick={() => handleSort('category')}
                     >
                       <div className="flex items-center">
@@ -531,7 +531,7 @@ const MenuItems = () => {
                       </div>
                     </TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      className="cursor-pointer hover:bg-muted/50 select-none w-[100px]"
                       onClick={() => handleSort('is_available')}
                     >
                       <div className="flex items-center">
@@ -545,7 +545,7 @@ const MenuItems = () => {
                 <TableBody>
                   {filteredAndPaginatedItems.items.map((item) => (
                     <TableRow key={item.id} className="hover:bg-muted/50">
-                      <TableCell>
+                      <TableCell className="w-[80px]">
                         {item.image_url ? (
                           <img
                             src={item.image_url}
@@ -558,7 +558,7 @@ const MenuItems = () => {
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium min-w-[120px]">
                         <div className="flex flex-col">
                           <span className="truncate max-w-[200px]">{item.name}</span>
                           {/* Show description on mobile as secondary text */}
@@ -567,15 +567,15 @@ const MenuItems = () => {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[200px] hidden md:table-cell">
+                      <TableCell className="w-[200px] hidden md:table-cell">
                         <span className="text-sm text-muted-foreground line-clamp-2">
                           {item.description || '—'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="w-[100px] text-right font-medium">
                         ${item.price_usd.toFixed(2)}
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+                      <TableCell className="w-[120px] hidden sm:table-cell">
                         {item.category ? (
                           <Badge variant="secondary" className="text-xs">
                             {item.category.name}
@@ -584,7 +584,7 @@ const MenuItems = () => {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="w-[100px]">
                         <Badge 
                           variant={item.is_available ? "default" : "secondary"}
                           className={item.is_available ? "bg-green-100 text-green-800 hover:bg-green-100/80 dark:bg-green-900/20 dark:text-green-400" : ""}
@@ -592,7 +592,7 @@ const MenuItems = () => {
                           {item.is_available ? 'Available' : 'Unavailable'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="w-[100px] text-right">
                         <div className="flex justify-end gap-1">
                           <Tooltip>
                             <TooltipTrigger asChild>
