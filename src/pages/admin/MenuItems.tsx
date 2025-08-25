@@ -499,7 +499,7 @@ const MenuItems = () => {
           <TooltipProvider>
             <div className="rounded-md border">
               <Table>
-                <TableHeader className="sticky top-[140px] z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <TableHeader>
                   <TableRow>
                     <TableHead className="w-[80px]">Image</TableHead>
                     <TableHead 
