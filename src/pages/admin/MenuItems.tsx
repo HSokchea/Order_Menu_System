@@ -330,13 +330,25 @@ const MenuItems = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
                 {/* Search */}
                 <div className="relative w-full sm:w-[240px]">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+                    onClick={() => document.getElementById('search-input')?.focus()}
+                  />
                   <Input
+                    id="search-input"
                     placeholder="Search menu items..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 pr-8"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
