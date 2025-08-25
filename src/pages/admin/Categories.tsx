@@ -7,7 +7,11 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 interface Category {
   id: string;
   name: string;
+  description?: string;
+  status: string;
   display_order: number;
+  created_at: string;
+  updated_at: string;
   restaurant_id: string;
 }
 
@@ -32,7 +36,7 @@ const Categories = () => {
       
       setRestaurantId(restaurant.id);
 
-      // Fetch categories
+      // Fetch categories with updated fields
       const { data: categoriesData } = await supabase
         .from('menu_categories')
         .select('*')
