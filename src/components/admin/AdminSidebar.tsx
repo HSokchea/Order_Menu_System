@@ -48,6 +48,12 @@ const navigationItems = [
     description: "Monitor live orders"
   },
   {
+    title: "Generate QR",
+    url: "/admin/qr-generator",
+    icon: QrCode,
+    description: "Create QR codes for tables"
+  },
+  {
     title: "Analytics",
     url: "/admin/analytics",
     icon: BarChart3,
