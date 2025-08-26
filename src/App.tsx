@@ -49,7 +49,7 @@ const AppContent = () => {
           <Route path="/admin/categories" element={<Categories />} />
           <Route path="/admin/menu-items" element={<MenuItems />} />
           <Route path="/admin/order-dashboard" element={<OrderDashboard />} />
-          <Route path="/admin/qr-codes" element={<QRGenerator />} />
+          <Route path="/admin/qr-generator" element={<QRGenerator />} />
         </>
       )}
       
