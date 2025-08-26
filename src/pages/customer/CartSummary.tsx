@@ -18,6 +18,21 @@ interface CartItem {
   is_available?: boolean;
   image_url?: string;
   quantity: number;
+  hasValidationError?: boolean;
+  validationReason?: string;
+}
+
+interface UnavailableItem {
+  id: string;
+  name: string;
+  reason: string;
+}
+
+interface OrderResponse {
+  success: boolean;
+  order_id?: string;
+  status?: string;
+  unavailable_items?: UnavailableItem[];
 }
 
 const CartSummary = () => {
@@ -29,6 +44,7 @@ const CartSummary = () => {
   const [table, setTable] = useState<any>(null);
   const [restaurant, setRestaurant] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<UnavailableItem[]>([]);
 
   useEffect(() => {
     const fetchTableData = async () => {
@@ -69,9 +85,30 @@ const CartSummary = () => {
     return cart.reduce((total, item) => total + ((item.price_usd || item.price || 0) * item.quantity), 0);
   };
 
+  const clearValidationErrors = () => {
+    setValidationErrors([]);
+    setCart(prev => prev.map(item => ({
+      ...item,
+      hasValidationError: false,
+      validationReason: undefined
+    })));
+  };
+
+  const removeUnavailableItems = () => {
+    const validationErrorIds = validationErrors.map(error => error.id);
+    setCart(prev => prev.filter(item => !validationErrorIds.includes(item.id)));
+    setValidationErrors([]);
+  };
+
+  const hasValidationErrors = () => {
+    return validationErrors.length > 0;
+  };
+
   const placeOrder = async () => {
     if (cart.length === 0) return;
     
+    // Clear any previous validation errors
+    clearValidationErrors();
     setLoading(true);
 
     try {
@@ -85,9 +122,9 @@ const CartSummary = () => {
         notes: null,
       }));
 
-      // Use secure RPC to create order + items in one transaction (bypasses RLS safely)
-      const { data: orderId, error: rpcError } = await supabase.rpc(
-        'create_order_with_items',
+      // Use new validation function
+      const { data: response, error: rpcError } = await supabase.rpc(
+        'create_order_with_items_validated',
         {
           p_restaurant_id: restaurant.id,
           p_table_id: tableId,
@@ -99,9 +136,35 @@ const CartSummary = () => {
       );
 
       if (rpcError) throw rpcError;
-      if (!orderId) throw new Error('Failed to create order.');
+      if (!response) throw new Error('No response from server.');
 
-      // Clear cart
+      const orderResponse = response as any as OrderResponse;
+
+      if (!orderResponse.success) {
+        // Handle validation errors
+        const unavailableItems = orderResponse.unavailable_items || [];
+        setValidationErrors(unavailableItems);
+        
+        // Mark items in cart as having errors
+        setCart(prev => prev.map(item => {
+          const errorItem = unavailableItems.find(error => error.id === item.id);
+          return errorItem ? {
+            ...item,
+            hasValidationError: true,
+            validationReason: errorItem.reason
+          } : item;
+        }));
+
+        const errorMessages = unavailableItems.map(item => `${item.name}: ${item.reason}`);
+        toast({
+          title: "Order Cannot Be Placed",
+          description: `Some items are no longer available:\n${errorMessages.join('\n')}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Success - clear cart and navigate
       localStorage.removeItem(`cart_${tableId}`);
       setCart([]);
 
@@ -110,7 +173,7 @@ const CartSummary = () => {
         description: "Your order has been sent to the kitchen.",
       });
 
-      navigate(`/order-success/${orderId}`);
+      navigate(`/order-success/${orderResponse.order_id}`);
     } catch (error: any) {
       toast({
         title: "Order Failed",
@@ -168,18 +231,36 @@ const CartSummary = () => {
               <CardContent>
                 <div className="space-y-4">
                   {cart.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between">
+                    <div 
+                      key={item.id} 
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        item.hasValidationError 
+                          ? 'border-destructive bg-destructive/5' 
+                          : 'border-transparent'
+                      }`}
+                    >
                       <div className="flex-1">
-                        <h3 className="font-semibold">{item.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{item.name}</h3>
+                          {item.hasValidationError && (
+                            <span className="text-xs text-destructive">❌ Not available</span>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           ${(item.price_usd || item.price || 0).toFixed(2)} each
                         </p>
+                        {item.hasValidationError && item.validationReason && (
+                          <p className="text-xs text-destructive mt-1">
+                            {item.validationReason}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => updateCartItem(item.id, item.quantity - 1)}
+                          disabled={item.hasValidationError}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -189,6 +270,7 @@ const CartSummary = () => {
                         <Button
                           size="sm"
                           onClick={() => updateCartItem(item.id, item.quantity + 1)}
+                          disabled={item.hasValidationError}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -201,6 +283,22 @@ const CartSummary = () => {
                     </div>
                   ))}
                 </div>
+
+                {hasValidationErrors() && (
+                  <div className="mt-4 p-4 bg-destructive/10 border border-destructive rounded-lg">
+                    <h4 className="font-semibold text-destructive mb-2">Items No Longer Available</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Some items in your cart are no longer available. Please remove them to continue.
+                    </p>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={removeUnavailableItems}
+                    >
+                      Remove Unavailable Items
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -230,9 +328,14 @@ const CartSummary = () => {
                   className="w-full"
                   size="lg"
                   onClick={placeOrder}
-                  disabled={loading}
+                  disabled={loading || hasValidationErrors()}
                 >
-                  {loading ? "Placing Order..." : "Place Order"}
+                  {loading 
+                    ? "Placing Order..." 
+                    : hasValidationErrors() 
+                      ? "Remove Unavailable Items First" 
+                      : "Place Order"
+                  }
                 </Button>
               </CardContent>
             </Card>

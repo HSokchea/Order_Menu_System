@@ -320,7 +320,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_order_with_items: {
+      create_order_with_items_validated: {
         Args: {
           p_customer_notes: string
           p_items: Json
@@ -329,7 +329,7 @@ export type Database = {
           p_table_number: string
           p_total_usd: number
         }
-        Returns: string
+        Returns: Json
       }
       get_order_details: {
         Args: { p_order_id: string }
@@ -348,7 +348,11 @@ export type Database = {
       [_ in never]: never
     }
     CompositeTypes: {
-      [_ in never]: never
+      order_validation_result: {
+        success: boolean | null
+        order_id: string | null
+        unavailable_items: Json | null
+      }
     }
   }
 }
