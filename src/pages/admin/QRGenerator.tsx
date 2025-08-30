@@ -182,30 +182,48 @@ const QRGenerator = () => {
 
   return (
     <div className="space-y-6">
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Add New Table</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <Label htmlFor="table-number">Table Number</Label>
+      {/* Sticky Header with controls */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">QR Code Generator</h2>
+              <p className="text-sm text-muted-foreground">
+                Showing {tables.length} {tables.length === 1 ? 'table' : 'tables'}
+              </p>
+            </div>
+            
+            {/* Add Table Form */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+              <div className="flex-1 lg:w-[200px]">
+                <Label htmlFor="table-number" className="sr-only">Table Number</Label>
                 <Input
                   id="table-number"
                   type="number"
                   value={newTableNumber}
                   onChange={(e) => setNewTableNumber(e.target.value)}
-                  placeholder="Enter table number"
+                  placeholder="Table number"
                 />
               </div>
-              <Button onClick={addTable}>
+              <Button onClick={addTable} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Table
               </Button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tables Grid */}
+      {tables.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground text-center">
+              No tables added yet. Add your first table above.
+            </p>
           </CardContent>
         </Card>
-
+      ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tables.map((table) => (
             <Card key={table.id}>
@@ -241,14 +259,7 @@ const QRGenerator = () => {
             </Card>
           ))}
         </div>
-
-        {tables.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">No tables added yet. Add your first table above.</p>
-            </CardContent>
-          </Card>
-        )}
+      )}
 
       {selectedTable && (
         <QRCodeDialog
