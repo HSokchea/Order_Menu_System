@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -305,26 +305,30 @@ const MenuView = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/my-orders/${tableId}`)}
+                  asChild
                   className="h-9 w-9 p-0"
                 >
-                  <Package2 className="h-4 w-4" />
+                  <Link to={`/my-orders/${tableId}`}>
+                    <Package2 className="h-4 w-4" />
+                  </Link>
                 </Button>
                 
                 {/* Cart Icon */}
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/cart/${tableId}`)}
+                  asChild
                   className="relative h-9 w-9 p-0"
                   disabled={cart.length === 0}
                 >
-                  <ShoppingCart className="h-4 w-4" />
-                  {cart.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {getTotalItems()}
-                    </span>
-                  )}
+                  <Link to={`/cart/${tableId}`}>
+                    <ShoppingCart className="h-4 w-4" />
+                    {cart.length > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {getTotalItems()}
+                      </span>
+                    )}
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -557,10 +561,12 @@ const MenuView = () => {
           <Button
             className="w-full h-12 text-base font-semibold rounded-full shadow-lg"
             size="lg"
-            onClick={() => navigate(`/cart/${tableId}`)}
+            asChild
           >
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            View Cart ({getTotalItems()}) - ${getTotalAmount().toFixed(2)}
+            <Link to={`/cart/${tableId}`}>
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              View Cart ({getTotalItems()}) - ${getTotalAmount().toFixed(2)}
+            </Link>
           </Button>
         </div>
       )}
