@@ -34,7 +34,6 @@ const MenuView = () => {
   const [table, setTable] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchInput, setSearchInput] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   
@@ -168,14 +167,9 @@ const MenuView = () => {
     // Focus will be handled by useEffect
   };
 
-  const handleSearch = () => {
-    setSearchQuery(searchInput);
-  };
-
   const handleSearchClose = () => {
     setIsSearchExpanded(false);
     setSearchQuery('');
-    setSearchInput('');
   };
 
   // Auto focus when search expands
@@ -226,16 +220,26 @@ const MenuView = () => {
               
               {/* Desktop Search Field - Centered */}
               <div className="hidden md:flex flex-1 justify-center">
-                <div className="relative max-w-md w-full">
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer" 
-                    onClick={handleSearch} />
-                  <Input
-                    placeholder="Search menu items..."
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    className="pr-10 h-10 bg-white dark:bg-muted text-sm"
+                <div className="relative max-w-lg w-full">
+                   <Search 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+                    onClick={() => document.getElementById('search-input')?.focus()}
                   />
+                  <Input
+                    id="search-input"
+                    placeholder="Search menu items..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-8"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               </div>
               
@@ -286,14 +290,16 @@ const MenuView = () => {
             // Mobile Search expanded view
             <div className="flex items-center gap-3 animate-fade-in md:hidden">
               <div className="flex-1 relative">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer" 
-                  onClick={handleSearch} />
+                <Search 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+                  onClick={() => document.getElementById('search-input')?.focus()}
+                />
                 <Input
+                  id="search-input"
                   placeholder="Search menu items..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pr-10 h-10 bg-white dark:bg-muted text-base"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-8"
                 />
               </div>
               <Button
