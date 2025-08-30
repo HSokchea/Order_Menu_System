@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, ChefHat, CheckCircle, Truck } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+
 
 interface OrderItem {
   id: string;
@@ -171,11 +171,11 @@ const OrderDashboard = () => {
   }
 
   return (
-    <AdminLayout 
-      title="Order Dashboard"
-      description="Monitor and manage incoming orders"
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Order Dashboard</h1>
+        <p className="text-muted-foreground">Monitor and manage incoming orders</p>
+      </div>
         {/* Active Orders Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-foreground">Active Orders</h2>
@@ -299,8 +299,7 @@ const OrderDashboard = () => {
             </div>
           </div>
         )}
-      </div>
-    </AdminLayout>
+    </div>
   );
 };
 

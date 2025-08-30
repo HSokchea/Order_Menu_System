@@ -7,10 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import Categories from "./pages/admin/Categories";
-import MenuItems from "./pages/admin/MenuItems";
-import OrderDashboard from "./pages/admin/OrderDashboard";
-import QRGenerator from "./pages/admin/QRGenerator";
+import AdminMain from "./pages/admin/AdminMain";
 import MenuView from "./pages/customer/MenuView";
 import CartSummary from "./pages/customer/CartSummary";
 import OrderSuccess from "./pages/customer/OrderSuccess";
@@ -45,11 +42,7 @@ const AppContent = () => {
           {/* Protected admin routes */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/admin" element={<Dashboard />} />
-          <Route path="/admin/categories" element={<Categories />} />
-          <Route path="/admin/menu-items" element={<MenuItems />} />
-          <Route path="/admin/order-dashboard" element={<OrderDashboard />} />
-          <Route path="/admin/qr-generator" element={<QRGenerator />} />
+          <Route path="/admin/*" element={<AdminMain />} />
         </>
       )}
       

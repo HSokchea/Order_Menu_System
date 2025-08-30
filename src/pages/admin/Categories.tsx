@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import CategoryManager from '@/components/admin/CategoryManager';
-import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface Category {
   id: string;
@@ -60,18 +59,17 @@ const Categories = () => {
   }
 
   return (
-    <AdminLayout 
-      title="Categories"
-      description="Manage your menu categories and their organization"
-    >
-      <div className="space-y-8">
-        <CategoryManager
-          categories={categories}
-          restaurantId={restaurantId}
-          onCategoriesUpdate={fetchData}
-        />
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
+        <p className="text-muted-foreground">Manage your menu categories and their organization</p>
       </div>
-    </AdminLayout>
+      <CategoryManager
+        categories={categories}
+        restaurantId={restaurantId}
+        onCategoriesUpdate={fetchData}
+      />
+    </div>
   );
 };
 

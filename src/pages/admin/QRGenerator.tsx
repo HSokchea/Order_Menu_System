@@ -11,7 +11,7 @@ import { Download, Plus, Copy } from 'lucide-react';
 import QRCode from 'qrcode';
 import QRCodeThumbnail from '@/components/QRCodeThumbnail';
 import QRCodeDialog from '@/components/QRCodeDialog';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+
 
 interface Table {
   id: string;
@@ -181,11 +181,11 @@ const QRGenerator = () => {
   }
 
   return (
-    <AdminLayout 
-      title="QR Code Generator"
-      description="Generate QR codes for your restaurant tables"
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">QR Code Generator</h1>
+        <p className="text-muted-foreground">Generate QR codes for your restaurant tables</p>
+      </div>
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Add New Table</CardTitle>
@@ -265,8 +265,7 @@ const QRGenerator = () => {
           tableNumber={selectedTable.table_number}
         />
       )}
-      </div>
-    </AdminLayout>
+    </div>
   );
 };
 
