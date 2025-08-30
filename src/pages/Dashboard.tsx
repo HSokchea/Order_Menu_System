@@ -12,7 +12,7 @@ import {
   Clock,
   Star
 } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+
 
 interface Restaurant {
   id: string;
@@ -50,10 +50,7 @@ const Dashboard = () => {
   }
 
   return (
-    <AdminLayout 
-      title={restaurant?.name || 'Restaurant Dashboard'}
-      description="Manage your restaurant's digital presence and track performance"
-    >
+    <div className="space-y-8">
       {/* Welcome Section */}
       <div className="mb-8">
         <h2 className="text-3xl font-bold tracking-tight mb-2">Welcome back</h2>
@@ -124,8 +121,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-
-    </AdminLayout>
+    </div>
   );
 };
 
