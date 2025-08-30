@@ -310,11 +310,7 @@ const MenuItems = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Menu Items</h1>
-        <p className="text-muted-foreground">Add and manage your menu items</p>
-      </div>
+    <div className="space-y-6">{/* Sticky Header with filters and controls */}
         {/* Sticky Header with filters and controls */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-4">
           <div className="flex flex-col gap-4">

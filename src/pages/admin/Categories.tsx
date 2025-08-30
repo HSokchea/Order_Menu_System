@@ -60,10 +60,6 @@ const Categories = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
-        <p className="text-muted-foreground">Manage your menu categories and their organization</p>
-      </div>
       <CategoryManager
         categories={categories}
         restaurantId={restaurantId}

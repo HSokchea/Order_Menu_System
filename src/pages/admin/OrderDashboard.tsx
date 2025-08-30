@@ -171,11 +171,7 @@ const OrderDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Order Dashboard</h1>
-        <p className="text-muted-foreground">Monitor and manage incoming orders</p>
-      </div>
+    <div className="space-y-6">{/* Active Orders Section */}
         {/* Active Orders Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-foreground">Active Orders</h2>

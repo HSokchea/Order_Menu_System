@@ -182,10 +182,6 @@ const QRGenerator = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">QR Code Generator</h1>
-        <p className="text-muted-foreground">Generate QR codes for your restaurant tables</p>
-      </div>
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Add New Table</CardTitle>
