@@ -29,9 +29,19 @@ interface CategoryManagerProps {
   categories: Category[];
   restaurantId: string;
   onCategoriesUpdate: () => void;
+  showControls?: boolean;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
-const CategoryManager = ({ categories, restaurantId, onCategoriesUpdate }: CategoryManagerProps) => {
+const CategoryManager = ({ 
+  categories, 
+  restaurantId, 
+  onCategoriesUpdate, 
+  showControls = true,
+  searchQuery: externalSearchQuery = '',
+  onSearchChange 
+}: CategoryManagerProps) => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -40,10 +50,13 @@ const CategoryManager = ({ categories, restaurantId, onCategoriesUpdate }: Categ
   const [categoryStatus, setCategoryStatus] = useState('active');
   
   // Search and sorting state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(externalSearchQuery);
   const [sortField, setSortField] = useState<'name' | 'item_count' | 'status' | 'updated_at' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showSearch, setShowSearch] = useState(false);
+
+  // Use external search query if provided
+  const activeSearchQuery = onSearchChange ? externalSearchQuery : searchQuery;
 
   // Get item counts for each category
   const categoriesWithItemCounts = useMemo(async () => {
@@ -194,9 +207,9 @@ const CategoryManager = ({ categories, restaurantId, onCategoriesUpdate }: Categ
   // Filter and sort categories
   const filteredAndSortedCategories = useMemo(() => {
     let filtered = categories.filter(category => {
-      const matchesSearch = !searchQuery || 
-        category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesSearch = !activeSearchQuery || 
+        category.name.toLowerCase().includes(activeSearchQuery.toLowerCase()) ||
+        (category.description && category.description.toLowerCase().includes(activeSearchQuery.toLowerCase()));
       return matchesSearch;
     });
 
@@ -227,98 +240,13 @@ const CategoryManager = ({ categories, restaurantId, onCategoriesUpdate }: Categ
     }
 
     return filtered;
-  }, [categories, searchQuery, sortField, sortDirection]);
+  }, [categories, activeSearchQuery, sortField, sortDirection]);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Categories</CardTitle>
-          <div className="flex items-center gap-2">
-            {showSearch ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Search categories..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowSearch(false);
-                    setSearchQuery('');
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSearch(true)}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            )}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Category
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="categoryName">Category Name</Label>
-                    <Input
-                      id="categoryName"
-                      value={categoryName}
-                      onChange={(e) => setCategoryName(e.target.value)}
-                      placeholder="e.g. Appetizers, Main Courses"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="categoryDescription">Description (Optional)</Label>
-                    <Textarea
-                      id="categoryDescription"
-                      value={categoryDescription}
-                      onChange={(e) => setCategoryDescription(e.target.value)}
-                      placeholder="Brief description of this category"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="categoryStatus">Status</Label>
-                    <Select value={categoryStatus} onValueChange={setCategoryStatus}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button onClick={handleSaveCategory} className="w-full">
-                    {editingCategory ? 'Update Category' : 'Add Category'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <TooltipProvider>
-          <div className="rounded-md border">
-            <Table>
+    <div className="space-y-4">
+      <TooltipProvider>
+        <div className="rounded-md border">
+          <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[40px]"></TableHead>
@@ -440,11 +368,10 @@ const CategoryManager = ({ categories, restaurantId, onCategoriesUpdate }: Categ
                   )}
                 </Droppable>
               </DragDropContext>
-            </Table>
-          </div>
-        </TooltipProvider>
-      </CardContent>
-    </Card>
+          </Table>
+        </div>
+      </TooltipProvider>
+    </div>
   );
 };
 

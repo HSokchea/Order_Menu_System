@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import CategoryManager from '@/components/admin/CategoryManager';
+import CategoryControls from '@/components/admin/CategoryControls';
 
 interface Category {
   id: string;
@@ -70,6 +71,12 @@ const Categories = () => {
                 Showing {categories.length} {categories.length === 1 ? 'category' : 'categories'}
               </p>
             </div>
+            <div className="flex items-center gap-3">
+              <CategoryControls 
+                restaurantId={restaurantId}
+                onCategoriesUpdate={fetchData}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -78,6 +85,7 @@ const Categories = () => {
         categories={categories}
         restaurantId={restaurantId}
         onCategoriesUpdate={fetchData}
+        showControls={false}
       />
     </div>
   );

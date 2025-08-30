@@ -1,0 +1,180 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Search, X } from 'lucide-react';
+
+interface CategoryControlsProps {
+  restaurantId: string;
+  onCategoriesUpdate: () => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+}
+
+const CategoryControls = ({ 
+  restaurantId, 
+  onCategoriesUpdate, 
+  searchQuery = '', 
+  onSearchChange 
+}: CategoryControlsProps) => {
+  const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [categoryStatus, setCategoryStatus] = useState('active');
+  const [showSearch, setShowSearch] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const resetForm = () => {
+    setCategoryName('');
+    setCategoryDescription('');
+    setCategoryStatus('active');
+    setEditingCategory(null);
+  };
+
+  const handleSaveCategory = async () => {
+    if (!categoryName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter a category name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const categoryData = {
+      name: categoryName,
+      description: categoryDescription || null,
+      status: categoryStatus,
+      restaurant_id: restaurantId,
+      display_order: 0, // Will be handled by the backend
+    };
+
+    let error;
+
+    if (editingCategory) {
+      ({ error } = await supabase
+        .from('menu_categories')
+        .update(categoryData)
+        .eq('id', editingCategory.id));
+    } else {
+      ({ error } = await supabase
+        .from('menu_categories')
+        .insert(categoryData));
+    }
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: `Category ${editingCategory ? 'updated' : 'added'} successfully`,
+      });
+      setDialogOpen(false);
+      resetForm();
+      onCategoriesUpdate();
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setLocalSearchQuery(value);
+    if (onSearchChange) {
+      onSearchChange(value);
+    }
+  };
+
+  return (
+    <>
+      {showSearch ? (
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search categories..."
+            value={onSearchChange ? searchQuery : localSearchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-64"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setShowSearch(false);
+              handleSearchChange('');
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowSearch(true)}
+        >
+          <Search className="h-4 w-4" />
+        </Button>
+      )}
+      
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button onClick={resetForm} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="categoryName">Category Name</Label>
+              <Input
+                id="categoryName"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                placeholder="e.g. Appetizers, Main Courses"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="categoryDescription">Description (Optional)</Label>
+              <Textarea
+                id="categoryDescription"
+                value={categoryDescription}
+                onChange={(e) => setCategoryDescription(e.target.value)}
+                placeholder="Brief description of this category"
+                rows={3}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="categoryStatus">Status</Label>
+              <Select value={categoryStatus} onValueChange={setCategoryStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSaveCategory} className="w-full">
+              {editingCategory ? 'Update Category' : 'Add Category'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default CategoryControls;
