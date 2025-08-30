@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -200,8 +200,10 @@ const CartSummary = () => {
     <div className="min-h-screen bg-muted/20">
       <header className="border-b bg-background">
         <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="ghost" onClick={() => navigate(`/menu/${tableId}`)} className="mr-4">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" asChild className="mr-4">
+            <Link to={`/menu/${tableId}`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Order Summary</h1>
@@ -217,8 +219,10 @@ const CartSummary = () => {
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
               <p className="text-muted-foreground mb-4">Add some items from the menu</p>
-              <Button onClick={() => navigate(`/menu/${tableId}`)}>
-                Browse Menu
+              <Button asChild>
+                <Link to={`/menu/${tableId}`}>
+                  Browse Menu
+                </Link>
               </Button>
             </CardContent>
           </Card>
