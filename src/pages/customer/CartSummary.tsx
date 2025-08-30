@@ -7,20 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface CartItem {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  price_usd?: number;
-  price_khr?: number;
-  is_available?: boolean;
-  image_url?: string;
-  quantity: number;
-  hasValidationError?: boolean;
-  validationReason?: string;
-}
+import { useCart } from '@/hooks/useCart';
 
 interface UnavailableItem {
   id: string;
@@ -39,12 +26,23 @@ const CartSummary = () => {
   const { tableId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [notes, setNotes] = useState('');
   const [table, setTable] = useState<any>(null);
   const [restaurant, setRestaurant] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<UnavailableItem[]>([]);
+  
+  // Use shared cart hook
+  const {
+    cart,
+    isLoaded: cartLoaded,
+    updateCartItem,
+    clearCart,
+    getTotalAmount,
+    markItemsWithValidationErrors,
+    clearValidationErrors,
+    removeUnavailableItems,
+  } = useCart(tableId);
 
   useEffect(() => {
     const fetchTableData = async () => {
@@ -63,40 +61,11 @@ const CartSummary = () => {
     };
 
     fetchTableData();
-
-    // Load cart from localStorage
-    const savedCart = localStorage.getItem(`cart_${tableId}`);
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
   }, [tableId]);
 
-  const updateCartItem = (itemId: string, quantity: number) => {
-    if (quantity === 0) {
-      setCart(prev => prev.filter(item => item.id !== itemId));
-    } else {
-      setCart(prev => prev.map(item =>
-        item.id === itemId ? { ...item, quantity } : item
-      ));
-    }
-  };
-
-  const getTotalAmount = () => {
-    return cart.reduce((total, item) => total + ((item.price_usd || item.price || 0) * item.quantity), 0);
-  };
-
-  const clearValidationErrors = () => {
-    setValidationErrors([]);
-    setCart(prev => prev.map(item => ({
-      ...item,
-      hasValidationError: false,
-      validationReason: undefined
-    })));
-  };
-
-  const removeUnavailableItems = () => {
+  const handleRemoveUnavailableItems = () => {
     const validationErrorIds = validationErrors.map(error => error.id);
-    setCart(prev => prev.filter(item => !validationErrorIds.includes(item.id)));
+    removeUnavailableItems(validationErrorIds);
     setValidationErrors([]);
   };
 
@@ -146,14 +115,7 @@ const CartSummary = () => {
         setValidationErrors(unavailableItems);
         
         // Mark items in cart as having errors
-        setCart(prev => prev.map(item => {
-          const errorItem = unavailableItems.find(error => error.id === item.id);
-          return errorItem ? {
-            ...item,
-            hasValidationError: true,
-            validationReason: errorItem.reason
-          } : item;
-        }));
+        markItemsWithValidationErrors(unavailableItems);
 
         const errorMessages = unavailableItems.map(item => `${item.name}: ${item.reason}`);
         toast({
@@ -165,8 +127,7 @@ const CartSummary = () => {
       }
 
       // Success - clear cart and navigate
-      localStorage.removeItem(`cart_${tableId}`);
-      setCart([]);
+      clearCart();
 
       toast({
         title: "Order Placed Successfully!",
@@ -185,12 +146,6 @@ const CartSummary = () => {
     }
   };
 
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    if (tableId) {
-      localStorage.setItem(`cart_${tableId}`, JSON.stringify(cart));
-    }
-  }, [cart, tableId]);
 
   if (!table || !restaurant) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -297,7 +252,7 @@ const CartSummary = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={removeUnavailableItems}
+                      onClick={handleRemoveUnavailableItems}
                     >
                       Remove Unavailable Items
                     </Button>

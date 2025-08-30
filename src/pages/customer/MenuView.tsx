@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/hooks/useCart';
 
 interface MenuItem {
   id: string;
@@ -24,10 +25,6 @@ interface Category {
   menu_items: MenuItem[];
 }
 
-interface CartItem extends MenuItem {
-  quantity: number;
-}
-
 const MenuView = () => {
   const { tableId } = useParams();
   const navigate = useNavigate();
@@ -35,12 +32,21 @@ const MenuView = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [restaurant, setRestaurant] = useState<any>(null);
   const [table, setTable] = useState<any>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  
+  // Use shared cart hook
+  const {
+    cart,
+    isLoaded: cartLoaded,
+    addToCart,
+    removeFromCart,
+    getTotalAmount,
+    getTotalItems,
+  } = useCart(tableId);
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -156,62 +162,6 @@ const MenuView = () => {
     fetchMenuData();
   }, [tableId, toast]);
 
-  const addToCart = (item: MenuItem) => {
-    setCart(prev => {
-      const existing = prev.find(cartItem => cartItem.id === item.id);
-      if (existing) {
-        return prev.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-      }
-      return [...prev, { ...item, quantity: 1 }];
-    });
-  };
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    if (tableId) {
-      if (cart.length > 0) {
-        localStorage.setItem(`cart_${tableId}`, JSON.stringify(cart));
-      } else {
-        localStorage.removeItem(`cart_${tableId}`);
-      }
-    }
-  }, [cart, tableId]);
-
-  // Load cart from localStorage on component mount
-  useEffect(() => {
-    if (tableId) {
-      const savedCart = localStorage.getItem(`cart_${tableId}`);
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
-    }
-  }, [tableId]);
-
-  const removeFromCart = (itemId: string) => {
-    setCart(prev => {
-      const existing = prev.find(cartItem => cartItem.id === itemId);
-      if (existing && existing.quantity > 1) {
-        return prev.map(cartItem =>
-          cartItem.id === itemId
-            ? { ...cartItem, quantity: cartItem.quantity - 1 }
-            : cartItem
-        );
-      }
-      return prev.filter(cartItem => cartItem.id !== itemId);
-    });
-  };
-
-  const getTotalAmount = () => {
-    return cart.reduce((total, item) => total + (item.price_usd * item.quantity), 0);
-  };
-
-  const getTotalItems = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  };
 
   const handleSearchExpand = () => {
     setIsSearchExpanded(true);
