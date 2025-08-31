@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
 
@@ -27,7 +26,6 @@ interface Category {
 
 const MenuView = () => {
   const { tableId } = useParams();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [restaurant, setRestaurant] = useState<any>(null);
@@ -43,6 +41,7 @@ const MenuView = () => {
     isLoaded: cartLoaded,
     addToCart,
     removeFromCart,
+    clearCart,
     getTotalAmount,
     getTotalItems,
   } = useCart(tableId);
@@ -161,6 +160,10 @@ const MenuView = () => {
     fetchMenuData();
   }, [tableId, toast]);
 
+//   const clearCart = () => {
+//   setCart([]); // assuming you're storing cart in state
+//   localStorage.removeItem(`cart-${tableId}`); // if you're persisting
+// };
 
   const handleSearchExpand = () => {
     setIsSearchExpanded(true);
@@ -514,16 +517,32 @@ const MenuView = () => {
       {/* Fixed Cart Button */}
       {cart.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4">
-          <Button
-            className="w-full h-12 text-base font-semibold rounded-full shadow-lg"
-            size="lg"
-            asChild
-          >
-            <Link to={`/cart/${tableId}`}>
-              <ShoppingCart className="h-5 w-5 mr-2" />
-              View Cart ({getTotalItems()}) - ${getTotalAmount().toFixed(2)}
-            </Link>
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="w-1/2 h-12 text-base font-semibold rounded-full shadow-lg flex items-center justify-center gap-2"
+              onClick={() => {
+                clearCart();
+                toast({
+                  title: "Cart cleared",
+                  description: "All items have been removed from your cart.",
+                });
+              }}
+            >
+              <Trash2 className="h-5 w-5" />
+              Cancel
+            </Button>
+            <Button
+              className="w-1/2 h-12 text-base font-semibold rounded-full shadow-lg"
+              size="lg"
+              asChild
+            >
+              <Link to={`/cart/${tableId}`}>
+                <ShoppingCart className="h-5 w-5 mr-2" />
+                View Cart ({getTotalItems()}) - ${getTotalAmount().toFixed(2)}
+              </Link>
+            </Button>
+          </div>
         </div>
       )}
 
