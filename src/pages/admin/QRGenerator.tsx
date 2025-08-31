@@ -114,6 +114,17 @@ const QRGenerator = () => {
       return;
     }
 
+    // Check if table number already exists
+    const existingTable = tables.find(table => table.table_number === tableNumber.toString());
+    if (existingTable) {
+      toast({
+        title: "Duplicate Table Number",
+        description: `Table ${tableNumber} already exists. Please choose a different number.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from('tables')
       .insert({
