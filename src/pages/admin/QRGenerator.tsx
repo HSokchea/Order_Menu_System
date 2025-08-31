@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Plus, Copy } from 'lucide-react';
+import { Download, Plus, Copy, Edit, Trash2 } from 'lucide-react';
 import QRCode from 'qrcode';
 import QRCodeThumbnail from '@/components/QRCodeThumbnail';
 import QRCodeDialog from '@/components/QRCodeDialog';
@@ -225,7 +225,7 @@ const QRGenerator = () => {
         </div>
       </div>
 
-      {/* Tables Grid */}
+      {/* Tables Table */}
       {tables.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -235,40 +235,71 @@ const QRGenerator = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {tables.map((table) => (
-            <Card key={table.id}>
-              <CardHeader>
-                <CardTitle>Table {table.table_number}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="bg-muted p-4 rounded text-center">
-                    <QRCodeThumbnail 
-                      tableId={table.id}
-                      onClick={() => openQRDialog(table)}
-                      className="mb-4"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button 
-                      variant="outline"
-                      onClick={() => copyMenuUrl(table.id)}
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy Link
-                    </Button>
-                    <Button 
-                      onClick={() => generateQRCode(table.id, table.table_number)}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download QR Code
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-24">QR Code</TableHead>
+                <TableHead>Table</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tables.map((table) => (
+                <TableRow key={table.id} className="hover:bg-muted/30">
+                  <TableCell>
+                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                      <QRCodeThumbnail 
+                        tableId={table.id}
+                        onClick={() => openQRDialog(table)}
+                        className="w-12 h-12"
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">Table {table.table_number}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Click QR code to view full size
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyMenuUrl(table.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => generateQRCode(table.id, table.table_number)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
