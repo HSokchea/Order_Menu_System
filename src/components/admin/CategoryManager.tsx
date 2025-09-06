@@ -32,6 +32,7 @@ interface CategoryManagerProps {
   showControls?: boolean;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  onEditCategory?: (category: Category) => void;
 }
 
 const CategoryManager = ({
@@ -40,7 +41,8 @@ const CategoryManager = ({
   onCategoriesUpdate,
   showControls = true,
   searchQuery: externalSearchQuery = '',
-  onSearchChange
+  onSearchChange,
+  onEditCategory
 }: CategoryManagerProps) => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -128,11 +130,15 @@ const CategoryManager = ({
   };
 
   const handleEditCategory = (category: Category) => {
-    setEditingCategory(category);
-    setCategoryName(category.name);
-    setCategoryDescription(category.description || '');
-    setCategoryStatus(category.status);
-    setDialogOpen(true);
+    if (onEditCategory) {
+      onEditCategory(category);
+    } else {
+      setEditingCategory(category);
+      setCategoryName(category.name);
+      setCategoryDescription(category.description || '');
+      setCategoryStatus(category.status);
+      setDialogOpen(true);
+    }
   };
 
   const handleDeleteCategory = async (id: string) => {

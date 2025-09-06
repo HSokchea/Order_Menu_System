@@ -23,6 +23,7 @@ const Categories = () => {
   const [loading, setLoading] = useState(true);
   const [restaurantId, setRestaurantId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -91,6 +92,8 @@ const Categories = () => {
                 onCategoriesUpdate={fetchData}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                editingCategory={editingCategory}
+                onEditComplete={() => setEditingCategory(null)}
               />
             </div>
           </div>
@@ -133,6 +136,7 @@ const Categories = () => {
           restaurantId={restaurantId}
           onCategoriesUpdate={fetchData}
           showControls={false}
+          onEditCategory={setEditingCategory}
         />
       )}
     </div>

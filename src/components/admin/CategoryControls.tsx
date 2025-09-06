@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,27 +14,42 @@ interface CategoryControlsProps {
   onCategoriesUpdate: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  editingCategory?: any;
+  onEditComplete?: () => void;
 }
 
 const CategoryControls = ({
   restaurantId,
   onCategoriesUpdate,
   searchQuery = '',
-  onSearchChange
+  onSearchChange,
+  editingCategory,
+  onEditComplete
 }: CategoryControlsProps) => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
   const [categoryStatus, setCategoryStatus] = useState('active');
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
 
+  // Handle external editing category
+  useEffect(() => {
+    if (editingCategory) {
+      setCategoryName(editingCategory.name);
+      setCategoryDescription(editingCategory.description || '');
+      setCategoryStatus(editingCategory.status);
+      setDialogOpen(true);
+    }
+  }, [editingCategory]);
+
   const resetForm = () => {
     setCategoryName('');
     setCategoryDescription('');
     setCategoryStatus('active');
-    setEditingCategory(null);
+    if (onEditComplete) {
+      onEditComplete();
+    }
   };
 
   const handleSaveCategory = async () => {
