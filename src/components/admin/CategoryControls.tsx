@@ -87,9 +87,9 @@ const CategoryControls = ({
 
   const handleSearchChange = (value: string) => {
     setLocalSearchQuery(value);
-    // if (onSearchChange) {
+    if (onSearchChange) {
       onSearchChange(value);
-    // }
+    }
   };
 
   return (
@@ -103,11 +103,11 @@ const CategoryControls = ({
         <Input
           id="search-input"
           placeholder="Search categories..."
-          value=""
+          value={localSearchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="pl-9 pr-8"
         />
-        {searchQuery && (
+        {localSearchQuery && (
           <button
             onClick={() => handleSearchChange('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"

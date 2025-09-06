@@ -20,6 +20,7 @@ const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [restaurantId, setRestaurantId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchData = async () => {
     if (!user) return;
@@ -75,6 +76,8 @@ const Categories = () => {
               <CategoryControls 
                 restaurantId={restaurantId}
                 onCategoriesUpdate={fetchData}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
               />
             </div>
           </div>
@@ -82,7 +85,11 @@ const Categories = () => {
       </div>
 
       <CategoryManager
-        categories={categories}
+        categories={categories.filter(category => 
+          searchQuery.trim() === '' || 
+          category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        )}
         restaurantId={restaurantId}
         onCategoriesUpdate={fetchData}
         showControls={false}
