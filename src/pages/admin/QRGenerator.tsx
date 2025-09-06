@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +31,9 @@ const QRGenerator = () => {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [qrCodeCache, setQrCodeCache] = useState<Record<string, string>>({});
+  const [editingTable, setEditingTable] = useState<Table | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editTableNumber, setEditTableNumber] = useState('');
 
   const fetchTables = async () => {
     if (!user) return;
@@ -188,6 +192,63 @@ const QRGenerator = () => {
     }
   };
 
+  const openEditDialog = (table: Table) => {
+    setEditingTable(table);
+    setEditTableNumber(table.table_number);
+    setIsEditDialogOpen(true);
+  };
+
+  const updateTable = async () => {
+    if (!editingTable || !editTableNumber) return;
+
+    const tableNumber = parseInt(editTableNumber);
+    if (isNaN(tableNumber)) {
+      toast({
+        title: "Invalid Table Number",
+        description: "Please enter a valid number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if table number already exists (excluding current table)
+    const existingTable = tables.find(table => 
+      table.table_number === tableNumber.toString() && table.id !== editingTable.id
+    );
+    if (existingTable) {
+      toast({
+        title: "Duplicate Table Number",
+        description: `Table ${tableNumber} already exists. Please choose a different number.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('tables')
+      .update({
+        table_number: tableNumber.toString(),
+      })
+      .eq('id', editingTable.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Table updated successfully",
+      });
+      setIsEditDialogOpen(false);
+      setEditingTable(null);
+      setEditTableNumber('');
+      fetchTables();
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -300,6 +361,7 @@ const QRGenerator = () => {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => openEditDialog(table)}
                             className="h-8 w-8 p-0"
                           >
                             <Edit className="h-4 w-4" />
@@ -343,6 +405,42 @@ const QRGenerator = () => {
           tableNumber={selectedTable.table_number}
         />
       )}
+
+      {/* Edit Table Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Table</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-table-number">Table Number</Label>
+              <Input
+                id="edit-table-number"
+                type="number"
+                value={editTableNumber}
+                onChange={(e) => setEditTableNumber(e.target.value)}
+                placeholder="Enter table number"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditDialogOpen(false);
+                setEditingTable(null);
+                setEditTableNumber('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={updateTable}>
+              Update Table
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
