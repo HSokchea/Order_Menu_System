@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import CategoryManager from '@/components/admin/CategoryManager';
 import CategoryControls from '@/components/admin/CategoryControls';
 
@@ -56,6 +58,17 @@ const Categories = () => {
     fetchData();
   }, [user]);
 
+  // Filter categories based on search query
+  const filteredCategories = useMemo(() => {
+    if (searchQuery.trim() === '') {
+      return categories;
+    }
+    return categories.filter(category => 
+      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [categories, searchQuery]);
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -69,7 +82,7 @@ const Categories = () => {
             <div>
               <h2 className="text-xl font-semibold">Categories</h2>
               <p className="text-sm text-muted-foreground">
-                Showing {categories.length} {categories.length === 1 ? 'category' : 'categories'}
+                Showing {filteredCategories.length} {filteredCategories.length === 1 ? 'category' : 'categories'}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -84,16 +97,44 @@ const Categories = () => {
         </div>
       </div>
 
-      <CategoryManager
-        categories={categories.filter(category => 
-          searchQuery.trim() === '' || 
-          category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
-        )}
-        restaurantId={restaurantId}
-        onCategoriesUpdate={fetchData}
-        showControls={false}
-      />
+      {/* Categories Content */}
+      {filteredCategories.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground text-center">
+              {categories.length === 0 
+                ? "No categories yet. Add your first category to get started."
+                : "No categories match your search. Try adjusting your search query."
+              }
+            </p>
+            {categories.length === 0 && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => setSearchQuery('')}
+              >
+                Add Category
+              </Button>
+            )}
+            {categories.length > 0 && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => setSearchQuery('')}
+              >
+                Clear Search
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <CategoryManager
+          categories={filteredCategories}
+          restaurantId={restaurantId}
+          onCategoriesUpdate={fetchData}
+          showControls={false}
+        />
+      )}
     </div>
   );
 };
