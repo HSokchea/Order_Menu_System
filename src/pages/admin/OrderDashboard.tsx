@@ -37,17 +37,17 @@ const OrderDashboard = () => {
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filter and search state
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<'created_at' | 'table_number' | 'total_usd' | 'status'>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
-  
+
   // Modal state
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -192,7 +192,7 @@ const OrderDashboard = () => {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(order => 
+      filtered = filtered.filter(order =>
         order.id.toLowerCase().includes(query) ||
         order.table_number.toLowerCase().includes(query) ||
         order.id.slice(-6).toLowerCase().includes(query)
@@ -270,8 +270,8 @@ const OrderDashboard = () => {
 
   const getSortIcon = (field: 'created_at' | 'table_number' | 'total_usd' | 'status') => {
     if (sortField !== field) return null;
-    return sortDirection === 'asc' ? 
-      <ChevronUp className="h-4 w-4 ml-1" /> : 
+    return sortDirection === 'asc' ?
+      <ChevronUp className="h-4 w-4 ml-1" /> :
       <ChevronDown className="h-4 w-4 ml-1" />;
   };
 
@@ -303,14 +303,14 @@ const OrderDashboard = () => {
                 Showing {filteredAndPaginatedOrders.totalItems > 0 ? filteredAndPaginatedOrders.startIndex : 0}–{filteredAndPaginatedOrders.endIndex} of {filteredAndPaginatedOrders.totalItems} orders
               </p>
             </div>
-            
+
             {/* Controls: Search, Filters and Sort */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Filter className="h-4 w-4" />
                 <span>Filters:</span>
               </div>
-              
+
               {/* Status Filter */}
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-full sm:w-[140px]">
@@ -346,8 +346,8 @@ const OrderDashboard = () => {
 
               {/* Search */}
               <div className="relative w-full sm:w-[260px]">
-                <Search 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
                   onClick={() => document.getElementById('search-input')?.focus()}
                 />
                 <Input
@@ -377,7 +377,7 @@ const OrderDashboard = () => {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground text-center">
-              {orders.length === 0 
+              {orders.length === 0
                 ? "No orders yet. New orders will appear here."
                 : "No orders match your current filters. Try adjusting the filters above."
               }
@@ -389,44 +389,13 @@ const OrderDashboard = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('created_at')}
-                >
-                  <div className="flex items-center">
-                    Order ID / Time
-                    {getSortIcon('created_at')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('table_number')}
-                >
-                  <div className="flex items-center">
-                    Table No.
-                    {getSortIcon('table_number')}
-                  </div>
-                </TableHead>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Table No.</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead>Remark</TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('total_usd')}
-                >
-                  <div className="flex items-center">
-                    Total
-                    {getSortIcon('total_usd')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 select-none"
-                  onClick={() => handleSort('status')}
-                >
-                  <div className="flex items-center">
-                    Status
-                    {getSortIcon('status')}
-                  </div>
-                </TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -434,19 +403,19 @@ const OrderDashboard = () => {
               {filteredAndPaginatedOrders.items.map((order) => {
                 const statusConfig = getStatusConfig(order.status);
                 const nextStepLabel = getNextStepLabel(order.status);
-                
+
                 return (
-                  <TableRow 
-                    key={order.id} 
+                  <TableRow
+                    key={order.id}
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => openOrderModal(order)}
                   >
                     <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium text-sm">#{order.id.slice(-6).toUpperCase()}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(order.created_at).toLocaleString()}
-                        </div>
+                      <div className="font-medium text-sm">#{order.id.slice(-6).toUpperCase()}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm truncate">
+                        {new Date(order.created_at).toLocaleString()}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -473,16 +442,6 @@ const OrderDashboard = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openOrderModal(order);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
                         {nextStepLabel && statusConfig.next && (
                           <Button
                             size="sm"
@@ -510,12 +469,12 @@ const OrderDashboard = () => {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
+                <PaginationPrevious
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
-              
+
               {Array.from({ length: filteredAndPaginatedOrders.totalPages }, (_, i) => i + 1)
                 .filter(page => {
                   const start = Math.max(1, currentPage - 2);
@@ -533,9 +492,9 @@ const OrderDashboard = () => {
                     </PaginationLink>
                   </PaginationItem>
                 ))}
-              
+
               <PaginationItem>
-                <PaginationNext 
+                <PaginationNext
                   onClick={() => setCurrentPage(Math.min(filteredAndPaginatedOrders.totalPages, currentPage + 1))}
                   className={currentPage >= filteredAndPaginatedOrders.totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
