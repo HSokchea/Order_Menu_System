@@ -34,13 +34,13 @@ interface CategoryManagerProps {
   onSearchChange?: (query: string) => void;
 }
 
-const CategoryManager = ({ 
-  categories, 
-  restaurantId, 
-  onCategoriesUpdate, 
+const CategoryManager = ({
+  categories,
+  restaurantId,
+  onCategoriesUpdate,
   showControls = true,
   searchQuery: externalSearchQuery = '',
-  onSearchChange 
+  onSearchChange
 }: CategoryManagerProps) => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -48,7 +48,7 @@ const CategoryManager = ({
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
   const [categoryStatus, setCategoryStatus] = useState('active');
-  
+
   // Search and sorting state
   const [searchQuery, setSearchQuery] = useState(externalSearchQuery);
   const [sortField, setSortField] = useState<'name' | 'item_count' | 'status' | 'updated_at' | null>(null);
@@ -207,7 +207,7 @@ const CategoryManager = ({
   // Filter and sort categories
   const filteredAndSortedCategories = useMemo(() => {
     let filtered = categories.filter(category => {
-      const matchesSearch = !activeSearchQuery || 
+      const matchesSearch = !activeSearchQuery ||
         category.name.toLowerCase().includes(activeSearchQuery.toLowerCase()) ||
         (category.description && category.description.toLowerCase().includes(activeSearchQuery.toLowerCase()));
       return matchesSearch;
@@ -232,7 +232,7 @@ const CategoryManager = ({
           default:
             return 0;
         }
-        
+
         if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
         return 0;
@@ -247,127 +247,127 @@ const CategoryManager = ({
       <TooltipProvider>
         <div className="rounded-md border">
           <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[40px]"></TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleSort('name')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Name
-                      {sortField === 'name' && (
-                        sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">Description</TableHead>
-                  <TableHead className="text-center">Item Count</TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/50 text-center"
-                    onClick={() => handleSort('status')}
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      Status
-                      {sortField === 'status' && (
-                        sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/50 hidden lg:table-cell"
-                    onClick={() => handleSort('updated_at')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Last Updated
-                      {sortField === 'updated_at' && (
-                        sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="categories">
-                  {(provided) => (
-                    <TableBody {...provided.droppableProps} ref={provided.innerRef}>
-                      {filteredAndSortedCategories.map((category, index) => {
-                        // Get item count for this category
-                        const getItemCount = async (categoryId: string) => {
-                          const { count } = await supabase
-                            .from('menu_items')
-                            .select('*', { count: 'exact', head: true })
-                            .eq('category_id', categoryId);
-                          return count || 0;
-                        };
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40px]"></TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center gap-2">
+                    Name
+                    {sortField === 'name' && (
+                      sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">Description</TableHead>
+                <TableHead className="text-center">Item Count</TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 text-center"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    Status
+                    {sortField === 'status' && (
+                      sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 hidden lg:table-cell"
+                  onClick={() => handleSort('updated_at')}
+                >
+                  <div className="flex items-center gap-2">
+                    Last Updated
+                    {sortField === 'updated_at' && (
+                      sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead className="text-right w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="categories">
+                {(provided) => (
+                  <TableBody {...provided.droppableProps} ref={provided.innerRef}>
+                    {filteredAndSortedCategories.map((category, index) => {
+                      // Get item count for this category
+                      const getItemCount = async (categoryId: string) => {
+                        const { count } = await supabase
+                          .from('menu_items')
+                          .select('*', { count: 'exact', head: true })
+                          .eq('category_id', categoryId);
+                        return count || 0;
+                      };
 
-                        return (
-                          <Draggable key={category.id} draggableId={category.id} index={index}>
-                            {(provided, snapshot) => (
-                              <TableRow
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={snapshot.isDragging ? "bg-muted/50" : ""}
-                              >
-                                <TableCell>
-                                  <div {...provided.dragHandleProps} className="cursor-grab">
-                                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                  </div>
-                                </TableCell>
-                                <TableCell className="font-medium">{category.name}</TableCell>
-                                <TableCell className="hidden md:table-cell text-muted-foreground">
-                                  {category.description || '-'}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <ItemCountCell categoryId={category.id} />
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
-                                    {category.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="hidden lg:table-cell text-muted-foreground">
-                                  {new Date(category.updated_at).toLocaleDateString()}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end gap-1">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleEditCategory(category)}
-                                        >
-                                          <Edit className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Edit category</TooltipContent>
-                                    </Tooltip>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleDeleteCategory(category.id)}
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Delete category</TooltipContent>
-                                    </Tooltip>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </Draggable>
-                        );
-                      })}
-                      {provided.placeholder}
-                    </TableBody>
-                  )}
-                </Droppable>
-              </DragDropContext>
+                      return (
+                        <Draggable key={category.id} draggableId={category.id} index={index}>
+                          {(provided, snapshot) => (
+                            <TableRow
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={snapshot.isDragging ? "bg-muted/50" : ""}
+                            >
+                              <TableCell>
+                                <div {...provided.dragHandleProps} className="cursor-grab">
+                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium">{category.name}</TableCell>
+                              <TableCell className="hidden md:table-cell text-muted-foreground">
+                                {category.description || '-'}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <ItemCountCell categoryId={category.id} />
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
+                                  {category.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell text-muted-foreground">
+                                {new Date(category.updated_at).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEditCategory(category)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Edit category</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteCategory(category.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4 text-destructive hover:text-destructive" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Delete category</TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </TableBody>
+                )}
+              </Droppable>
+            </DragDropContext>
           </Table>
         </div>
       </TooltipProvider>

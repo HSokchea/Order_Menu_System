@@ -16,11 +16,11 @@ interface CategoryControlsProps {
   onSearchChange?: (query: string) => void;
 }
 
-const CategoryControls = ({ 
-  restaurantId, 
-  onCategoriesUpdate, 
-  searchQuery = '', 
-  onSearchChange 
+const CategoryControls = ({
+  restaurantId,
+  onCategoriesUpdate,
+  searchQuery = '',
+  onSearchChange
 }: CategoryControlsProps) => {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -28,7 +28,6 @@ const CategoryControls = ({
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
   const [categoryStatus, setCategoryStatus] = useState('active');
-  const [showSearch, setShowSearch] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
 
   const resetForm = () => {
@@ -88,45 +87,39 @@ const CategoryControls = ({
 
   const handleSearchChange = (value: string) => {
     setLocalSearchQuery(value);
-    if (onSearchChange) {
+    // if (onSearchChange) {
       onSearchChange(value);
-    }
+    // }
   };
 
   return (
     <>
-      {showSearch ? (
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search categories..."
-            value={onSearchChange ? searchQuery : localSearchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-64"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setShowSearch(false);
-              handleSearchChange('');
-            }}
+     {/* Search */}
+      <div className="relative w-full sm:w-[260px]">
+        <Search
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+          onClick={() => document.getElementById('search-input')?.focus()}
+        />
+        <Input
+          id="search-input"
+          placeholder="Search categories..."
+          value=""
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="pl-9 pr-8"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => handleSearchChange('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowSearch(true)}
-        >
-          <Search className="h-4 w-4" />
-        </Button>
-      )}
-      
+            ×
+          </button>
+        )}
+      </div>
+
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
-          <Button onClick={resetForm} size="sm">
+          <Button onClick={resetForm} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Category
           </Button>

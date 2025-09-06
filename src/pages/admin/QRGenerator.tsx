@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -59,7 +60,7 @@ const QRGenerator = () => {
 
   const generateQRCodeForDisplay = async (tableId: string) => {
     if (qrCodeCache[tableId]) return qrCodeCache[tableId];
-    
+
     try {
       const menuUrl = `${window.location.origin}/menu/${tableId}`;
       const qrCodeDataUrl = await QRCode.toDataURL(menuUrl, {
@@ -70,7 +71,7 @@ const QRGenerator = () => {
           light: '#FFFFFF'
         }
       });
-      
+
       setQrCodeCache(prev => ({ ...prev, [tableId]: qrCodeDataUrl }));
       return qrCodeDataUrl;
     } catch (error) {
@@ -151,7 +152,7 @@ const QRGenerator = () => {
   const generateQRCode = async (tableId: string, tableNumber: string) => {
     try {
       const menuUrl = `${window.location.origin}/menu/${tableId}`;
-      
+
       // Generate QR code as data URL
       const qrCodeDataUrl = await QRCode.toDataURL(menuUrl, {
         width: 300,
@@ -166,7 +167,7 @@ const QRGenerator = () => {
       const response = await fetch(qrCodeDataUrl);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      
+
       const a = document.createElement('a');
       a.href = url;
       a.download = `table-${tableNumber}-qr.png`;
@@ -203,7 +204,7 @@ const QRGenerator = () => {
                 Showing {tables.length} {tables.length === 1 ? 'table' : 'tables'}
               </p>
             </div>
-            
+
             {/* Add Table Form */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
               <div className="flex-1 lg:w-[200px]">
@@ -238,7 +239,7 @@ const QRGenerator = () => {
         <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow>
                 <TableHead className="w-24">QR Code</TableHead>
                 <TableHead>Table</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -248,11 +249,11 @@ const QRGenerator = () => {
               {tables.map((table) => (
                 <TableRow key={table.id} className="hover:bg-muted/30">
                   <TableCell>
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                      <QRCodeThumbnail 
+                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                      <QRCodeThumbnail
                         tableId={table.id}
                         onClick={() => openQRDialog(table)}
-                        className="w-12 h-12"
+                        className="w-8 h-8"
                       />
                     </div>
                   </TableCell>
@@ -264,36 +265,64 @@ const QRGenerator = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button 
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyMenuUrl(table.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => generateQRCode(table.id, table.table_number)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyMenuUrl(table.id)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copy table QR code</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => generateQRCode(table.id, table.table_number)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Download table QR code</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit table</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete table</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </TableCell>
                 </TableRow>
