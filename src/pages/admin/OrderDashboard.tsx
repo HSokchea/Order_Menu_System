@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, ChefHat, CheckCircle, Truck, Filter, Search, ChevronUp, ChevronDown, Eye } from 'lucide-react';
+import { format } from 'date-fns';
 
 
 interface OrderItem {
@@ -415,7 +416,7 @@ const OrderDashboard = () => {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm truncate">
-                        {new Date(order.created_at).toLocaleString()}
+                        {format(new Date(order.created_at), 'MM/dd/yyyy, h:mm a')}
                       </div>
                     </TableCell>
                     <TableCell>
