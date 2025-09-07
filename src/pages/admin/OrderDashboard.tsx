@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Clock, ChefHat, CheckCircle, Truck, Filter, Search, ChevronUp, ChevronDown, Eye, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 interface OrderItem {
@@ -437,7 +438,7 @@ const OrderDashboard = () => {
                       <div className="font-semibold">${order.total_usd.toFixed(2)}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`${statusConfig.color} gap-1`}>
+                      <Badge className={`${statusConfig.color} gap-1 pointer-events-none`}>
                         {statusConfig.icon}
                         {statusConfig.label}
                       </Badge>
@@ -445,13 +446,32 @@ const OrderDashboard = () => {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
+                          {isOrderActive(order.status) ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Update status</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => e.stopPropagation()}
+                              disabled={true}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Done
+                            </Button>
+                          )}
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
@@ -578,7 +598,10 @@ const OrderDashboard = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Badge
-                          className={`${getStatusConfig(selectedOrder.status).color} gap-1 cursor-pointer hover:opacity-80 transition-opacity`}
+                          className={`${getStatusConfig(selectedOrder.status).color} gap-1 ${isOrderActive(selectedOrder.status)
+                            ? 'cursor-pointer hover:opacity-80 transition-opacity'
+                            : 'pointer-events-none'
+                            }`}
                         >
                           {getStatusConfig(selectedOrder.status).icon}
                           {getStatusConfig(selectedOrder.status).label}
@@ -586,53 +609,55 @@ const OrderDashboard = () => {
                         </Badge>
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      className="z-[100] bg-background border shadow-lg"
-                      sideOffset={4}
-                    >
-                      <DropdownMenuItem
-                        onClick={() => {
-                          updateOrderStatus(selectedOrder.id, 'preparing');
-                          setSelectedOrder({ ...selectedOrder, status: 'preparing' });
-                        }}
-                        disabled={selectedOrder.status === 'preparing'}
+                    {isOrderActive(selectedOrder.status) && (
+                      <DropdownMenuContent
+                        align="start"
+                        className="z-[100] bg-background border shadow-lg"
+                        sideOffset={4}
                       >
-                        <ChefHat className="h-4 w-4 mr-2" />
-                        Preparing
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          updateOrderStatus(selectedOrder.id, 'ready');
-                          setSelectedOrder({ ...selectedOrder, status: 'ready' });
-                        }}
-                        disabled={selectedOrder.status === 'ready'}
-                      >
-                        <Truck className="h-4 w-4 mr-2" />
-                        Ready
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          updateOrderStatus(selectedOrder.id, 'completed');
-                          setSelectedOrder({ ...selectedOrder, status: 'completed' });
-                        }}
-                        disabled={selectedOrder.status === 'completed'}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Complete
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          updateOrderStatus(selectedOrder.id, 'cancelled');
-                          setSelectedOrder({ ...selectedOrder, status: 'cancelled' });
-                        }}
-                        disabled={selectedOrder.status === 'cancelled'}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        Cancel
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            updateOrderStatus(selectedOrder.id, 'preparing');
+                            setSelectedOrder({ ...selectedOrder, status: 'preparing' });
+                          }}
+                          disabled={selectedOrder.status === 'preparing'}
+                        >
+                          <ChefHat className="h-4 w-4 mr-2" />
+                          Preparing
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            updateOrderStatus(selectedOrder.id, 'ready');
+                            setSelectedOrder({ ...selectedOrder, status: 'ready' });
+                          }}
+                          disabled={selectedOrder.status === 'ready'}
+                        >
+                          <Truck className="h-4 w-4 mr-2" />
+                          Ready
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            updateOrderStatus(selectedOrder.id, 'completed');
+                            setSelectedOrder({ ...selectedOrder, status: 'completed' });
+                          }}
+                          disabled={selectedOrder.status === 'completed'}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Complete
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            updateOrderStatus(selectedOrder.id, 'cancelled');
+                            setSelectedOrder({ ...selectedOrder, status: 'cancelled' });
+                          }}
+                          disabled={selectedOrder.status === 'cancelled'}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Clock className="h-4 w-4 mr-2" />
+                          Cancel
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    )}
                   </DropdownMenu>
                 </div>
               </div>
