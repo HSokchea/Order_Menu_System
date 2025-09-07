@@ -141,6 +141,14 @@ const OrderStatusTracker = ({ orders, onViewDetails }: OrderStatusTrackerProps) 
           color: 'bg-green-500',
           variant: 'default' as const
         };
+      case 'rejected':
+        return {
+          label: 'Order Rejected',
+          icon: <X className="h-4 w-4" />,
+          progress: 0,
+          color: 'bg-red-500',
+          variant: 'destructive' as const
+        };
       default:
         return {
           label: 'Processing',

@@ -226,8 +226,8 @@ const OrderDashboard = () => {
           bValue = b.total_usd;
           break;
         case 'status':
-          const statusOrder = { 'new': 1, 'preparing': 2, 'ready': 3, 'completed': 4 };
-          aValue = statusOrder[a.status as keyof typeof statusOrder] || 5;
+          const statusOrder = { 'new': 1, 'preparing': 2, 'ready': 3, 'completed': 4, 'rejected': 5 };
+          aValue = statusOrder[a.status as keyof typeof statusOrder] || 6;
           bValue = statusOrder[b.status as keyof typeof statusOrder] || 5;
           break;
         default:

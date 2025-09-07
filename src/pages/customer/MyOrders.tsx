@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { ChefHat, Clock, CheckCircle, ArrowLeft, Package2, RefreshCw } from 'lucide-react';
+import { ChefHat, Clock, CheckCircle, ArrowLeft, Package2, RefreshCw, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useActiveOrders } from '@/hooks/useActiveOrders';
 
@@ -92,6 +92,15 @@ const MyOrders = () => {
           color: 'bg-green-500',
           variant: 'default' as const,
           description: 'Your order is ready! Please collect it from the counter'
+        };
+      case 'rejected':
+        return {
+          label: 'Order Rejected',
+          icon: <X className="h-5 w-5" />,
+          progress: 0,
+          color: 'bg-red-500',
+          variant: 'destructive' as const,
+          description: 'Sorry, your order was rejected. Please contact the restaurant for more information.'
         };
       default:
         return {
