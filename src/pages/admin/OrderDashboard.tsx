@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, ChefHat, CheckCircle, Truck, Filter, Search, ChevronUp, ChevronDown, Eye } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, Truck, Filter, Search, ChevronUp, ChevronDown, Eye, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 
 
@@ -442,19 +443,60 @@ const OrderDashboard = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {nextStepLabel && statusConfig.next && (
-                          <Button
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="outline" 
                             size="sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
-                              updateOrderStatus(order.id, statusConfig.next!);
+                              updateOrderStatus(order.id, 'preparing');
                             }}
+                            disabled={order.status === 'preparing'}
                           >
-                            {nextStepLabel}
-                          </Button>
-                        )}
-                      </div>
+                            <ChefHat className="h-4 w-4 mr-2" />
+                            Preparing
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateOrderStatus(order.id, 'ready');
+                            }}
+                            disabled={order.status === 'ready'}
+                          >
+                            <Truck className="h-4 w-4 mr-2" />
+                            Ready
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateOrderStatus(order.id, 'completed');
+                            }}
+                            disabled={order.status === 'completed'}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Complete
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateOrderStatus(order.id, 'cancelled');
+                            }}
+                            disabled={order.status === 'cancelled'}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Clock className="h-4 w-4 mr-2" />
+                            Cancel
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
@@ -573,19 +615,59 @@ const OrderDashboard = () => {
               </div>
 
               {/* Actions */}
-              {getNextStepLabel(selectedOrder.status) && getStatusConfig(selectedOrder.status).next && (
-                <div className="flex gap-3">
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      updateOrderStatus(selectedOrder.id, getStatusConfig(selectedOrder.status).next!);
-                      setIsModalOpen(false);
-                    }}
-                  >
-                    {getNextStepLabel(selectedOrder.status)}
-                  </Button>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex-1">
+                      Update Status
+                      <MoreHorizontal className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        updateOrderStatus(selectedOrder.id, 'preparing');
+                        setIsModalOpen(false);
+                      }}
+                      disabled={selectedOrder.status === 'preparing'}
+                    >
+                      <ChefHat className="h-4 w-4 mr-2" />
+                      Preparing
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        updateOrderStatus(selectedOrder.id, 'ready');
+                        setIsModalOpen(false);
+                      }}
+                      disabled={selectedOrder.status === 'ready'}
+                    >
+                      <Truck className="h-4 w-4 mr-2" />
+                      Ready
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        updateOrderStatus(selectedOrder.id, 'completed');
+                        setIsModalOpen(false);
+                      }}
+                      disabled={selectedOrder.status === 'completed'}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Complete
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        updateOrderStatus(selectedOrder.id, 'cancelled');
+                        setIsModalOpen(false);
+                      }}
+                      disabled={selectedOrder.status === 'cancelled'}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Clock className="h-4 w-4 mr-2" />
+                      Cancel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           )}
         </DialogContent>
