@@ -444,11 +444,11 @@ const OrderDashboard = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          {isOrderActive(order.status) ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
+                      {isOrderActive(order.status) ? (
+                        <DropdownMenu>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -456,67 +456,67 @@ const OrderDashboard = () => {
                                 >
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Update status</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => e.stopPropagation()}
-                              disabled={true}
+                              </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Update status</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateOrderStatus(order.id, 'preparing');
+                              }}
+                              disabled={order.status === 'preparing'}
                             >
-                              <CheckCircle className="h-4 w-4" />
-                              Done
-                            </Button>
-                          )}
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateOrderStatus(order.id, 'preparing');
-                            }}
-                            disabled={order.status === 'preparing'}
-                          >
-                            <ChefHat className="h-4 w-4 mr-2" />
-                            Preparing
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateOrderStatus(order.id, 'ready');
-                            }}
-                            disabled={order.status === 'ready'}
-                          >
-                            <Truck className="h-4 w-4 mr-2" />
-                            Ready
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateOrderStatus(order.id, 'completed');
-                            }}
-                            disabled={order.status === 'completed'}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Complete
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateOrderStatus(order.id, 'cancelled');
-                            }}
-                            disabled={order.status === 'cancelled'}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Clock className="h-4 w-4 mr-2" />
-                            Cancel
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                              <ChefHat className="h-4 w-4 mr-2" />
+                              Preparing
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateOrderStatus(order.id, 'ready');
+                              }}
+                              disabled={order.status === 'ready'}
+                            >
+                              <Truck className="h-4 w-4 mr-2" />
+                              Ready
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateOrderStatus(order.id, 'completed');
+                              }}
+                              disabled={order.status === 'completed'}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Complete
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateOrderStatus(order.id, 'cancelled');
+                              }}
+                              disabled={order.status === 'cancelled'}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Clock className="h-4 w-4 mr-2" />
+                              Cancel
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={true}
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Done
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 );
