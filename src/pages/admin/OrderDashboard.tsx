@@ -581,30 +581,46 @@ const OrderDashboard = () => {
                         <ChevronDown className="h-3 w-3 ml-1" />
                       </Badge>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
+                    <DropdownMenuContent 
+                      align="start" 
+                      className="z-[100] bg-background border shadow-lg"
+                      sideOffset={4}
+                    >
                       <DropdownMenuItem
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'preparing')}
+                        onClick={() => {
+                          updateOrderStatus(selectedOrder.id, 'preparing');
+                          setSelectedOrder({...selectedOrder, status: 'preparing'});
+                        }}
                         disabled={selectedOrder.status === 'preparing'}
                       >
                         <ChefHat className="h-4 w-4 mr-2" />
                         Preparing
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'ready')}
+                        onClick={() => {
+                          updateOrderStatus(selectedOrder.id, 'ready');
+                          setSelectedOrder({...selectedOrder, status: 'ready'});
+                        }}
                         disabled={selectedOrder.status === 'ready'}
                       >
                         <Truck className="h-4 w-4 mr-2" />
                         Ready
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'completed')}
+                        onClick={() => {
+                          updateOrderStatus(selectedOrder.id, 'completed');
+                          setSelectedOrder({...selectedOrder, status: 'completed'});
+                        }}
                         disabled={selectedOrder.status === 'completed'}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Complete
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => updateOrderStatus(selectedOrder.id, 'cancelled')}
+                        onClick={() => {
+                          updateOrderStatus(selectedOrder.id, 'cancelled');
+                          setSelectedOrder({...selectedOrder, status: 'cancelled'});
+                        }}
                         disabled={selectedOrder.status === 'cancelled'}
                         className="text-destructive focus:text-destructive"
                       >
