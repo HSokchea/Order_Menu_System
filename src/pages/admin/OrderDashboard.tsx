@@ -571,10 +571,48 @@ const OrderDashboard = () => {
                 </div>
                 <div>
                   <h4 className="font-medium text-sm mb-1 text-muted-foreground">Status</h4>
-                  <Badge className={`${getStatusConfig(selectedOrder.status).color} gap-1`}>
-                    {getStatusConfig(selectedOrder.status).icon}
-                    {getStatusConfig(selectedOrder.status).label}
-                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Badge 
+                        className={`${getStatusConfig(selectedOrder.status).color} gap-1 cursor-pointer hover:opacity-80 transition-opacity`}
+                      >
+                        {getStatusConfig(selectedOrder.status).icon}
+                        {getStatusConfig(selectedOrder.status).label}
+                        <ChevronDown className="h-3 w-3 ml-1" />
+                      </Badge>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem
+                        onClick={() => updateOrderStatus(selectedOrder.id, 'preparing')}
+                        disabled={selectedOrder.status === 'preparing'}
+                      >
+                        <ChefHat className="h-4 w-4 mr-2" />
+                        Preparing
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateOrderStatus(selectedOrder.id, 'ready')}
+                        disabled={selectedOrder.status === 'ready'}
+                      >
+                        <Truck className="h-4 w-4 mr-2" />
+                        Ready
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateOrderStatus(selectedOrder.id, 'completed')}
+                        disabled={selectedOrder.status === 'completed'}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Complete
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateOrderStatus(selectedOrder.id, 'cancelled')}
+                        disabled={selectedOrder.status === 'cancelled'}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        Cancel
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 
@@ -614,60 +652,7 @@ const OrderDashboard = () => {
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex-1">
-                      Update Status
-                      <MoreHorizontal className="h-4 w-4 ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        updateOrderStatus(selectedOrder.id, 'preparing');
-                        setIsModalOpen(false);
-                      }}
-                      disabled={selectedOrder.status === 'preparing'}
-                    >
-                      <ChefHat className="h-4 w-4 mr-2" />
-                      Preparing
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        updateOrderStatus(selectedOrder.id, 'ready');
-                        setIsModalOpen(false);
-                      }}
-                      disabled={selectedOrder.status === 'ready'}
-                    >
-                      <Truck className="h-4 w-4 mr-2" />
-                      Ready
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        updateOrderStatus(selectedOrder.id, 'completed');
-                        setIsModalOpen(false);
-                      }}
-                      disabled={selectedOrder.status === 'completed'}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Complete
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        updateOrderStatus(selectedOrder.id, 'cancelled');
-                        setIsModalOpen(false);
-                      }}
-                      disabled={selectedOrder.status === 'cancelled'}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Clock className="h-4 w-4 mr-2" />
-                      Cancel
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              {/* Actions - Removed redundant update status as it's now integrated in the status chip */}
             </div>
           )}
         </DialogContent>
