@@ -567,7 +567,7 @@ const OrderDashboard = () => {
                 </div>
                 <div>
                   <h4 className="font-medium text-sm mb-1 text-muted-foreground">Order Time</h4>
-                  <p>{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                  <p>{format(new Date(selectedOrder.created_at), 'MM/dd/yyyy, h:mm a')}</p>
                 </div>
                 <div>
                   <h4 className="font-medium text-sm mb-1 text-muted-foreground">Status</h4>

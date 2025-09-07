@@ -499,7 +499,7 @@ const MenuItems = () => {
                   <TableRow>
                     <TableHead className="w-[80px]">Image</TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none min-w-[120px]"
+                      className="cursor-pointer hover:bg-muted/50 select-none w-[200px]"
                       onClick={() => handleSort('name')}
                     >
                       <div className="flex items-center">
