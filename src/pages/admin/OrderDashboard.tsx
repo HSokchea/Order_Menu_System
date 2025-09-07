@@ -496,13 +496,13 @@ const OrderDashboard = () => {
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
-                                updateOrderStatus(order.id, 'cancelled');
+                                updateOrderStatus(order.id, 'rejected');
                               }}
-                              disabled={order.status === 'cancelled'}
+                              disabled={order.status === 'rejected'}
                               className="text-destructive focus:text-destructive"
                             >
                               <Clock className="h-4 w-4 mr-2" />
-                              Cancel
+                              Reject
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -647,14 +647,14 @@ const OrderDashboard = () => {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
-                            updateOrderStatus(selectedOrder.id, 'cancelled');
-                            setSelectedOrder({ ...selectedOrder, status: 'cancelled' });
+                            updateOrderStatus(selectedOrder.id, 'rejected');
+                            setSelectedOrder({ ...selectedOrder, status: 'rejected' });
                           }}
-                          disabled={selectedOrder.status === 'cancelled'}
+                          disabled={selectedOrder.status === 'rejected'}
                           className="text-destructive focus:text-destructive"
                         >
                           <Clock className="h-4 w-4 mr-2" />
-                          Cancel
+                          Reject
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     )}
