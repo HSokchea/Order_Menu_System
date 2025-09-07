@@ -445,8 +445,8 @@ const OrderDashboard = () => {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -573,23 +573,28 @@ const OrderDashboard = () => {
                   <h4 className="font-medium text-sm mb-1 text-muted-foreground">Status</h4>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Badge 
-                        className={`${getStatusConfig(selectedOrder.status).color} gap-1 cursor-pointer hover:opacity-80 transition-opacity`}
+                      <button
+                        className="p-0 border-0 bg-transparent hover:bg-transparent focus:ring-0"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {getStatusConfig(selectedOrder.status).icon}
-                        {getStatusConfig(selectedOrder.status).label}
-                        <ChevronDown className="h-3 w-3 ml-1" />
-                      </Badge>
+                        <Badge
+                          className={`${getStatusConfig(selectedOrder.status).color} gap-1 cursor-pointer hover:opacity-80 transition-opacity`}
+                        >
+                          {getStatusConfig(selectedOrder.status).icon}
+                          {getStatusConfig(selectedOrder.status).label}
+                          <ChevronDown className="h-3 w-3 ml-1" />
+                        </Badge>
+                      </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent 
-                      align="start" 
+                    <DropdownMenuContent
+                      align="start"
                       className="z-[100] bg-background border shadow-lg"
                       sideOffset={4}
                     >
                       <DropdownMenuItem
                         onClick={() => {
                           updateOrderStatus(selectedOrder.id, 'preparing');
-                          setSelectedOrder({...selectedOrder, status: 'preparing'});
+                          setSelectedOrder({ ...selectedOrder, status: 'preparing' });
                         }}
                         disabled={selectedOrder.status === 'preparing'}
                       >
@@ -599,7 +604,7 @@ const OrderDashboard = () => {
                       <DropdownMenuItem
                         onClick={() => {
                           updateOrderStatus(selectedOrder.id, 'ready');
-                          setSelectedOrder({...selectedOrder, status: 'ready'});
+                          setSelectedOrder({ ...selectedOrder, status: 'ready' });
                         }}
                         disabled={selectedOrder.status === 'ready'}
                       >
@@ -609,7 +614,7 @@ const OrderDashboard = () => {
                       <DropdownMenuItem
                         onClick={() => {
                           updateOrderStatus(selectedOrder.id, 'completed');
-                          setSelectedOrder({...selectedOrder, status: 'completed'});
+                          setSelectedOrder({ ...selectedOrder, status: 'completed' });
                         }}
                         disabled={selectedOrder.status === 'completed'}
                       >
@@ -619,7 +624,7 @@ const OrderDashboard = () => {
                       <DropdownMenuItem
                         onClick={() => {
                           updateOrderStatus(selectedOrder.id, 'cancelled');
-                          setSelectedOrder({...selectedOrder, status: 'cancelled'});
+                          setSelectedOrder({ ...selectedOrder, status: 'cancelled' });
                         }}
                         disabled={selectedOrder.status === 'cancelled'}
                         className="text-destructive focus:text-destructive"
