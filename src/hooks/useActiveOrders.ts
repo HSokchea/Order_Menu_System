@@ -38,7 +38,7 @@ export const useActiveOrders = (tableId: string) => {
             restaurants:restaurant_id (name)
           `)
           .or(`table_number.eq.${tableId},table_id.eq.${tableId}`)
-          .not('status', 'in', '("completed","rejected")')
+          .neq('status', 'completed')
           .order('created_at', { ascending: false });
 
         console.log('Orders query result:', { orders, error, tableId, queryUsed: `table_number.eq.${tableId},table_id.eq.${tableId}` });

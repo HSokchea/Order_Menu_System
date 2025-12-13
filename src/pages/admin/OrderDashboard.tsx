@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, ChefHat, CheckCircle, Truck, Filter, Search, ChevronUp, ChevronDown, Eye, MoreHorizontal, X } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, Truck, Filter, Search, ChevronUp, ChevronDown, Eye, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -159,13 +159,6 @@ const OrderDashboard = () => {
           color: 'bg-muted text-muted-foreground',
           label: 'Completed',
           icon: <CheckCircle className="h-4 w-4" />,
-          next: null
-        };
-      case 'rejected':
-        return {
-          color: 'bg-destructive text-destructive-foreground',
-          label: 'Rejected',
-          icon: <X className="h-4 w-4" />,
           next: null
         };
       default:
@@ -508,7 +501,7 @@ const OrderDashboard = () => {
                               disabled={order.status === 'rejected'}
                               className="text-destructive focus:text-destructive"
                             >
-                              <X className="h-4 w-4 mr-2" />
+                              <Clock className="h-4 w-4 mr-2" />
                               Reject
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -660,7 +653,7 @@ const OrderDashboard = () => {
                           disabled={selectedOrder.status === 'rejected'}
                           className="text-destructive focus:text-destructive"
                         >
-                          <X className="h-4 w-4 mr-2" />
+                          <Clock className="h-4 w-4 mr-2" />
                           Reject
                         </DropdownMenuItem>
                       </DropdownMenuContent>
