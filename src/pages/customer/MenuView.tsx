@@ -263,10 +263,15 @@ const MenuView = () => {
                   variant="outline"
                   size="sm"
                   asChild
-                  className="h-9 w-9 p-0"
+                  className="relative h-9 w-9 p-0"
                 >
                   <Link to={`/my-orders/${tableId}`}>
                     <Package2 className="h-4 w-4" />
+                    {cart.length > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {getTotalItems()}
+                      </span>
+                    )}
                   </Link>
                 </Button>
                 
@@ -317,7 +322,6 @@ const MenuView = () => {
           )}
         </div>
       </header>
-
       {/* Category Navigation */}
       {!searchQuery && (
         <div className="sticky top-[73px] z-20 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
@@ -518,9 +522,14 @@ const MenuView = () => {
       {cart.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4">
           <div className="flex gap-3">
+
+            {/* Cancel Button */}
             <Button
               variant="outline"
-              className="w-1/2 h-12 text-base font-semibold rounded-full shadow-lg flex items-center justify-center gap-2"
+              className="
+                h-10 rounded-full shadow-lg flex items-center justify-center
+                w-10 md:w-1/2
+              "
               onClick={() => {
                 clearCart();
                 toast({
@@ -529,23 +538,31 @@ const MenuView = () => {
                 });
               }}
             >
-              <Trash2 className="h-5 w-5" />
-              Cancel
+              <X className="h-5 w-5 md:mr-2" />
+              <span className="hidden md:inline">Cancel</span>
             </Button>
+
+            {/* View Cart Button */}
             <Button
-              className="w-1/2 h-12 text-base font-semibold rounded-full shadow-lg"
-              size="lg"
+              className="
+                h-10 text-sm font-semibold rounded-full shadow-lg
+                flex-1 md:w-1/2 md:flex-none
+              "
+              size="sm"
               asChild
             >
-              <Link to={`/cart/${tableId}`}>
+              <Link
+                to={`/cart/${tableId}`}
+                className="flex items-center justify-center"
+              >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                View Cart ({getTotalItems()}) - ${getTotalAmount().toFixed(2)}
+                View Cart ({getTotalItems()}) – ${getTotalAmount().toFixed(2)}
               </Link>
             </Button>
+
           </div>
         </div>
       )}
-
     </div>
   );
 };
