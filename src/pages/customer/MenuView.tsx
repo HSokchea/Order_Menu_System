@@ -7,6 +7,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
+import { useActiveOrders } from '@/hooks/useActiveOrders';
 
 interface MenuItem {
   id: string;
@@ -45,6 +46,9 @@ const MenuView = () => {
     getTotalAmount,
     getTotalItems,
   } = useCart(tableId);
+
+  // Get active orders count for badge
+  const { activeOrders } = useActiveOrders(tableId || '');
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -267,9 +271,9 @@ const MenuView = () => {
                 >
                   <Link to={`/my-orders/${tableId}`}>
                     <Package2 className="h-4 w-4" />
-                    {cart.length > 0 && (
+                    {activeOrders.length > 0 && (
                       <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {getTotalItems()}
+                        {activeOrders.length}
                       </span>
                     )}
                   </Link>

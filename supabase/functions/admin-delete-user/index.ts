@@ -76,99 +76,94 @@ serve(async (req) => {
     const userId = userToDelete.id;
     console.log(`Found user with ID: ${userId}`);
 
+    // Get restaurant IDs for this user first
+    const { data: restaurants, error: restaurantsFetchError } = await supabaseAdmin
+      .from('restaurants')
+      .select('id')
+      .eq('owner_id', userId);
+
+    if (restaurantsFetchError) {
+      console.error('Error fetching restaurants:', restaurantsFetchError);
+    }
+
+    const restaurantIds = restaurants?.map(r => r.id) || [];
+    console.log(`Found ${restaurantIds.length} restaurants for user`);
+
     // Delete related data in the correct order (to respect foreign key constraints)
     
-    // 1. Delete order items first (they reference orders)
-    const { error: orderItemsError } = await supabaseAdmin
-      .from('order_items')
-      .delete()
-      .in('order_id', 
-        supabaseAdmin
-          .from('orders')
-          .select('id')
-          .in('restaurant_id',
-            supabaseAdmin
-              .from('restaurants')
-              .select('id')
-              .eq('owner_id', userId)
-          )
-      );
+    if (restaurantIds.length > 0) {
+      // 1. Get order IDs for these restaurants
+      const { data: orders } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .in('restaurant_id', restaurantIds);
 
-    if (orderItemsError) {
-      console.error('Error deleting order items:', orderItemsError);
-    } else {
-      console.log('Successfully deleted order items');
+      const orderIds = orders?.map(o => o.id) || [];
+
+      // 2. Delete order items first (they reference orders)
+      if (orderIds.length > 0) {
+        const { error: orderItemsError } = await supabaseAdmin
+          .from('order_items')
+          .delete()
+          .in('order_id', orderIds);
+
+        if (orderItemsError) {
+          console.error('Error deleting order items:', orderItemsError);
+        } else {
+          console.log('Successfully deleted order items');
+        }
+      }
+
+      // 3. Delete orders
+      const { error: ordersError } = await supabaseAdmin
+        .from('orders')
+        .delete()
+        .in('restaurant_id', restaurantIds);
+
+      if (ordersError) {
+        console.error('Error deleting orders:', ordersError);
+      } else {
+        console.log('Successfully deleted orders');
+      }
+
+      // 4. Delete menu items
+      const { error: menuItemsError } = await supabaseAdmin
+        .from('menu_items')
+        .delete()
+        .in('restaurant_id', restaurantIds);
+
+      if (menuItemsError) {
+        console.error('Error deleting menu items:', menuItemsError);
+      } else {
+        console.log('Successfully deleted menu items');
+      }
+
+      // 5. Delete menu categories
+      const { error: categoriesError } = await supabaseAdmin
+        .from('menu_categories')
+        .delete()
+        .in('restaurant_id', restaurantIds);
+
+      if (categoriesError) {
+        console.error('Error deleting menu categories:', categoriesError);
+      } else {
+        console.log('Successfully deleted menu categories');
+      }
+
+      // 6. Delete tables
+      const { error: tablesError } = await supabaseAdmin
+        .from('tables')
+        .delete()
+        .in('restaurant_id', restaurantIds);
+
+      if (tablesError) {
+        console.error('Error deleting tables:', tablesError);
+      } else {
+        console.log('Successfully deleted tables');
+      }
     }
 
-    // 2. Delete orders
-    const { error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .delete()
-      .in('restaurant_id',
-        supabaseAdmin
-          .from('restaurants')
-          .select('id')
-          .eq('owner_id', userId)
-      );
-
-    if (ordersError) {
-      console.error('Error deleting orders:', ordersError);
-    } else {
-      console.log('Successfully deleted orders');
-    }
-
-    // 3. Delete menu items
-    const { error: menuItemsError } = await supabaseAdmin
-      .from('menu_items')
-      .delete()
-      .in('restaurant_id',
-        supabaseAdmin
-          .from('restaurants')
-          .select('id')
-          .eq('owner_id', userId)
-      );
-
-    if (menuItemsError) {
-      console.error('Error deleting menu items:', menuItemsError);
-    } else {
-      console.log('Successfully deleted menu items');
-    }
-
-    // 4. Delete menu categories
-    const { error: categoriesError } = await supabaseAdmin
-      .from('menu_categories')
-      .delete()
-      .in('restaurant_id',
-        supabaseAdmin
-          .from('restaurants')
-          .select('id')
-          .eq('owner_id', userId)
-      );
-
-    if (categoriesError) {
-      console.error('Error deleting menu categories:', categoriesError);
-    } else {
-      console.log('Successfully deleted menu categories');
-    }
-
-    // 5. Delete tables
-    const { error: tablesError } = await supabaseAdmin
-      .from('tables')
-      .delete()
-      .in('restaurant_id',
-        supabaseAdmin
-          .from('restaurants')
-          .select('id')
-          .eq('owner_id', userId)
-      );
-
-    if (tablesError) {
-      console.error('Error deleting tables:', tablesError);
-    } else {
-      console.log('Successfully deleted tables');
-    }
-
-    // 6. Delete restaurants
+    // 7. Delete restaurants
     const { error: restaurantsError } = await supabaseAdmin
       .from('restaurants')
       .delete()
@@ -180,7 +175,7 @@ serve(async (req) => {
       console.log('Successfully deleted restaurants');
     }
 
-    // 7. Delete profiles
+    // 8. Delete profiles
     const { error: profilesError } = await supabaseAdmin
       .from('profiles')
       .delete()
@@ -192,7 +187,7 @@ serve(async (req) => {
       console.log('Successfully deleted profiles');
     }
 
-    // 8. Finally, delete the auth user (this will cascade delete any remaining references)
+    // 9. Finally, delete the auth user (this will cascade delete any remaining references)
     const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteUserError) {
