@@ -189,12 +189,16 @@ const MenuView = () => {
     }
   }, [isSearchExpanded]);
 
+  // Filter items based on search query AND active category
   const filteredCategories = categories.map(category => ({
     ...category,
-    menu_items: category.menu_items.filter(item =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    menu_items: category.menu_items.filter(item => {
+      const matchesSearch = !searchQuery || 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = !searchQuery || category.id === activeCategory;
+      return matchesSearch && matchesCategory;
+    })
   })).filter(category => category.menu_items.length > 0);
 
   if (loading) {
@@ -327,199 +331,109 @@ const MenuView = () => {
         </div>
       </header>
       {/* Category Navigation */}
-      {!searchQuery && (
-        <div className="sticky top-[73px] z-20 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              {filteredCategories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={activeCategory === category.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setActiveCategory(category.id)}
-                  className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all"
-                >
-                  {category.name}
-                </Button>
-              ))}
-            </div>
+      <div className="sticky top-[73px] z-20 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={activeCategory === category.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setActiveCategory(category.id)}
+                className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all"
+              >
+                {category.name}
+              </Button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 pb-24">
-        {searchQuery ? (
-          // Search Results
-          <div className="space-y-8">
-            {filteredCategories.map((category) => (
-              category.menu_items.length > 0 && (
-                <div key={category.id} className="space-y-6">
-                  <div className="flex items-center">
-                    <h3 className="text-lg font-semibold text-foreground bg-muted/30 px-4 py-2 rounded-full border">
-                      {category.name}
-                    </h3>
-                  </div>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                       {category.menu_items.map((item) => (
-                         <div key={item.id} className={`bg-card/70 backdrop-blur-sm rounded-xl shadow-sm border border-border/50 hover:shadow-md hover:bg-card transition-all duration-200 overflow-hidden w-full ${!item.is_available ? 'opacity-50' : ''}`}>
-                          {/* Product Image */}
-                          <div className="aspect-[3/2] bg-muted relative overflow-hidden">
-                            {item.image_url ? (
-                              <img 
-                                src={item.image_url} 
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80">
-                                <span className="text-muted-foreground text-2xl">🍽️</span>
-                              </div>
-                            )}
-                          </div>
-                         
-                           {/* Card Content */}
-                           <div className="p-4 space-y-3 h-32 flex flex-col">
-                             <div className="space-y-1 flex-1">
-                               <h4 className="font-semibold text-card-foreground text-base leading-tight line-clamp-1">{item.name}</h4>
-                               {item.description && (
-                                 <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
-                               )}
-                             </div>
-                           
-                            <div className="flex items-center justify-between pt-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-primary font-bold text-xl">${item.price_usd.toFixed(2)}</span>
-                               {!item.is_available && (
-                                 <Badge variant="secondary" className="text-xs">Unavailable</Badge>
-                               )}
-                             </div>
-                             
-                             {cart.find(cartItem => cartItem.id === item.id) ? (
-                               <div className="flex items-center space-x-2">
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={() => removeFromCart(item.id)}
-                                   className="h-9 w-9 p-0 rounded-full"
-                                 >
-                                   <Minus className="h-4 w-4" />
-                                 </Button>
-                                 <span className="text-base font-semibold min-w-[24px] text-center">
-                                   {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
-                                 </span>
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={() => addToCart(item)}
-                                   disabled={!item.is_available}
-                                   className="h-9 w-9 p-0 rounded-full"
-                                 >
-                                   <Plus className="h-4 w-4" />
-                                 </Button>
-                               </div>
-                             ) : (
-                               <Button
-                                 onClick={() => addToCart(item)}
-                                 disabled={!item.is_available}
-                                 className="h-9 px-4 rounded-full font-medium"
-                               >
-                                 Add to Cart
-                               </Button>
-                             )}
-                           </div>
-                         </div>
-                       </div>
-                     ))}
-                  </div>
-                </div>
-              )
-            ))}
-            {filteredCategories.every(cat => cat.menu_items.length === 0) && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No items found matching your search.</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          // Category View
-          <div className="space-y-8">
-            {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items && (
-               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
-                    <div key={item.id} className={`bg-card/70 backdrop-blur-sm rounded-xl shadow-sm border border-border/50 hover:shadow-md hover:bg-card transition-all duration-200 overflow-hidden w-full ${!item.is_available ? 'opacity-50' : ''}`}>
-                      {/* Product Image */}
-                      <div className="aspect-[3/2] bg-muted relative overflow-hidden">
-                        {item.image_url ? (
-                          <img 
-                            src={item.image_url} 
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80">
-                            <span className="text-muted-foreground text-2xl">🍽️</span>
-                          </div>
-                        )}
-                      </div>
-                     
-                       {/* Card Content */}
-                       <div className="p-4 space-y-3 h-32 flex flex-col">
-                         <div className="space-y-1 flex-1">
-                           <h4 className="font-semibold text-card-foreground text-base leading-tight line-clamp-1">{item.name}</h4>
-                           {item.description && (
-                             <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
-                           )}
-                         </div>
-                       
-                        <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-primary font-bold text-xl">${item.price_usd.toFixed(2)}</span>
-                           {!item.is_available && (
-                             <Badge variant="secondary" className="text-xs">Unavailable</Badge>
-                           )}
-                         </div>
-                         
-                         {cart.find(cartItem => cartItem.id === item.id) ? (
-                           <div className="flex items-center space-x-2">
-                             <Button
-                               variant="outline"
-                               size="sm"
-                               onClick={() => removeFromCart(item.id)}
-                               className="h-9 w-9 p-0 rounded-full"
-                             >
-                               <Minus className="h-4 w-4" />
-                             </Button>
-                             <span className="text-base font-semibold min-w-[24px] text-center">
-                               {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
-                             </span>
-                             <Button
-                               variant="outline"
-                               size="sm"
-                               onClick={() => addToCart(item)}
-                               disabled={!item.is_available}
-                               className="h-9 w-9 p-0 rounded-full"
-                             >
-                               <Plus className="h-4 w-4" />
-                             </Button>
-                           </div>
-                         ) : (
-                           <Button
-                             onClick={() => addToCart(item)}
-                             disabled={!item.is_available}
-                             className="h-9 px-4 rounded-full font-medium"
-                           >
-                             Add to Cart
-                           </Button>
+        <div className="space-y-8">
+          {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items && 
+            filteredCategories.find(cat => cat.id === activeCategory)!.menu_items.length > 0 ? (
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
+                  <div key={item.id} className={`bg-card/70 backdrop-blur-sm rounded-xl shadow-sm border border-border/50 hover:shadow-md hover:bg-card transition-all duration-200 overflow-hidden w-full ${!item.is_available ? 'opacity-50' : ''}`}>
+                    {/* Product Image */}
+                    <div className="aspect-[3/2] bg-muted relative overflow-hidden">
+                      {item.image_url ? (
+                        <img 
+                          src={item.image_url} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80">
+                          <span className="text-muted-foreground text-2xl">🍽️</span>
+                        </div>
+                      )}
+                    </div>
+                   
+                     {/* Card Content */}
+                     <div className="p-4 space-y-3 h-32 flex flex-col">
+                       <div className="space-y-1 flex-1">
+                         <h4 className="font-semibold text-card-foreground text-base leading-tight line-clamp-1">{item.name}</h4>
+                         {item.description && (
+                           <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">{item.description}</p>
                          )}
                        </div>
+                     
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-primary font-bold text-xl">${item.price_usd.toFixed(2)}</span>
+                         {!item.is_available && (
+                           <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                         )}
+                       </div>
+                       
+                       {cart.find(cartItem => cartItem.id === item.id) ? (
+                         <div className="flex items-center space-x-2">
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => removeFromCart(item.id)}
+                             className="h-9 w-9 p-0 rounded-full"
+                           >
+                             <Minus className="h-4 w-4" />
+                           </Button>
+                           <span className="text-base font-semibold min-w-[24px] text-center">
+                             {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
+                           </span>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => addToCart(item)}
+                             disabled={!item.is_available}
+                             className="h-9 w-9 p-0 rounded-full"
+                           >
+                             <Plus className="h-4 w-4" />
+                           </Button>
+                         </div>
+                       ) : (
+                         <Button
+                           onClick={() => addToCart(item)}
+                           disabled={!item.is_available}
+                           className="h-9 px-4 rounded-full font-medium"
+                         >
+                           Add to Cart
+                         </Button>
+                       )}
                      </div>
                    </div>
-                 ))}
-              </div>
-            )}
-          </div>
-        )}
+                 </div>
+               ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                {searchQuery ? `No items found matching "${searchQuery}" in this category.` : 'No items in this category.'}
+              </p>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Fixed Cart Button */}
