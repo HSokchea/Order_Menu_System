@@ -155,7 +155,6 @@ const MyOrders = () => {
               </Button>
               <div>
                 <h1 className="text-xl font-bold text-primary">My Orders</h1>
-                <p className="text-xs text-muted-foreground">Table {tableId}</p>
               </div>
             </div>
             <Button

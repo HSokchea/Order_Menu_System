@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -179,6 +179,14 @@ const MenuView = () => {
     setSearchQuery('');
   };
 
+  const scrollRef = useRef(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    setIsScrolled(scrollRef.current.scrollLeft > 0);
+  };
+
   // Auto focus when search expands
   useEffect(() => {
     if (isSearchExpanded) {
@@ -225,8 +233,8 @@ const MenuView = () => {
             // Normal view - Restaurant name and search/cart
             <div className="flex items-center justify-between gap-4">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-primary">{restaurant.name}</h1>
-                <p className="text-xs text-muted-foreground font-medium">Table {table.table_number}</p>
+                <h5 className="text-2xl font-bold text-primary">{restaurant.name}</h5>
+                {/* <p className="text-xs text-muted-foreground font-medium">Table {table.table_number}</p>             */}
               </div>
               
               {/* Desktop Search Field - Centered */}
@@ -331,8 +339,8 @@ const MenuView = () => {
         </div>
       </header>
       {/* Category Navigation */}
-      <div className="sticky top-[73px] z-20 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3">
+      {/* <div className="sticky top-[61px] z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+        <div className="container mx-auto pl-4 pr-0 py-3">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {categories.map((category) => (
               <Button
@@ -347,7 +355,34 @@ const MenuView = () => {
             ))}
           </div>
         </div>
+      </div> */}
+
+      <div className="sticky top-[61px] z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+        <div
+          className={`container mx-auto pr-0 py-3 transition-all ${
+            isScrolled ? "pl-0" : "pl-4"
+          }`}
+        >
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex gap-2 overflow-x-auto scrollbar-hide"
+          >
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={activeCategory === category.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setActiveCategory(category.id)}
+                className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-regular transition-all"
+              >
+                {category.name}
+              </Button>
+            ))}
+          </div>
+        </div>
       </div>
+
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 pb-24">
@@ -427,8 +462,9 @@ const MenuView = () => {
                ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
+            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+              <Search className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground text-sm">
                 {searchQuery ? `No items found matching "${searchQuery}" in this category.` : 'No items in this category.'}
               </p>
             </div>
@@ -438,14 +474,12 @@ const MenuView = () => {
 
       {/* Fixed Cart Button */}
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4">
-          <div className="flex gap-3">
-
-            {/* Cancel Button */}
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4 z-40">
+          <div className="flex gap-3 items-end relative">
             <Button
-              variant="outline"
+              variant="custom"
               className="
-                h-10 rounded-full shadow-lg flex items-center justify-center
+                h-10 bg-destructive text-white rounded-full shadow-lg flex items-center justify-center
                 w-10 md:w-1/2
               "
               onClick={() => {
@@ -453,6 +487,7 @@ const MenuView = () => {
                 toast({
                   title: "Cart cleared",
                   description: "All items have been removed from your cart.",
+                  variant: "destructive",
                 });
               }}
             >
@@ -477,7 +512,6 @@ const MenuView = () => {
                 View Cart ({getTotalItems()}) – ${getTotalAmount().toFixed(2)}
               </Link>
             </Button>
-
           </div>
         </div>
       )}

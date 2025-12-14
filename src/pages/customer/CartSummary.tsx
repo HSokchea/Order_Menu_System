@@ -162,7 +162,6 @@ const CartSummary = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Order Summary</h1>
-            <p className="text-muted-foreground">{restaurant.name} - Table {table.table_number}</p>
           </div>
         </div>
       </header>
