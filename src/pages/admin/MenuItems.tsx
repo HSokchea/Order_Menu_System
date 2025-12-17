@@ -16,6 +16,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Filter, Search, Edit, Trash2, ImageIcon, ChevronUp, ChevronDown } from 'lucide-react';
 import ImageUpload from '@/components/admin/ImageUpload';
+import ItemOptionsEditor, { ItemOptions } from '@/components/admin/ItemOptionsEditor';
+import { Json } from '@/integrations/supabase/types';
 
 
 interface Category {
@@ -33,6 +35,7 @@ interface MenuItem {
   category_id: string;
   is_available: boolean;
   image_url?: string;
+  options?: ItemOptions | null;
   category?: Category;
 }
 
@@ -65,6 +68,7 @@ const MenuItems = () => {
   const [itemPrice, setItemPrice] = useState('');
   const [itemCategory, setItemCategory] = useState('');
   const [itemAvailable, setItemAvailable] = useState(true);
+  const [itemOptions, setItemOptions] = useState<ItemOptions | null>(null);
   const [itemImageUrl, setItemImageUrl] = useState<string | null>(null);
 
   const fetchData = async () => {
@@ -102,6 +106,7 @@ const MenuItems = () => {
       setCategories(categoriesData || []);
       setMenuItems((itemsData || []).map(item => ({
         ...item,
+        options: (item.options as unknown as ItemOptions) || null,
         category: Array.isArray(item.category) ? item.category[0] : item.category
       })));
       setLoading(false);
@@ -122,6 +127,7 @@ const MenuItems = () => {
     setItemCategory('');
     setItemAvailable(true);
     setItemImageUrl(null);
+    setItemOptions(null);
     setEditingItem(null);
   };
 
@@ -135,6 +141,38 @@ const MenuItems = () => {
       return;
     }
 
+    // Validate options if present
+    if (itemOptions?.options) {
+      for (const group of itemOptions.options) {
+        if (!group.name.trim()) {
+          toast({
+            title: "Invalid Options",
+            description: "All option groups must have a name",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (group.required && group.values.length === 0) {
+          toast({
+            title: "Invalid Options",
+            description: `Required option group "${group.name}" must have at least one value`,
+            variant: "destructive",
+          });
+          return;
+        }
+        for (const value of group.values) {
+          if (!value.label.trim()) {
+            toast({
+              title: "Invalid Options",
+              description: `All option values in "${group.name}" must have a label`,
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+      }
+    }
+
     if (!restaurantId) return;
 
     const itemData = {
@@ -144,6 +182,7 @@ const MenuItems = () => {
       category_id: itemCategory,
       is_available: itemAvailable,
       image_url: itemImageUrl,
+      options: itemOptions as unknown as Json,
       restaurant_id: restaurantId,
     };
 
@@ -185,6 +224,7 @@ const MenuItems = () => {
     setItemCategory(item.category_id);
     setItemAvailable(item.is_available);
     setItemImageUrl(item.image_url || null);
+    setItemOptions(item.options || null);
     setDialogOpen(true);
   };
 
@@ -447,6 +487,14 @@ const MenuItems = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  {/* Item Options Section */}
+                  <div className="border-t pt-4 mt-4">
+                    <ItemOptionsEditor
+                      value={itemOptions}
+                      onChange={setItemOptions}
+                    />
                   </div>
                   
                   <div className="flex items-center space-x-2">

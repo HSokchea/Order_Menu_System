@@ -64,6 +64,7 @@ export type Database = {
           image_url: string | null
           is_available: boolean | null
           name: string
+          options: Json | null
           price_khr: number | null
           price_usd: number | null
           restaurant_id: string
@@ -77,6 +78,7 @@ export type Database = {
           image_url?: string | null
           is_available?: boolean | null
           name: string
+          options?: Json | null
           price_khr?: number | null
           price_usd?: number | null
           restaurant_id: string
@@ -90,6 +92,7 @@ export type Database = {
           image_url?: string | null
           is_available?: boolean | null
           name?: string
+          options?: Json | null
           price_khr?: number | null
           price_usd?: number | null
           restaurant_id?: string
