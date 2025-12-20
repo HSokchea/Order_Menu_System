@@ -411,31 +411,18 @@ export type Database = {
           total_usd: number
         }[]
       }
-      get_order_details:
-        | {
-            Args: { p_order_id: string }
-            Returns: {
-              created_at: string
-              id: string
-              restaurant_name: string
-              status: string
-              table_id: string
-              table_number: string
-              total_usd: number
-            }[]
-          }
-        | {
-            Args: { p_order_id: string; p_order_token?: string }
-            Returns: {
-              created_at: string
-              id: string
-              restaurant_name: string
-              status: string
-              table_id: string
-              table_number: string
-              total_usd: number
-            }[]
-          }
+      get_order_details: {
+        Args: { p_order_id: string; p_order_token?: string }
+        Returns: {
+          created_at: string
+          id: string
+          restaurant_name: string
+          status: string
+          table_id: string
+          table_number: string
+          total_usd: number
+        }[]
+      }
       get_order_items_by_token: {
         Args: { p_order_id: string; p_order_token: string }
         Returns: {
