@@ -24,30 +24,32 @@ const MyOrders = () => {
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch order items for each order
+  // Fetch order items using secure token-based RPC
   useEffect(() => {
     const fetchOrderItems = async () => {
       const itemsMap: Record<string, OrderItem[]> = {};
+      const storedTokens = JSON.parse(localStorage.getItem('order_tokens') || '{}');
       
       for (const order of activeOrders) {
         try {
-          const { data: items, error } = await supabase
-            .from('order_items')
-            .select(`
-              id,
-              quantity,
-              price_usd,
-              notes,
-              menu_items:menu_item_id (name)
-            `)
-            .eq('order_id', order.id);
+          const orderToken = storedTokens[order.id];
+          if (!orderToken) {
+            console.log('No token found for order:', order.id);
+            continue;
+          }
+
+          // Use secure RPC function with token validation
+          const { data: items, error } = await supabase.rpc('get_order_items_by_token', {
+            p_order_id: order.id,
+            p_order_token: orderToken
+          });
 
           if (!error && items) {
-            itemsMap[order.id] = items.map(item => ({
+            itemsMap[order.id] = (items as any[]).map(item => ({
               id: item.id,
               quantity: item.quantity,
               price_usd: Number(item.price_usd || 0),
-              menu_item_name: (item.menu_items as any)?.name || 'Unknown Item',
+              menu_item_name: item.menu_item_name || 'Unknown Item',
               notes: item.notes || undefined
             }));
           }
