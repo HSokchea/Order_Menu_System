@@ -58,33 +58,19 @@ const MenuView = () => {
       }
 
       try {
-        // Fetch table info (robust: support both UUID id and plain table number)
+        // Fetch table info using secure RPC (prevents bulk enumeration)
         const isUuid = (val: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
 
         let tableData: any = null;
         let tableError: any = null;
 
         if (isUuid(tableId)) {
+          // Use secure RPC function instead of direct table access
           const { data, error } = await supabase
-            .from('tables')
-            .select('*')
-            .eq('id', tableId)
-            .maybeSingle();
-          tableData = data;
+            .rpc('get_public_table', { p_table_id: tableId });
+          // RPC returns an array, get first result
+          tableData = data?.[0] || null;
           tableError = error;
-        }
-
-        // Fallback: if not a UUID, or lookup by id failed, try by table_number
-        if (!tableData) {
-          const { data, error } = await supabase
-            .from('tables')
-            .select('*')
-            .eq('table_number', tableId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          tableData = data;
-          tableError = tableError ?? error;
         }
 
         if (!tableData) {
