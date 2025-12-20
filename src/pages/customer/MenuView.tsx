@@ -50,117 +50,163 @@ const MenuView = () => {
   // Get active orders count for badge
   const { activeOrders } = useActiveOrders(tableId || '');
 
-  useEffect(() => {
-    const fetchMenuData = async () => {
-      if (!tableId) {
+  const fetchMenuData = async () => {
+    if (!tableId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Fetch table info using secure RPC (prevents bulk enumeration)
+      const isUuid = (val: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+
+      let tableData: any = null;
+      let tableError: any = null;
+
+      if (isUuid(tableId)) {
+        // Use secure RPC function instead of direct table access
+        const { data, error } = await supabase
+          .rpc('get_public_table', { p_table_id: tableId });
+        // RPC returns an array, get first result
+        tableData = data?.[0] || null;
+        tableError = error;
+      }
+
+      if (!tableData) {
+        console.error('Table fetch error:', tableError);
+        setLoading(false);
+        toast({
+          title: "Table Not Found",
+          description: tableError?.message || "The QR code may be invalid or the table was removed.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setTable(tableData);
+
+      // Fetch restaurant info using public view (excludes owner_id for privacy)
+      const { data: restaurantData, error: restaurantError } = await supabase
+        .from('public_restaurants')
+        .select('id, name')
+        .eq('id', tableData.restaurant_id)
+        .maybeSingle();
+
+      if (restaurantError || !restaurantData) {
+        console.error('Restaurant fetch error:', restaurantError);
+        setLoading(false);
+        toast({
+          title: "Restaurant Not Found",
+          description: "Unable to load restaurant information",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setRestaurant(restaurantData);
+
+      // Fetch menu categories using secure RPC (prevents bulk enumeration)
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .rpc('get_public_menu_categories', { p_restaurant_id: restaurantData.id });
+
+      if (categoriesError) {
+        console.error('Categories fetch error:', categoriesError);
+        toast({
+          title: "Error Loading Menu",
+          description: "Unable to load menu items. Please try again.",
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
 
-      try {
-        // Fetch table info using secure RPC (prevents bulk enumeration)
-        const isUuid = (val: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+      // Fetch menu items for this restaurant (RLS ensures only available items are returned)
+      const { data: menuItemsData, error: menuItemsError } = await supabase
+        .from('menu_items')
+        .select('id, name, description, price_usd, is_available, category_id, image_url')
+        .eq('restaurant_id', restaurantData.id)
+        .eq('is_available', true);
 
-        let tableData: any = null;
-        let tableError: any = null;
-
-        if (isUuid(tableId)) {
-          // Use secure RPC function instead of direct table access
-          const { data, error } = await supabase
-            .rpc('get_public_table', { p_table_id: tableId });
-          // RPC returns an array, get first result
-          tableData = data?.[0] || null;
-          tableError = error;
-        }
-
-        if (!tableData) {
-          console.error('Table fetch error:', tableError);
-          setLoading(false);
-          toast({
-            title: "Table Not Found",
-            description: tableError?.message || "The QR code may be invalid or the table was removed.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        setTable(tableData);
-
-        // Fetch restaurant info using public view (excludes owner_id for privacy)
-        const { data: restaurantData, error: restaurantError } = await supabase
-          .from('public_restaurants')
-          .select('id, name')
-          .eq('id', tableData.restaurant_id)
-          .maybeSingle();
-
-        if (restaurantError || !restaurantData) {
-          console.error('Restaurant fetch error:', restaurantError);
-          setLoading(false);
-          toast({
-            title: "Restaurant Not Found",
-            description: "Unable to load restaurant information",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        setRestaurant(restaurantData);
-
-        // Fetch menu categories using secure RPC (prevents bulk enumeration)
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .rpc('get_public_menu_categories', { p_restaurant_id: restaurantData.id });
-
-        if (categoriesError) {
-          console.error('Categories fetch error:', categoriesError);
-          toast({
-            title: "Error Loading Menu",
-            description: "Unable to load menu items. Please try again.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-
-        // Fetch menu items for this restaurant (RLS ensures only available items are returned)
-        const { data: menuItemsData, error: menuItemsError } = await supabase
-          .from('menu_items')
-          .select('id, name, description, price_usd, is_available, category_id, image_url')
-          .eq('restaurant_id', restaurantData.id)
-          .eq('is_available', true);
-
-        if (menuItemsError) {
-          console.error('Menu items fetch error:', menuItemsError);
-          toast({
-            title: "Error Loading Menu",
-            description: "Unable to load menu items. Please try again.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-
-        // Combine categories with their menu items
-        const categoriesWithItems = (categoriesData || []).map((category: any) => ({
-          ...category,
-          menu_items: (menuItemsData || []).filter((item: any) => item.category_id === category.id)
-        }));
-
-        setCategories(categoriesWithItems);
-        setActiveCategory(categoriesWithItems[0]?.id || '');
-        setLoading(false);
-      } catch (error) {
-        console.error('Unexpected error:', error);
-        setLoading(false);
+      if (menuItemsError) {
+        console.error('Menu items fetch error:', menuItemsError);
         toast({
-          title: "Error",
-          description: "Something went wrong. Please try again.",
+          title: "Error Loading Menu",
+          description: "Unable to load menu items. Please try again.",
           variant: "destructive",
         });
+        setLoading(false);
+        return;
       }
-    };
 
+      // Combine categories with their menu items
+      const categoriesWithItems = (categoriesData || []).map((category: any) => ({
+        ...category,
+        menu_items: (menuItemsData || []).filter((item: any) => item.category_id === category.id)
+      }));
+
+      setCategories(categoriesWithItems);
+      if (!activeCategory && categoriesWithItems[0]?.id) {
+        setActiveCategory(categoriesWithItems[0].id);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setLoading(false);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
     fetchMenuData();
   }, [tableId, toast]);
+
+  // Subscribe to realtime updates for menu items and categories
+  useEffect(() => {
+    if (!restaurant?.id) return;
+
+    const menuItemsChannel = supabase
+      .channel('menu-items-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'menu_items',
+          filter: `restaurant_id=eq.${restaurant.id}`
+        },
+        (payload) => {
+          console.log('Menu item change:', payload.eventType);
+          fetchMenuData();
+        }
+      )
+      .subscribe();
+
+    const categoriesChannel = supabase
+      .channel('menu-categories-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'menu_categories',
+          filter: `restaurant_id=eq.${restaurant.id}`
+        },
+        (payload) => {
+          console.log('Category change:', payload.eventType);
+          fetchMenuData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(menuItemsChannel);
+      supabase.removeChannel(categoriesChannel);
+    };
+  }, [restaurant?.id]);
 
   //   const clearCart = () => {
   //   setCart([]); // assuming you're storing cart in state
