@@ -100,10 +100,10 @@ const MenuView = () => {
 
         setTable(tableData);
 
-        // Fetch restaurant info
+        // Fetch restaurant info using public view (excludes owner_id for privacy)
         const { data: restaurantData, error: restaurantError } = await supabase
-          .from('restaurants')
-          .select('*')
+          .from('public_restaurants')
+          .select('id, name')
           .eq('id', tableData.restaurant_id)
           .maybeSingle();
 
