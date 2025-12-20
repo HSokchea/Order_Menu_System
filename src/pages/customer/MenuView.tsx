@@ -120,23 +120,9 @@ const MenuView = () => {
 
         setRestaurant(restaurantData);
 
-        // Fetch menu categories and items
+        // Fetch menu categories using secure RPC (prevents bulk enumeration)
         const { data: categoriesData, error: categoriesError } = await supabase
-          .from('menu_categories')
-          .select(`
-            *,
-            menu_items (
-              id,
-              name,
-              description,
-              price_usd,
-              is_available,
-              category_id,
-              image_url
-            )
-          `)
-          .eq('restaurant_id', restaurantData.id)
-          .order('display_order');
+          .rpc('get_public_menu_categories', { p_restaurant_id: restaurantData.id });
 
         if (categoriesError) {
           console.error('Categories fetch error:', categoriesError);
@@ -145,10 +131,36 @@ const MenuView = () => {
             description: "Unable to load menu items. Please try again.",
             variant: "destructive",
           });
+          setLoading(false);
+          return;
         }
 
-        setCategories(categoriesData || []);
-        setActiveCategory(categoriesData?.[0]?.id || '');
+        // Fetch menu items for this restaurant (RLS ensures only available items are returned)
+        const { data: menuItemsData, error: menuItemsError } = await supabase
+          .from('menu_items')
+          .select('id, name, description, price_usd, is_available, category_id, image_url')
+          .eq('restaurant_id', restaurantData.id)
+          .eq('is_available', true);
+
+        if (menuItemsError) {
+          console.error('Menu items fetch error:', menuItemsError);
+          toast({
+            title: "Error Loading Menu",
+            description: "Unable to load menu items. Please try again.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Combine categories with their menu items
+        const categoriesWithItems = (categoriesData || []).map((category: any) => ({
+          ...category,
+          menu_items: (menuItemsData || []).filter((item: any) => item.category_id === category.id)
+        }));
+
+        setCategories(categoriesWithItems);
+        setActiveCategory(categoriesWithItems[0]?.id || '');
         setLoading(false);
       } catch (error) {
         console.error('Unexpected error:', error);

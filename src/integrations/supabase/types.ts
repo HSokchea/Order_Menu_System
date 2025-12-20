@@ -446,6 +446,18 @@ export type Database = {
           quantity: number
         }[]
       }
+      get_public_menu_categories: {
+        Args: { p_restaurant_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
