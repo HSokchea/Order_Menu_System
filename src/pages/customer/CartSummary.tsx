@@ -18,6 +18,7 @@ interface UnavailableItem {
 interface OrderResponse {
   success: boolean;
   order_id?: string;
+  order_token?: string;
   status?: string;
   unavailable_items?: UnavailableItem[];
 }
@@ -126,7 +127,14 @@ const CartSummary = () => {
         return;
       }
 
-      // Success - clear cart and navigate
+      // Success - save order token for future access and clear cart
+      if (orderResponse.order_id && orderResponse.order_token) {
+        // Store order token in localStorage for secure access
+        const storedTokens = JSON.parse(localStorage.getItem('order_tokens') || '{}');
+        storedTokens[orderResponse.order_id] = orderResponse.order_token;
+        localStorage.setItem('order_tokens', JSON.stringify(storedTokens));
+      }
+      
       clearCart();
 
       toast({
@@ -134,7 +142,8 @@ const CartSummary = () => {
         description: "Your order has been sent to the kitchen.",
       });
 
-      navigate(`/order-success/${orderResponse.order_id}`);
+      // Pass order token as URL parameter for secure access
+      navigate(`/order-success/${orderResponse.order_id}?token=${orderResponse.order_token}`);
     } catch (error: any) {
       toast({
         title: "Order Failed",

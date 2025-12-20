@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Clock } from 'lucide-react';
 
 interface OrderDetails {
@@ -18,6 +18,7 @@ interface OrderDetails {
 
 const OrderSuccess = () => {
   const { orderId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [tableId, setTableId] = useState<string>('');
   const [order, setOrder] = useState<OrderDetails | null>(null);
@@ -27,7 +28,18 @@ const OrderSuccess = () => {
     const fetchOrder = async () => {
       if (!orderId) return;
 
-      const { data, error } = await supabase.rpc('get_order_details', { p_order_id: orderId });
+      // Get token from URL or localStorage
+      let orderToken = searchParams.get('token');
+      if (!orderToken) {
+        const storedTokens = JSON.parse(localStorage.getItem('order_tokens') || '{}');
+        orderToken = storedTokens[orderId] || null;
+      }
+
+      // Call RPC with token for secure access
+      const { data, error } = await supabase.rpc('get_order_details', { 
+        p_order_id: orderId,
+        p_order_token: orderToken
+      });
 
       if (error || !data || (Array.isArray(data) && data.length === 0)) {
         setOrder(null);
@@ -46,8 +58,6 @@ const OrderSuccess = () => {
       };
 
       setOrder(mapped);
-      // Use the actual table_id for navigation, not table_number
-      console.log('Setting tableId for OrderSuccess:', details.table_id, 'from details:', details);
       setTableId(details.table_id);
       setLoading(false);
     };
@@ -74,7 +84,7 @@ const OrderSuccess = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [orderId]);
+  }, [orderId, searchParams]);
 
   const getStatusMessage = (status: string) => {
     switch (status) {

@@ -168,6 +168,7 @@ export type Database = {
           created_at: string
           customer_notes: string | null
           id: string
+          order_token: string | null
           restaurant_id: string
           status: string | null
           table_id: string | null
@@ -180,6 +181,7 @@ export type Database = {
           created_at?: string
           customer_notes?: string | null
           id?: string
+          order_token?: string | null
           restaurant_id: string
           status?: string | null
           table_id?: string | null
@@ -192,6 +194,7 @@ export type Database = {
           created_at?: string
           customer_notes?: string | null
           id?: string
+          order_token?: string | null
           restaurant_id?: string
           status?: string | null
           table_id?: string | null
@@ -334,16 +337,39 @@ export type Database = {
         }
         Returns: Json
       }
-      get_order_details: {
-        Args: { p_order_id: string }
+      get_order_details:
+        | {
+            Args: { p_order_id: string }
+            Returns: {
+              created_at: string
+              id: string
+              restaurant_name: string
+              status: string
+              table_id: string
+              table_number: string
+              total_usd: number
+            }[]
+          }
+        | {
+            Args: { p_order_id: string; p_order_token?: string }
+            Returns: {
+              created_at: string
+              id: string
+              restaurant_name: string
+              status: string
+              table_id: string
+              table_number: string
+              total_usd: number
+            }[]
+          }
+      get_order_items_by_token: {
+        Args: { p_order_id: string; p_order_token: string }
         Returns: {
-          created_at: string
           id: string
-          restaurant_name: string
-          status: string
-          table_id: string
-          table_number: string
-          total_usd: number
+          menu_item_name: string
+          notes: string
+          price_usd: number
+          quantity: number
         }[]
       }
     }
