@@ -120,6 +120,50 @@ const MenuItems = () => {
     fetchData();
   }, [user]);
 
+  // Subscribe to realtime updates for menu items and categories
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const menuItemsChannel = supabase
+      .channel('admin-menu-items-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'menu_items',
+          filter: `restaurant_id=eq.${restaurantId}`
+        },
+        (payload) => {
+          console.log('Menu item change:', payload.eventType);
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    const categoriesChannel = supabase
+      .channel('admin-menu-categories-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'menu_categories',
+          filter: `restaurant_id=eq.${restaurantId}`
+        },
+        (payload) => {
+          console.log('Category change:', payload.eventType);
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(menuItemsChannel);
+      supabase.removeChannel(categoriesChannel);
+    };
+  }, [restaurantId]);
+
   const resetForm = () => {
     setItemName('');
     setItemDescription('');

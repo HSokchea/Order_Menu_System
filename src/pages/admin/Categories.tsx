@@ -59,6 +59,32 @@ const Categories = () => {
     fetchData();
   }, [user]);
 
+  // Subscribe to realtime updates for categories
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const categoriesChannel = supabase
+      .channel('admin-categories-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'menu_categories',
+          filter: `restaurant_id=eq.${restaurantId}`
+        },
+        (payload) => {
+          console.log('Category change:', payload.eventType);
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(categoriesChannel);
+    };
+  }, [restaurantId]);
+
   // Filter categories based on search query
   const filteredCategories = useMemo(() => {
     if (searchQuery.trim() === '') {
