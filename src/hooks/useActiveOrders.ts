@@ -23,37 +23,42 @@ export const useActiveOrders = (tableId: string) => {
       }
 
       try {
-        console.log('Fetching active orders for tableId:', tableId);
-        
-        // Try to match by table_number first (string comparison), then by table_id (UUID)
-        const { data: orders, error } = await supabase
-          .from('orders')
-          .select(`
-            id,
-            table_number,
-            table_id,
-            total_usd,
-            status,
-            created_at,
-            restaurants:restaurant_id (name)
-          `)
-          .or(`table_number.eq.${tableId},table_id.eq.${tableId}`)
-          .not('status', 'in', '("completed","rejected")')
-          .order('created_at', { ascending: false });
+        // Get all order tokens from localStorage
+        const storedTokens = JSON.parse(localStorage.getItem('order_tokens') || '{}');
+        const tokenValues = Object.values(storedTokens) as string[];
 
-        console.log('Orders query result:', { orders, error, tableId, queryUsed: `table_number.eq.${tableId},table_id.eq.${tableId}` });
+        if (tokenValues.length === 0) {
+          console.log('No order tokens found in localStorage');
+          setActiveOrders([]);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Fetching active orders with tokens:', tokenValues.length);
+        
+        // Use secure RPC function with token validation
+        const { data: orders, error } = await supabase.rpc('get_active_orders_by_tokens', {
+          p_order_tokens: tokenValues
+        });
+
+        console.log('Orders query result:', { orders, error });
 
         if (error) {
           console.error('Error fetching active orders:', error);
           setActiveOrders([]);
         } else {
-          const mappedOrders: ActiveOrder[] = (orders || []).map(order => ({
+          // Filter orders to only those matching the current table
+          const filteredOrders = (orders || []).filter((order: any) => 
+            order.table_id === tableId || order.table_number === tableId
+          );
+          
+          const mappedOrders: ActiveOrder[] = filteredOrders.map((order: any) => ({
             id: order.id,
             table_number: order.table_number,
             total_usd: Number(order.total_usd || 0),
             status: order.status || 'new',
             created_at: order.created_at,
-            restaurant_name: (order.restaurants as any)?.name || 'Restaurant'
+            restaurant_name: order.restaurant_name || 'Restaurant'
           }));
           
           console.log('Mapped orders:', mappedOrders);
@@ -70,6 +75,7 @@ export const useActiveOrders = (tableId: string) => {
     fetchActiveOrders();
 
     // Set up real-time subscription for order status updates
+    // Note: This will only show updates for orders the user has tokens for
     const channel = supabase
       .channel('active-orders')
       .on(
