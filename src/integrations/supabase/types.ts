@@ -337,6 +337,18 @@ export type Database = {
         }
         Returns: Json
       }
+      get_active_orders_by_tokens: {
+        Args: { p_order_tokens: string[] }
+        Returns: {
+          created_at: string
+          id: string
+          restaurant_name: string
+          status: string
+          table_id: string
+          table_number: string
+          total_usd: number
+        }[]
+      }
       get_order_details:
         | {
             Args: { p_order_id: string }
