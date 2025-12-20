@@ -35,7 +35,7 @@ const MenuView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  
+
   // Use shared cart hook
   const {
     cart,
@@ -164,10 +164,10 @@ const MenuView = () => {
     fetchMenuData();
   }, [tableId, toast]);
 
-//   const clearCart = () => {
-//   setCart([]); // assuming you're storing cart in state
-//   localStorage.removeItem(`cart-${tableId}`); // if you're persisting
-// };
+  //   const clearCart = () => {
+  //   setCart([]); // assuming you're storing cart in state
+  //   localStorage.removeItem(`cart-${tableId}`); // if you're persisting
+  // };
 
   const handleSearchExpand = () => {
     setIsSearchExpanded(true);
@@ -201,7 +201,7 @@ const MenuView = () => {
   const filteredCategories = categories.map(category => ({
     ...category,
     menu_items: category.menu_items.filter(item => {
-      const matchesSearch = !searchQuery || 
+      const matchesSearch = !searchQuery ||
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = !searchQuery || category.id === activeCategory;
@@ -225,7 +225,7 @@ const MenuView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-background dark:to-background">
+    <div className="min-h-screen">
       {/* Top Navigation */}
       <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
@@ -233,15 +233,14 @@ const MenuView = () => {
             // Normal view - Restaurant name and search/cart
             <div className="flex items-center justify-between gap-4">
               <div className="flex-shrink-0">
-                <h5 className="text-2xl font-bold text-primary">{restaurant.name}</h5>
-                {/* <p className="text-xs text-muted-foreground font-medium">Table {table.table_number}</p>             */}
+                <h4 className="text-2xl font-bold text-primary">{restaurant.name}</h4>
               </div>
-              
+
               {/* Desktop Search Field - Centered */}
               <div className="hidden md:flex flex-1 justify-center">
                 <div className="relative max-w-lg w-full">
-                   <Search 
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
                     onClick={() => document.getElementById('search-input')?.focus()}
                   />
                   <Input
@@ -261,7 +260,7 @@ const MenuView = () => {
                   )}
                 </div>
               </div>
-              
+
               {/* Mobile and Desktop Icons - Right Aligned */}
               <div className="flex items-center gap-2 ml-auto md:ml-0">
                 {/* Mobile Search Icon */}
@@ -273,7 +272,7 @@ const MenuView = () => {
                 >
                   <Search className="h-4 w-4" />
                 </Button>
-                
+
                 {/* My Orders Icon */}
                 <Button
                   variant="outline"
@@ -290,7 +289,7 @@ const MenuView = () => {
                     )}
                   </Link>
                 </Button>
-                
+
                 {/* Cart Icon */}
                 <Button
                   variant="outline"
@@ -314,8 +313,8 @@ const MenuView = () => {
             // Mobile Search expanded view
             <div className="flex items-center gap-3 animate-fade-in md:hidden">
               <div className="flex-1 relative">
-                <Search 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" 
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
                   onClick={() => document.getElementById('search-input')?.focus()}
                 />
                 <Input
@@ -338,11 +337,10 @@ const MenuView = () => {
           )}
         </div>
       </header>
-      <div className="sticky top-[61px] z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+      <div className="sticky top-[61px] z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md">
         <div
-          className={`container mx-auto pr-0 py-3 transition-all ${
-            isScrolled ? "pl-0" : "pl-4"
-          }`}
+          className={`container mx-auto pr-0 py-3 transition-all ${isScrolled ? "pl-0" : "pl-4"
+            }`}
         >
           <div
             ref={scrollRef}
@@ -366,83 +364,80 @@ const MenuView = () => {
 
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 pb-24">
+      <main className="container mx-auto px-2 py-2 pb-24">
         <div className="space-y-8">
-          {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items && 
+          {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items &&
             filteredCategories.find(cat => cat.id === activeCategory)!.menu_items.length > 0 ? (
-             <div className="flex flex-col gap-3 md:gap-4">
-                {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`flex flex-row items-center bg-card/70 backdrop-blur-sm rounded-xl transition-all duration-200 overflow-hidden w-full ${!item.is_available ? 'opacity-50' : ''}`}
-                  >
-                    {/* Product Image */}
-                    <div className="flex-shrink-0 w-28 h-28 md:w-40 md:h-40 bg-muted relative overflow-hidden flex items-center justify-center m-3 rounded-lg border border-border rounded-xl">
-                      {item.image_url ? (
-                        <img 
-                          src={item.image_url} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-lg">
-                          <span className="text-muted-foreground text-2xl">🍽️</span>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">
+              {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
+                <div
+                  key={item.id}
+                  className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 ${!item.is_available ? 'opacity-50' : ''}`}
+                >
+                  {/* Product Image */}
+                  <div className="relative w-full aspect-square bg-muted rounded-2xl">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-2xl">
+                        <span className="text-muted-foreground text-8xl">🍽️</span>
+                      </div>
+                    )}
+
+                    {/* Add Button Overlay */}
+                    <div className="absolute bottom-3 right-3">
+                      {cart.find(cartItem => cartItem.id === item.id) ? (
+                        <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-2 py-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFromCart(item.id)}
+                            className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm font-semibold min-w-[20px] text-center">
+                            {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => addToCart(item)}
+                            disabled={!item.is_available}
+                            className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
                         </div>
+                      ) : (
+                        <Button
+                          onClick={() => addToCart(item)}
+                          disabled={!item.is_available}
+                          size="sm"
+                          className="h-9 w-9 p-0 rounded-full shadow-lg"
+                        >
+                          <Plus className="h-5 w-5" />
+                        </Button>
                       )}
                     </div>
-                    {/* Card Content */}
-                    <div className="flex flex-col justify-between flex-1 pr-3 md:p-4 h-28 md:h-40">
-                      <div className="flex-1 flex flex-col justify-between h-full">
-                        <h6 className="font-medium text-card-foreground text-base md:text-lg leading-tight line-clamp-1 mt-0">{item.name}</h6>
-                        <div className="flex-1">
-                          {item.description && (
-                            <p className="text-muted-foreground text-xs md:text-sm line-clamp-2 leading-relaxed mt-1">{item.description}</p>
-                          )}
-                        </div>
-                        <div className="flex items-end justify-between mb-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-primary font-bold text-lg md:text-xl">${item.price_usd.toFixed(2)}</span>
-                            {!item.is_available && (
-                              <Badge variant="secondary" className="text-xs">Unavailable</Badge>
-                            )}
-                          </div>
-                          {cart.find(cartItem => cartItem.id === item.id) ? (
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeFromCart(item.id)}
-                                className="h-8 w-8 md:h-9 md:w-9 p-0 rounded-full"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="text-base font-semibold min-w-[24px] text-center">
-                                {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
-                              </span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addToCart(item)}
-                                disabled={!item.is_available}
-                                className="h-8 w-8 md:h-9 md:w-9 p-0 rounded-full"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                              <Button
-                                onClick={() => addToCart(item)}
-                                disabled={!item.is_available}
-                                className="h-8 w-8 md:h-9 md:w-9 p-0 rounded-full"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                          )}
-                        </div>
-                      </div>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-3">
+                    <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">{item.name}</h6>
+                    <div className="flex items-center justify-between">
+                      <span className="text-primary font-bold text-base md:text-lg">${item.price_usd.toFixed(2)}</span>
+                      {!item.is_available && (
+                        <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                      )}
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           ) : (
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
@@ -458,30 +453,26 @@ const MenuView = () => {
       {/* Fixed Cart Button */}
       {cart.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4 z-40">
-          <div className="flex gap-3 items-end relative">
+          <div className="flex gap-3 items-end relative md:justify-center left-0 right-0">
             <Button
               variant="custom"
               className="
-                h-10 bg-destructive text-white rounded-full shadow-lg flex items-center justify-center
-                w-10 md:w-1/2
+                h-10 bg-white text-white rounded-full shadow-lg flex items-center justify-center
+                w-10
               "
               onClick={() => {
                 clearCart();
-                toast({
-                  title: "Cart cleared",
-                  description: "All items have been removed from your cart.",
-                  variant: "destructive",
-                });
               }}
             >
-              <X className="h-5 w-5 md:mr-2" />
-              <span className="hidden md:inline">Cancel</span>
+              <X className="h-5 w-5 text-muted-foreground" />
+              {/* <span className="hidden md:inline">Cancel</span> */}
             </Button>
 
             {/* View Cart Button */}
             <Button
+              variant="custom"
               className="
-                h-10 text-sm font-semibold rounded-full shadow-lg
+                h-10 bg-primary text-white text-sm font-semibold rounded-full shadow-lg
                 flex-1 md:w-1/2 md:flex-none
               "
               size="sm"
