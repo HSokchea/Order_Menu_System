@@ -458,6 +458,16 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_public_table: {
+        Args: { p_table_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          qr_code_url: string
+          restaurant_id: string
+          table_number: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
