@@ -253,6 +253,19 @@ const MenuView = () => {
     })
   })).filter(category => category.menu_items.length > 0);
 
+  // Set default activeCategory to first filtered category with items
+  useEffect(() => {
+    if (filteredCategories.length > 0) {
+      setActiveCategory((prev) => {
+        // If current activeCategory is not in filteredCategories, reset to first
+        if (!filteredCategories.some(cat => cat.id === prev)) {
+          return filteredCategories[0].id;
+        }
+        return prev;
+      });
+    }
+  }, [filteredCategories.length]);
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading menu...</div>;
   }
@@ -391,7 +404,11 @@ const MenuView = () => {
             onScroll={handleScroll}
             className="flex gap-2 overflow-x-auto scrollbar-hide"
           >
-            {categories.map((category) => (
+            {(
+              searchQuery
+                ? categories.filter(cat => cat.menu_items && cat.menu_items.length > 0)
+                : filteredCategories
+            ).map((category) => (
               <Button
                 key={category.id}
                 variant={activeCategory === category.id ? "default" : "outline"}
@@ -413,75 +430,77 @@ const MenuView = () => {
           {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items &&
             filteredCategories.find(cat => cat.id === activeCategory)!.menu_items.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">
-              {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
-                <div
-                  key={item.id}
-                  className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 ${!item.is_available ? 'opacity-50' : ''}`}
-                >
-                  {/* Product Image */}
-                  <div className="relative w-full aspect-square bg-muted rounded-2xl">
-                    {item.image_url ? (
-                      <img
-                        src={item.image_url}
-                        alt={item.name}
-                        className="w-full h-full object-cover rounded-2xl"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-2xl">
-                        <span className="text-muted-foreground text-8xl">🍽️</span>
-                      </div>
-                    )}
+              {filteredCategories
+                .filter(cat => cat.menu_items.length > 0)
+                .find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 ${!item.is_available ? 'opacity-50' : ''}`}
+                  >
+                    {/* Product Image */}
+                    <div className="relative w-full aspect-square bg-muted rounded-2xl">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="w-full h-full object-cover rounded-2xl"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-2xl">
+                          <span className="text-muted-foreground text-8xl">🍽️</span>
+                        </div>
+                      )}
 
-                    {/* Add Button Overlay */}
-                    <div className="absolute bottom-3 right-3">
-                      {cart.find(cartItem => cartItem.id === item.id) ? (
-                        <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-2 py-1">
+                      {/* Add Button Overlay */}
+                      <div className="absolute bottom-3 right-3">
+                        {cart.find(cartItem => cartItem.id === item.id) ? (
+                          <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-2 py-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFromCart(item.id)}
+                              className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="text-sm font-semibold min-w-[20px] text-center">
+                              {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => addToCart(item)}
+                              disabled={!item.is_available}
+                              className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
                           <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFromCart(item.id)}
-                            className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="text-sm font-semibold min-w-[20px] text-center">
-                            {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
                             onClick={() => addToCart(item)}
                             disabled={!item.is_available}
-                            className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                            size="sm"
+                            className="h-9 w-9 p-0 rounded-full shadow-lg"
                           >
-                            <Plus className="h-4 w-4" />
+                            <Plus className="h-5 w-5" />
                           </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          onClick={() => addToCart(item)}
-                          disabled={!item.is_available}
-                          size="sm"
-                          className="h-9 w-9 p-0 rounded-full shadow-lg"
-                        >
-                          <Plus className="h-5 w-5" />
-                        </Button>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Card Content */}
-                  <div className="p-3">
-                    <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">{item.name}</h6>
-                    <div className="flex items-center justify-between">
-                      <span className="text-primary font-bold text-base md:text-lg">${item.price_usd.toFixed(2)}</span>
-                      {!item.is_available && (
-                        <Badge variant="secondary" className="text-xs">Unavailable</Badge>
-                      )}
+                    {/* Card Content */}
+                    <div className="p-3">
+                      <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">{item.name}</h6>
+                      <div className="flex items-center justify-between">
+                        <span className="text-primary font-bold text-base md:text-lg">${item.price_usd.toFixed(2)}</span>
+                        {!item.is_available && (
+                          <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
