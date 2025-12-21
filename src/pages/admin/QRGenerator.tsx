@@ -34,6 +34,8 @@ const QRGenerator = () => {
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editTableNumber, setEditTableNumber] = useState('');
+  const [deletingTable, setDeletingTable] = useState<Table | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const fetchTables = async () => {
     if (!user) return;
@@ -249,11 +251,42 @@ const QRGenerator = () => {
     }
   };
 
+  const openDeleteDialog = (table: Table) => {
+    setDeletingTable(table);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const deleteTable = async () => {
+    if (!deletingTable) return;
+
+    const { error } = await supabase
+      .from('tables')
+      .delete()
+      .eq('id', deletingTable.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: `Table ${deletingTable.table_number} deleted successfully`,
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingTable(null);
+      fetchTables();
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       {/* Sticky Header with controls */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pb-4">
@@ -376,6 +409,7 @@ const QRGenerator = () => {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => openDeleteDialog(table)}
                             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -441,7 +475,34 @@ const QRGenerator = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Table Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Table</DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            Are you sure you want to delete Table {deletingTable?.table_number}? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setDeletingTable(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={deleteTable}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+    </TooltipProvider>
   );
 };
 
