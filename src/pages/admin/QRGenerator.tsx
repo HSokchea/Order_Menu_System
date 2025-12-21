@@ -64,6 +64,31 @@ const QRGenerator = () => {
     fetchTables();
   }, [user]);
 
+  // Real-time subscription for tables
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel('tables-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tables',
+          filter: `restaurant_id=eq.${restaurantId}`
+        },
+        () => {
+          fetchTables();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId]);
+
   const generateQRCodeForDisplay = async (tableId: string) => {
     if (qrCodeCache[tableId]) return qrCodeCache[tableId];
 
