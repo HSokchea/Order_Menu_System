@@ -157,12 +157,14 @@ const QRGenerator = () => {
       return;
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('tables')
       .insert({
         table_number: tableNumber.toString(),
         restaurant_id: restaurantId,
-      });
+      })
+      .select()
+      .single();
 
     if (error) {
       toast({
@@ -170,14 +172,21 @@ const QRGenerator = () => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Table added successfully",
-      });
-      setNewTableNumber('');
-      fetchTables();
+      return;
     }
+
+    // Update qr_code_url with the menu URL
+    const menuUrl = `${window.location.origin}/menu/${data.id}`;
+    await supabase
+      .from('tables')
+      .update({ qr_code_url: menuUrl })
+      .eq('id', data.id);
+
+    toast({
+      title: "Success",
+      description: "Table added successfully",
+    });
+    setNewTableNumber('');
   };
 
   const generateQRCode = async (tableId: string, tableNumber: string) => {
