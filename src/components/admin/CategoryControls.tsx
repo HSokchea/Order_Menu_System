@@ -96,7 +96,7 @@ const CategoryControls = ({
       });
       setDialogOpen(false);
       resetForm();
-      onCategoriesUpdate();
+      // Realtime subscription will handle the update automatically
     }
   };
 

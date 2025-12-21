@@ -125,7 +125,7 @@ const CategoryManager = ({
       });
       setDialogOpen(false);
       resetForm();
-      onCategoriesUpdate();
+      // Realtime subscription will handle the update automatically
     }
   };
 
@@ -173,7 +173,7 @@ const CategoryManager = ({
         title: "Success",
         description: "Category deleted successfully",
       });
-      onCategoriesUpdate();
+      // Realtime subscription will handle the update automatically
     }
   };
 
@@ -196,8 +196,7 @@ const CategoryManager = ({
         .update({ display_order: update.display_order })
         .eq('id', update.id);
     }
-
-    onCategoriesUpdate();
+    // Realtime subscription will handle the update automatically
   };
 
   // Sorting function
