@@ -120,12 +120,13 @@ const MenuView = () => {
         return;
       }
 
-      // Fetch menu items for this restaurant (RLS ensures only available items are returned)
+      // Fetch menu items for this restaurant (RLS ensures only available items are returned) - newest first
       const { data: menuItemsData, error: menuItemsError } = await supabase
         .from('menu_items')
-        .select('id, name, description, price_usd, is_available, category_id, image_url')
+        .select('id, name, description, price_usd, is_available, category_id, image_url, created_at')
         .eq('restaurant_id', restaurantData.id)
-        .eq('is_available', true);
+        .eq('is_available', true)
+        .order('created_at', { ascending: false });
 
       if (menuItemsError) {
         console.error('Menu items fetch error:', menuItemsError);
