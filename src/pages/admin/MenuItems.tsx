@@ -93,7 +93,7 @@ const MenuItems = () => {
         .eq('restaurant_id', restaurant.id)
         .order('display_order');
 
-      // Fetch menu items with proper category join
+      // Fetch menu items with proper category join - newest first
       const { data: itemsData } = await supabase
         .from('menu_items')
         .select(`
@@ -101,7 +101,7 @@ const MenuItems = () => {
           category:menu_categories(id, name, display_order)
         `)
         .eq('restaurant_id', restaurant.id)
-        .order('name');
+        .order('created_at', { ascending: false });
 
       setCategories(categoriesData || []);
       setMenuItems((itemsData || []).map(item => ({
