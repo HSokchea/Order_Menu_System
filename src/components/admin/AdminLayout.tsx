@@ -29,7 +29,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
         
         <SidebarInset className="flex-1">
           {/* Top Header */}
-          <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center justify-between px-6">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="h-8 w-8">
@@ -62,7 +62,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4">
             {children}
           </main>
         </SidebarInset>

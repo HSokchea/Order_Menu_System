@@ -98,7 +98,7 @@ export function AdminSidebar() {
     <Sidebar className="border-r border-border/40">
       <SidebarContent className="bg-background">
         {/* Header */}
-        <div className="p-6 border-b border-border/40">
+        <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-2.5">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <Store className="h-4 w-4 text-primary-foreground" />
@@ -113,8 +113,7 @@ export function AdminSidebar() {
         </div>
 
         {/* Navigation */}
-        <SidebarGroup className="px-4 py-6">
-          
+        <SidebarGroup className="px-0">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
               {navigationItems.map((item) => (
