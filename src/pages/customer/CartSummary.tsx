@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
 
@@ -33,11 +33,11 @@ const CartSummary = () => {
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<UnavailableItem[]>([]);
   
-  // Use shared cart hook
   const {
     cart,
     isLoaded: cartLoaded,
     updateCartItem,
+    removeCartItem,
     clearCart,
     getTotalAmount,
     markItemsWithValidationErrors,
@@ -70,29 +70,24 @@ const CartSummary = () => {
     setValidationErrors([]);
   };
 
-  const hasValidationErrors = () => {
-    return validationErrors.length > 0;
-  };
+  const hasValidationErrors = () => validationErrors.length > 0;
 
   const placeOrder = async () => {
     if (cart.length === 0) return;
     
-    // Clear any previous validation errors
     clearValidationErrors();
     setLoading(true);
 
     try {
       const totalAmount = getTotalAmount();
 
-      // Prepare order items payload for RPC function
       const orderItemsPayload = cart.map((item) => ({
         menu_item_id: item.id,
         quantity: item.quantity,
-        price_usd: item.price_usd || item.price || 0,
-        notes: null,
+        price_usd: (item.price_usd || item.price || 0) + (item.optionsTotal || 0),
+        notes: item.selectedOptions?.map(o => `${o.groupName}: ${o.label}`).join(', ') || null,
       }));
 
-      // Use new validation function
       const { data: response, error: rpcError } = await supabase.rpc(
         'create_order_with_items_validated',
         {
@@ -111,11 +106,8 @@ const CartSummary = () => {
       const orderResponse = response as any as OrderResponse;
 
       if (!orderResponse.success) {
-        // Handle validation errors
         const unavailableItems = orderResponse.unavailable_items || [];
         setValidationErrors(unavailableItems);
-        
-        // Mark items in cart as having errors
         markItemsWithValidationErrors(unavailableItems);
 
         const errorMessages = unavailableItems.map(item => `${item.name}: ${item.reason}`);
@@ -127,9 +119,7 @@ const CartSummary = () => {
         return;
       }
 
-      // Success - save order token for future access and clear cart
       if (orderResponse.order_id && orderResponse.order_token) {
-        // Store order token in localStorage for secure access
         const storedTokens = JSON.parse(localStorage.getItem('order_tokens') || '{}');
         storedTokens[orderResponse.order_id] = orderResponse.order_token;
         localStorage.setItem('order_tokens', JSON.stringify(storedTokens));
@@ -142,7 +132,6 @@ const CartSummary = () => {
         description: "Your order has been sent to the kitchen.",
       });
 
-      // Pass order token as URL parameter for secure access
       navigate(`/order-success/${orderResponse.order_id}?token=${orderResponse.order_token}`);
     } catch (error: any) {
       toast({
@@ -154,7 +143,6 @@ const CartSummary = () => {
       setLoading(false);
     }
   };
-
 
   if (!table || !restaurant) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -183,9 +171,7 @@ const CartSummary = () => {
               <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
               <p className="text-muted-foreground mb-4">Add some items from the menu</p>
               <Button asChild>
-                <Link to={`/menu/${tableId}`}>
-                  Browse Menu
-                </Link>
+                <Link to={`/menu/${tableId}`}>Browse Menu</Link>
               </Button>
             </CardContent>
           </Card>
@@ -197,58 +183,86 @@ const CartSummary = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {cart.map((item) => (
-                    <div 
-                      key={item.id} 
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        item.hasValidationError 
-                          ? 'border-destructive bg-destructive/5' 
-                          : 'border-transparent'
-                      }`}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{item.name}</h3>
-                          {item.hasValidationError && (
-                            <span className="text-xs text-destructive">❌ Not available</span>
-                          )}
+                  {cart.map((item) => {
+                    const itemTotal = ((item.price_usd || item.price || 0) + (item.optionsTotal || 0)) * item.quantity;
+                    
+                    return (
+                      <div 
+                        key={item.cartItemId} 
+                        className={`p-3 rounded-lg border ${
+                          item.hasValidationError 
+                            ? 'border-destructive bg-destructive/5' 
+                            : 'border-border'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold">{item.name}</h3>
+                              {item.hasValidationError && (
+                                <span className="text-xs text-destructive">❌</span>
+                              )}
+                            </div>
+                            
+                            {/* Selected Options */}
+                            {item.selectedOptions && item.selectedOptions.length > 0 && (
+                              <div className="mt-1 space-y-0.5">
+                                {item.selectedOptions.map((opt, idx) => (
+                                  <p key={idx} className="text-xs text-muted-foreground">
+                                    {opt.groupName}: {opt.label}
+                                    {opt.price > 0 && ` (+$${opt.price.toFixed(2)})`}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                            
+                            <p className="text-sm text-muted-foreground mt-1">
+                              ${((item.price_usd || item.price || 0) + (item.optionsTotal || 0)).toFixed(2)} each
+                            </p>
+                            
+                            {item.hasValidationError && item.validationReason && (
+                              <p className="text-xs text-destructive mt-1">{item.validationReason}</p>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateCartItem(item.cartItemId, item.quantity - 1)}
+                              disabled={item.hasValidationError}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="font-semibold min-w-[1.5rem] text-center">
+                              {item.quantity}
+                            </span>
+                            <Button
+                              size="sm"
+                              onClick={() => updateCartItem(item.cartItemId, item.quantity + 1)}
+                              disabled={item.hasValidationError}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeCartItem(item.cartItemId)}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          ${(item.price_usd || item.price || 0).toFixed(2)} each
-                        </p>
-                        {item.hasValidationError && item.validationReason && (
-                          <p className="text-xs text-destructive mt-1">
-                            {item.validationReason}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateCartItem(item.id, item.quantity - 1)}
-                          disabled={item.hasValidationError}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="font-semibold min-w-[2rem] text-center">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          size="sm"
-                          onClick={() => updateCartItem(item.id, item.quantity + 1)}
-                          disabled={item.hasValidationError}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                        <div className="ml-4 text-right min-w-[4rem]">
-                          <span className="font-semibold">
-                            ${((item.price_usd || item.price || 0) * item.quantity).toFixed(2)}
-                          </span>
+                        
+                        <div className="text-right mt-2">
+                          <span className="font-semibold">${itemTotal.toFixed(2)}</span>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {hasValidationErrors() && (
@@ -257,11 +271,7 @@ const CartSummary = () => {
                     <p className="text-sm text-muted-foreground mb-3">
                       Some items in your cart are no longer available. Please remove them to continue.
                     </p>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={handleRemoveUnavailableItems}
-                    >
+                    <Button size="sm" variant="outline" onClick={handleRemoveUnavailableItems}>
                       Remove Unavailable Items
                     </Button>
                   </div>
@@ -297,12 +307,7 @@ const CartSummary = () => {
                   onClick={placeOrder}
                   disabled={loading || hasValidationErrors()}
                 >
-                  {loading 
-                    ? "Placing Order..." 
-                    : hasValidationErrors() 
-                      ? "Remove Unavailable Items First" 
-                      : "Place Order"
-                  }
+                  {loading ? "Placing Order..." : hasValidationErrors() ? "Remove Unavailable Items First" : "Place Order"}
                 </Button>
               </CardContent>
             </Card>

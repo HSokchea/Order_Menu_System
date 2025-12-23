@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 
-interface CartItem {
+export interface SelectedOption {
+  groupName: string;
+  label: string;
+  price: number;
+}
+
+export interface CartItem {
   id: string;
+  cartItemId: string; // Unique ID for each cart entry (same item with different options = different entries)
   name: string;
   description?: string;
   price: number;
@@ -10,6 +17,8 @@ interface CartItem {
   is_available?: boolean;
   image_url?: string;
   quantity: number;
+  selectedOptions?: SelectedOption[];
+  optionsTotal?: number;
   hasValidationError?: boolean;
   validationReason?: string;
 }
@@ -23,6 +32,18 @@ interface MenuItem {
   category_id: string;
   image_url?: string;
 }
+
+// Generate unique cart item ID based on item and selected options
+const generateCartItemId = (itemId: string, selectedOptions?: SelectedOption[]): string => {
+  if (!selectedOptions || selectedOptions.length === 0) {
+    return itemId;
+  }
+  const optionsKey = selectedOptions
+    .map(o => `${o.groupName}:${o.label}`)
+    .sort()
+    .join('|');
+  return `${itemId}_${btoa(optionsKey).slice(0, 12)}`;
+};
 
 export const useCart = (tableId?: string) => {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -56,46 +77,74 @@ export const useCart = (tableId?: string) => {
     }
   }, [cart, tableId, isLoaded]);
 
-  const addToCart = useCallback((item: MenuItem) => {
+  // Add item with options
+  const addToCartWithOptions = useCallback((
+    item: MenuItem,
+    quantity: number,
+    selectedOptions?: SelectedOption[]
+  ) => {
+    const cartItemId = generateCartItemId(item.id, selectedOptions);
+    const optionsTotal = selectedOptions?.reduce((sum, opt) => sum + opt.price, 0) || 0;
+
     setCart(prev => {
-      const existing = prev.find(cartItem => cartItem.id === item.id);
+      const existing = prev.find(cartItem => cartItem.cartItemId === cartItemId);
       if (existing) {
         return prev.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+          cartItem.cartItemId === cartItemId
+            ? { ...cartItem, quantity: cartItem.quantity + quantity }
             : cartItem
         );
       }
-      return [...prev, { 
-        ...item, 
+      return [...prev, {
+        id: item.id,
+        cartItemId,
+        name: item.name,
+        description: item.description,
         price: item.price_usd,
-        quantity: 1 
+        price_usd: item.price_usd,
+        is_available: item.is_available,
+        image_url: item.image_url,
+        quantity,
+        selectedOptions,
+        optionsTotal,
       }];
     });
   }, []);
 
-  const removeFromCart = useCallback((itemId: string) => {
+  // Legacy: Add item without options (for quick add button)
+  const addToCart = useCallback((item: MenuItem) => {
+    addToCartWithOptions(item, 1, undefined);
+  }, [addToCartWithOptions]);
+
+  // Remove by cartItemId
+  const removeFromCart = useCallback((cartItemId: string) => {
     setCart(prev => {
-      const existing = prev.find(cartItem => cartItem.id === itemId);
+      const existing = prev.find(cartItem => cartItem.cartItemId === cartItemId);
       if (existing && existing.quantity > 1) {
         return prev.map(cartItem =>
-          cartItem.id === itemId
+          cartItem.cartItemId === cartItemId
             ? { ...cartItem, quantity: cartItem.quantity - 1 }
             : cartItem
         );
       }
-      return prev.filter(cartItem => cartItem.id !== itemId);
+      return prev.filter(cartItem => cartItem.cartItemId !== cartItemId);
     });
   }, []);
 
-  const updateCartItem = useCallback((itemId: string, quantity: number) => {
+  // Update quantity by cartItemId
+  const updateCartItem = useCallback((cartItemId: string, quantity: number) => {
     if (quantity === 0) {
-      setCart(prev => prev.filter(item => item.id !== itemId));
+      setCart(prev => prev.filter(item => item.cartItemId !== cartItemId));
     } else {
       setCart(prev => prev.map(item =>
-        item.id === itemId ? { ...item, quantity } : item
+        item.cartItemId === cartItemId ? { ...item, quantity } : item
       ));
     }
+  }, []);
+
+  // Remove item entirely by cartItemId
+  const removeCartItem = useCallback((cartItemId: string) => {
+    setCart(prev => prev.filter(item => item.cartItemId !== cartItemId));
   }, []);
 
   const clearCart = useCallback(() => {
@@ -105,12 +154,24 @@ export const useCart = (tableId?: string) => {
     }
   }, [tableId]);
 
+  // Get total including options prices
   const getTotalAmount = useCallback(() => {
-    return cart.reduce((total, item) => total + ((item.price_usd || item.price || 0) * item.quantity), 0);
+    return cart.reduce((total, item) => {
+      const basePrice = item.price_usd || item.price || 0;
+      const optionsPrice = item.optionsTotal || 0;
+      return total + ((basePrice + optionsPrice) * item.quantity);
+    }, 0);
   }, [cart]);
 
   const getTotalItems = useCallback(() => {
     return cart.reduce((total, item) => total + item.quantity, 0);
+  }, [cart]);
+
+  // Get count of a specific menu item (across all option variations)
+  const getItemCount = useCallback((itemId: string) => {
+    return cart
+      .filter(cartItem => cartItem.id === itemId)
+      .reduce((total, item) => total + item.quantity, 0);
   }, [cart]);
 
   const markItemsWithValidationErrors = useCallback((unavailableItems: Array<{id: string; name: string; reason: string}>) => {
@@ -140,11 +201,14 @@ export const useCart = (tableId?: string) => {
     cart,
     isLoaded,
     addToCart,
+    addToCartWithOptions,
     removeFromCart,
     updateCartItem,
+    removeCartItem,
     clearCart,
     getTotalAmount,
     getTotalItems,
+    getItemCount,
     markItemsWithValidationErrors,
     clearValidationErrors,
     removeUnavailableItems,
