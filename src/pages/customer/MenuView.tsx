@@ -6,8 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useParams, Link } from 'react-router-dom';
 import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCart } from '@/hooks/useCart';
+import { useCart, SelectedOption } from '@/hooks/useCart';
 import { useActiveOrders } from '@/hooks/useActiveOrders';
+import ItemDetailSheet, { ItemOptions } from '@/components/customer/ItemDetailSheet';
 
 interface MenuItem {
   id: string;
@@ -17,6 +18,7 @@ interface MenuItem {
   is_available: boolean;
   category_id: string;
   image_url?: string;
+  options?: ItemOptions | null;
 }
 
 interface Category {
@@ -35,16 +37,22 @@ const MenuView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  
+  // Item detail sheet state
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [isItemSheetOpen, setIsItemSheetOpen] = useState(false);
 
   // Use shared cart hook
   const {
     cart,
     isLoaded: cartLoaded,
     addToCart,
+    addToCartWithOptions,
     removeFromCart,
     clearCart,
     getTotalAmount,
     getTotalItems,
+    getItemCount,
   } = useCart(tableId);
 
   // Get active orders count for badge
@@ -121,9 +129,10 @@ const MenuView = () => {
       }
 
       // Fetch menu items for this restaurant (RLS ensures only available items are returned) - newest first
+      // Include options field for customizations
       const { data: menuItemsData, error: menuItemsError } = await supabase
         .from('menu_items')
-        .select('id, name, description, price_usd, is_available, category_id, image_url, created_at')
+        .select('id, name, description, price_usd, is_available, category_id, image_url, options, created_at')
         .eq('restaurant_id', restaurantData.id)
         .eq('is_available', true)
         .order('created_at', { ascending: false });
@@ -142,7 +151,12 @@ const MenuView = () => {
       // Combine categories with their menu items
       const categoriesWithItems = (categoriesData || []).map((category: any) => ({
         ...category,
-        menu_items: (menuItemsData || []).filter((item: any) => item.category_id === category.id)
+        menu_items: (menuItemsData || [])
+          .filter((item: any) => item.category_id === category.id)
+          .map((item: any) => ({
+            ...item,
+            options: item.options as ItemOptions | null,
+          }))
       }));
 
       setCategories(categoriesWithItems);
@@ -209,14 +223,8 @@ const MenuView = () => {
     };
   }, [restaurant?.id]);
 
-  //   const clearCart = () => {
-  //   setCart([]); // assuming you're storing cart in state
-  //   localStorage.removeItem(`cart-${tableId}`); // if you're persisting
-  // };
-
   const handleSearchExpand = () => {
     setIsSearchExpanded(true);
-    // Focus will be handled by useEffect
   };
 
   const handleSearchClose = () => {
@@ -266,6 +274,51 @@ const MenuView = () => {
       });
     }
   }, [filteredCategories.length]);
+
+  // Handle item click - open detail sheet if has options, otherwise quick add
+  const handleItemClick = (item: MenuItem) => {
+    if (item.options?.options && item.options.options.length > 0) {
+      setSelectedItem(item);
+      setIsItemSheetOpen(true);
+    } else {
+      // No options, just add to cart
+      addToCart(item);
+      toast({
+        title: "Added to cart",
+        description: `${item.name} added to your cart`,
+      });
+    }
+  };
+
+  // Handle add button click (+ button on card)
+  const handleQuickAdd = (e: React.MouseEvent, item: MenuItem) => {
+    e.stopPropagation();
+    if (item.options?.options && item.options.options.length > 0) {
+      setSelectedItem(item);
+      setIsItemSheetOpen(true);
+    } else {
+      addToCart(item);
+    }
+  };
+
+  // Handle minus button click
+  const handleQuickRemove = (e: React.MouseEvent, itemId: string) => {
+    e.stopPropagation();
+    // Find any cart item with this menu item ID and remove one
+    const cartItem = cart.find(ci => ci.id === itemId);
+    if (cartItem) {
+      removeFromCart(cartItem.cartItemId);
+    }
+  };
+
+  // Handle add to cart from detail sheet
+  const handleAddToCartWithOptions = (item: MenuItem, quantity: number, selectedOptions?: SelectedOption[]) => {
+    addToCartWithOptions(item, quantity, selectedOptions);
+    toast({
+      title: "Added to cart",
+      description: `${quantity}x ${item.name} added to your cart`,
+    });
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading menu...</div>;
@@ -433,75 +486,90 @@ const MenuView = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">
               {filteredCategories
                 .filter(cat => cat.menu_items.length > 0)
-                .find(cat => cat.id === activeCategory)?.menu_items.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 ${!item.is_available ? 'opacity-50' : ''}`}
-                  >
-                    {/* Product Image */}
-                    <div className="relative w-full aspect-square bg-muted rounded-2xl">
-                      {item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="w-full h-full object-cover rounded-2xl"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-2xl">
-                          <span className="text-muted-foreground text-8xl">🍽️</span>
-                        </div>
-                      )}
-
-                      {/* Add Button Overlay */}
-                      <div className="absolute bottom-3 right-3">
-                        {cart.find(cartItem => cartItem.id === item.id) ? (
-                          <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-2 py-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFromCart(item.id)}
-                              className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="text-sm font-semibold min-w-[20px] text-center">
-                              {cart.find(cartItem => cartItem.id === item.id)?.quantity || 0}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => addToCart(item)}
-                              disabled={!item.is_available}
-                              className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
+                .find(cat => cat.id === activeCategory)?.menu_items.map((item) => {
+                  const itemCount = getItemCount(item.id);
+                  const hasOptions = item.options?.options && item.options.options.length > 0;
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleItemClick(item)}
+                      className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-lg ${!item.is_available ? 'opacity-50' : ''}`}
+                    >
+                      {/* Product Image */}
+                      <div className="relative w-full aspect-square bg-muted rounded-2xl">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-full h-full object-cover rounded-2xl"
+                          />
                         ) : (
-                          <Button
-                            onClick={() => addToCart(item)}
-                            disabled={!item.is_available}
-                            size="sm"
-                            className="h-9 w-9 p-0 rounded-full shadow-lg"
-                          >
-                            <Plus className="h-5 w-5" />
-                          </Button>
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-2xl">
+                            <span className="text-muted-foreground text-8xl">🍽️</span>
+                          </div>
                         )}
-                      </div>
-                    </div>
 
-                    {/* Card Content */}
-                    <div className="p-3">
-                      <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">{item.name}</h6>
-                      <div className="flex items-center justify-between">
-                        <span className="text-primary font-bold text-base md:text-lg">${item.price_usd.toFixed(2)}</span>
-                        {!item.is_available && (
-                          <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                        {/* Options indicator */}
+                        {hasOptions && (
+                          <div className="absolute top-2 left-2">
+                            <Badge variant="secondary" className="text-xs bg-background/90">
+                              Customizable
+                            </Badge>
+                          </div>
                         )}
+
+                        {/* Add Button Overlay */}
+                        <div className="absolute bottom-3 right-3">
+                          {itemCount > 0 && !hasOptions ? (
+                            <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-2 py-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => handleQuickRemove(e, item.id)}
+                                className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="text-sm font-semibold min-w-[20px] text-center">
+                                {itemCount}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => handleQuickAdd(e, item)}
+                                disabled={!item.is_available}
+                                className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              onClick={(e) => handleQuickAdd(e, item)}
+                              disabled={!item.is_available}
+                              size="sm"
+                              className="h-9 w-9 p-0 rounded-full shadow-lg"
+                            >
+                              <Plus className="h-5 w-5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Content */}
+                      <div className="p-3">
+                        <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">{item.name}</h6>
+                        <div className="flex items-center justify-between">
+                          <span className="text-primary font-bold text-base md:text-lg">${item.price_usd.toFixed(2)}</span>
+                          {!item.is_available && (
+                            <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           ) : (
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
@@ -529,7 +597,6 @@ const MenuView = () => {
               }}
             >
               <X className="h-5 w-5 text-muted-foreground" />
-              {/* <span className="hidden md:inline">Cancel</span> */}
             </Button>
 
             {/* View Cart Button */}
@@ -553,6 +620,14 @@ const MenuView = () => {
           </div>
         </div>
       )}
+
+      {/* Item Detail Sheet */}
+      <ItemDetailSheet
+        item={selectedItem}
+        open={isItemSheetOpen}
+        onOpenChange={setIsItemSheetOpen}
+        onAddToCart={handleAddToCartWithOptions}
+      />
     </div>
   );
 };
