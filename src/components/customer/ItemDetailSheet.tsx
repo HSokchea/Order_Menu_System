@@ -115,8 +115,15 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
     });
   }, [options, selections]);
 
-  const handleSingleSelect = (groupName: string, value: string) => {
-    setSelections(prev => ({ ...prev, [groupName]: value }));
+  const handleSingleSelect = (groupName: string, value: string, required: boolean) => {
+    setSelections(prev => {
+      const current = prev[groupName];
+      // Allow deselection if not required and clicking the same value
+      if (!required && current === value) {
+        return { ...prev, [groupName]: '' };
+      }
+      return { ...prev, [groupName]: value };
+    });
   };
 
   const handleMultipleSelect = (groupName: string, value: string, checked: boolean) => {
@@ -215,36 +222,30 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
                   </div>
 
                   {group.type === 'single' ? (
-                    <RadioGroup
-                      value={(selections[group.name] as string) || ''}
-                      onValueChange={(value) => handleSingleSelect(group.name, value)}
-                      className="space-y-2"
-                    >
-                      {group.values.map((option, optionIndex) => (
-                        <div
-                          key={optionIndex}
-                          className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <RadioGroupItem
-                              value={option.label}
-                              id={`${group.name}-${optionIndex}`}
-                            />
-                            <Label
-                              htmlFor={`${group.name}-${optionIndex}`}
-                              className="cursor-pointer font-normal"
-                            >
-                              {option.label}
-                            </Label>
+                    <div className="space-y-2">
+                      {group.values.map((option, optionIndex) => {
+                        const isSelected = selections[group.name] === option.label;
+                        return (
+                          <div
+                            key={optionIndex}
+                            className={`flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors cursor-pointer ${isSelected ? 'border-primary ring-1 ring-primary' : ''}`}
+                            onClick={() => handleSingleSelect(group.name, option.label, group.required)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary' : 'border-muted-foreground/50'}`}>
+                                {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
+                              </div>
+                              <span className="font-normal">{option.label}</span>
+                            </div>
+                            {option.price > 0 && (
+                              <span className="text-sm text-muted-foreground">
+                                +${option.price.toFixed(2)}
+                              </span>
+                            )}
                           </div>
-                          {option.price > 0 && (
-                            <span className="text-sm text-muted-foreground">
-                              +${option.price.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </RadioGroup>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       {group.values.map((option, optionIndex) => {
