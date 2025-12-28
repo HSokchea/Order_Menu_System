@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Filter, Search, Edit, Trash2, ImageIcon, ChevronUp, ChevronDown } from 'lucide-react';
 import ImageUpload from '@/components/admin/ImageUpload';
 import ItemOptionsEditor, { ItemOptions } from '@/components/admin/ItemOptionsEditor';
+import SizePricingEditor, { SizeOption } from '@/components/admin/SizePricingEditor';
 import { Json } from '@/integrations/supabase/types';
 
 
@@ -36,6 +38,8 @@ interface MenuItem {
   is_available: boolean;
   image_url?: string;
   options?: ItemOptions | null;
+  size_enabled: boolean;
+  sizes?: SizeOption[] | null;
   category?: Category;
 }
 
@@ -70,6 +74,8 @@ const MenuItems = () => {
   const [itemAvailable, setItemAvailable] = useState(true);
   const [itemOptions, setItemOptions] = useState<ItemOptions | null>(null);
   const [itemImageUrl, setItemImageUrl] = useState<string | null>(null);
+  const [itemSizeEnabled, setItemSizeEnabled] = useState(false);
+  const [itemSizes, setItemSizes] = useState<SizeOption[] | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -107,6 +113,7 @@ const MenuItems = () => {
       setMenuItems((itemsData || []).map(item => ({
         ...item,
         options: (item.options as unknown as ItemOptions) || null,
+        sizes: (item.sizes as unknown as SizeOption[]) || null,
         category: Array.isArray(item.category) ? item.category[0] : item.category
       })));
       setLoading(false);
@@ -172,17 +179,71 @@ const MenuItems = () => {
     setItemAvailable(true);
     setItemImageUrl(null);
     setItemOptions(null);
+    setItemSizeEnabled(false);
+    setItemSizes(null);
     setEditingItem(null);
   };
 
   const handleSaveItem = async () => {
-    if (!user || !itemName || !itemPrice || !itemCategory) {
+    if (!user || !itemName || !itemCategory) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
+    }
+
+    // Validate pricing mode
+    if (itemSizeEnabled) {
+      // Size-based pricing validation
+      if (!itemSizes || itemSizes.length === 0) {
+        toast({
+          title: "Invalid Configuration",
+          description: "Size-based items must have at least one size",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Check all sizes have labels and valid prices
+      for (const size of itemSizes) {
+        if (!size.label.trim()) {
+          toast({
+            title: "Invalid Configuration",
+            description: "All sizes must have a label",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (size.price < 0) {
+          toast({
+            title: "Invalid Configuration",
+            description: "Size prices must be 0 or greater",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      // Ensure exactly one default
+      const defaultCount = itemSizes.filter(s => s.default).length;
+      if (defaultCount !== 1) {
+        toast({
+          title: "Invalid Configuration",
+          description: "Exactly one size must be set as default",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // Fixed price validation
+      if (!itemPrice || parseFloat(itemPrice) < 0) {
+        toast({
+          title: "Missing Information",
+          description: "Fixed price items must have a valid base price",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     // Validate options if present
@@ -222,11 +283,13 @@ const MenuItems = () => {
     const itemData = {
       name: itemName,
       description: itemDescription || null,
-      price_usd: parseFloat(itemPrice),
+      price_usd: itemSizeEnabled ? 0 : parseFloat(itemPrice),
       category_id: itemCategory,
       is_available: itemAvailable,
       image_url: itemImageUrl,
       options: itemOptions as unknown as Json,
+      size_enabled: itemSizeEnabled,
+      sizes: itemSizeEnabled ? (itemSizes as unknown as Json) : null,
       restaurant_id: restaurantId,
     };
 
@@ -269,6 +332,8 @@ const MenuItems = () => {
     setItemAvailable(item.is_available);
     setItemImageUrl(item.image_url || null);
     setItemOptions(item.options || null);
+    setItemSizeEnabled(item.size_enabled || false);
+    setItemSizes(item.sizes || null);
     setDialogOpen(true);
   };
 
@@ -502,35 +567,72 @@ const MenuItems = () => {
                     />
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="price">Price (USD) *</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={itemPrice}
-                        onChange={(e) => setItemPrice(e.target.value)}
-                        placeholder="0.00"
+                  {/* Pricing Mode Section */}
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-medium">Pricing Mode</Label>
+                      <RadioGroup
+                        value={itemSizeEnabled ? 'size' : 'fixed'}
+                        onValueChange={(val) => {
+                          const sizeMode = val === 'size';
+                          setItemSizeEnabled(sizeMode);
+                          if (sizeMode && (!itemSizes || itemSizes.length === 0)) {
+                            // Initialize with one default size
+                            setItemSizes([{ label: '', price: 0, default: true }]);
+                          }
+                        }}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="fixed" id="pricing-fixed" />
+                          <Label htmlFor="pricing-fixed" className="text-sm font-normal cursor-pointer">
+                            Fixed Price
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="size" id="pricing-size" />
+                          <Label htmlFor="pricing-size" className="text-sm font-normal cursor-pointer">
+                            Size-Based Price
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {!itemSizeEnabled ? (
+                      <div className="grid gap-2">
+                        <Label htmlFor="price">Base Price (USD) *</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={itemPrice}
+                          onChange={(e) => setItemPrice(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    ) : (
+                      <SizePricingEditor
+                        sizes={itemSizes}
+                        onChange={setItemSizes}
                       />
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="category">Category *</Label>
-                      <Select value={itemCategory} onValueChange={setItemCategory}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    )}
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="category">Category *</Label>
+                    <Select value={itemCategory} onValueChange={setItemCategory}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Item Options Section */}

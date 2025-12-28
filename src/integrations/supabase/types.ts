@@ -75,6 +75,8 @@ export type Database = {
           price_khr: number | null
           price_usd: number | null
           restaurant_id: string
+          size_enabled: boolean
+          sizes: Json | null
           updated_at: string
         }
         Insert: {
@@ -89,6 +91,8 @@ export type Database = {
           price_khr?: number | null
           price_usd?: number | null
           restaurant_id: string
+          size_enabled?: boolean
+          sizes?: Json | null
           updated_at?: string
         }
         Update: {
@@ -103,6 +107,8 @@ export type Database = {
           price_khr?: number | null
           price_usd?: number | null
           restaurant_id?: string
+          size_enabled?: boolean
+          sizes?: Json | null
           updated_at?: string
         }
         Relationships: [
