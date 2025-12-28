@@ -43,6 +43,15 @@ interface MenuItem {
   category?: Category;
 }
 
+// Get display price: for size-based items, use default size price
+const getDisplayPrice = (item: MenuItem): number => {
+  if (item.size_enabled && item.sizes && item.sizes.length > 0) {
+    const defaultSize = item.sizes.find(s => s.default);
+    return defaultSize ? defaultSize.price : item.sizes[0].price;
+  }
+  return item.price_usd;
+};
+
 const MenuItems = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -763,7 +772,7 @@ const MenuItems = () => {
                         </span>
                       </TableCell>
                       <TableCell className="w-[100px] text-right font-medium">
-                        ${item.price_usd.toFixed(2)}
+                        ${getDisplayPrice(item).toFixed(2)}
                       </TableCell>
                       <TableCell className="w-[120px] hidden sm:table-cell">
                         {item.category ? (
