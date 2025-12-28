@@ -20,6 +20,7 @@ interface OrderItem {
   id: string;
   quantity: number;
   price_usd: number;
+  notes: string | null;
   menu_item: {
     name: string;
   };
@@ -74,6 +75,7 @@ const OrderDashboard = () => {
           id,
           quantity,
           price_usd,
+          notes,
           menu_item:menu_items (name)
         )
       `)
@@ -284,10 +286,18 @@ const OrderDashboard = () => {
   };
 
   const getItemsSummary = (orderItems: OrderItem[]) => {
+    const formatItem = (item: OrderItem) => {
+      let text = `${item.quantity}x ${item.menu_item.name}`;
+      if (item.notes) {
+        text += ` (${item.notes})`;
+      }
+      return text;
+    };
+    
     if (orderItems.length <= 2) {
-      return orderItems.map(item => `${item.quantity}x ${item.menu_item.name}`).join(', ');
+      return orderItems.map(formatItem).join(', ');
     }
-    return `${orderItems[0].quantity}x ${orderItems[0].menu_item.name}, ${orderItems[1].quantity}x ${orderItems[1].menu_item.name} +${orderItems.length - 2} more`;
+    return `${formatItem(orderItems[0])}, ${formatItem(orderItems[1])} +${orderItems.length - 2} more`;
   };
 
   if (loading) {
@@ -667,14 +677,28 @@ const OrderDashboard = () => {
                 <h4 className="font-medium text-sm mb-3 text-muted-foreground">Order Items</h4>
                 <div className="space-y-3">
                   {selectedOrder.order_items.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                          {item.quantity}
-                        </span>
-                        <span className="font-medium">{item.menu_item.name}</span>
+                    <div key={item.id} className="p-3 bg-muted/50 rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-3">
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-medium shrink-0">
+                            {item.quantity}
+                          </span>
+                          <div className="min-w-0">
+                            <span className="font-medium">{item.menu_item.name}</span>
+                            {item.notes && (
+                              <div className="mt-1 space-y-0.5">
+                                {item.notes.split(', ').map((option, idx) => (
+                                  <p key={idx} className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <span className="text-muted-foreground/60">•</span>
+                                    {option}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-semibold shrink-0">${(item.quantity * item.price_usd).toFixed(2)}</span>
                       </div>
-                      <span className="font-semibold">${(item.quantity * item.price_usd).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
