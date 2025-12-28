@@ -84,8 +84,8 @@ const CartSummary = () => {
       const orderItemsPayload = cart.map((item) => ({
         menu_item_id: item.id,
         quantity: item.quantity,
-        price_usd: (item.price_usd || item.price || 0) + (item.optionsTotal || 0),
-        notes: item.selectedOptions?.map(o => `${o.groupName}: ${o.label}`).join(', ') || null,
+        price_usd: item.price_usd || item.price || 0,
+        notes: item.selectedOptions?.map(o => `${o.groupName}: ${o.label}${o.price > 0 ? ` (+$${o.price.toFixed(2)})` : ''}`).join(', ') || null,
       }));
 
       const { data: response, error: rpcError } = await supabase.rpc(
