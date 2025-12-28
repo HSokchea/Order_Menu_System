@@ -33,6 +33,8 @@ interface MenuItem {
   is_available: boolean;
   category_id: string;
   image_url?: string;
+  size_enabled?: boolean;
+  sizes?: Array<{ label: string; price: number; default?: boolean }> | null;
 }
 
 // Generate unique cart item ID based on item and selected options
@@ -86,8 +88,26 @@ export const useCart = (tableId?: string) => {
     selectedOptions?: SelectedOption[]
   ) => {
     const cartItemId = generateCartItemId(item.id, selectedOptions);
-    const basePrice = item.price_usd;
-    const optionsTotal = selectedOptions?.reduce((sum, opt) => sum + opt.price, 0) || 0;
+    
+    // Determine base price: if size-enabled, base price comes from the Size option
+    let basePrice = item.price_usd;
+    let optionsTotal = 0;
+    
+    if (item.size_enabled && selectedOptions) {
+      // For size-enabled items, the Size option's price IS the base price
+      const sizeOption = selectedOptions.find(o => o.groupName === 'Size');
+      if (sizeOption) {
+        basePrice = sizeOption.price;
+        // Options total is the sum of all NON-size options
+        optionsTotal = selectedOptions
+          .filter(o => o.groupName !== 'Size')
+          .reduce((sum, opt) => sum + opt.price, 0);
+      }
+    } else {
+      // Fixed price items: base price from item, options add/subtract
+      optionsTotal = selectedOptions?.reduce((sum, opt) => sum + opt.price, 0) || 0;
+    }
+    
     const finalUnitPrice = Math.max(0, basePrice + optionsTotal); // Rule 4: must be >= 0
 
     // Rule 6: Validate before adding - quantity must be >= 1

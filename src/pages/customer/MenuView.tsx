@@ -8,7 +8,7 @@ import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-r
 import { useToast } from '@/hooks/use-toast';
 import { useCart, SelectedOption } from '@/hooks/useCart';
 import { useActiveOrders } from '@/hooks/useActiveOrders';
-import ItemDetailSheet, { ItemOptions } from '@/components/customer/ItemDetailSheet';
+import ItemDetailSheet, { ItemOptions, SizeOption } from '@/components/customer/ItemDetailSheet';
 
 interface MenuItem {
   id: string;
@@ -19,6 +19,8 @@ interface MenuItem {
   category_id: string;
   image_url?: string;
   options?: ItemOptions | null;
+  size_enabled?: boolean;
+  sizes?: SizeOption[] | null;
 }
 
 interface Category {
@@ -132,7 +134,7 @@ const MenuView = () => {
       // Include options field for customizations
       const { data: menuItemsData, error: menuItemsError } = await supabase
         .from('menu_items')
-        .select('id, name, description, price_usd, is_available, category_id, image_url, options, created_at')
+        .select('id, name, description, price_usd, is_available, category_id, image_url, options, size_enabled, sizes, created_at')
         .eq('restaurant_id', restaurantData.id)
         .eq('is_available', true)
         .order('created_at', { ascending: false });
@@ -156,6 +158,7 @@ const MenuView = () => {
           .map((item: any) => ({
             ...item,
             options: item.options as ItemOptions | null,
+            sizes: item.sizes as SizeOption[] | null,
           }))
       }));
 
@@ -275,13 +278,16 @@ const MenuView = () => {
     }
   }, [filteredCategories.length]);
 
-  // Handle item click - open detail sheet if has options, otherwise quick add
+  // Handle item click - open detail sheet if has options or sizes, otherwise quick add
   const handleItemClick = (item: MenuItem) => {
-    if (item.options?.options && item.options.options.length > 0) {
+    const hasOptions = item.options?.options && item.options.options.length > 0;
+    const hasSizes = item.size_enabled && item.sizes && item.sizes.length > 0;
+    
+    if (hasOptions || hasSizes) {
       setSelectedItem(item);
       setIsItemSheetOpen(true);
     } else {
-      // No options, just add to cart
+      // No options or sizes, just add to cart
       addToCart(item);
       toast({
         title: "Added to cart",
@@ -293,7 +299,10 @@ const MenuView = () => {
   // Handle add button click (+ button on card)
   const handleQuickAdd = (e: React.MouseEvent, item: MenuItem) => {
     e.stopPropagation();
-    if (item.options?.options && item.options.options.length > 0) {
+    const hasOptions = item.options?.options && item.options.options.length > 0;
+    const hasSizes = item.size_enabled && item.sizes && item.sizes.length > 0;
+    
+    if (hasOptions || hasSizes) {
       setSelectedItem(item);
       setIsItemSheetOpen(true);
     } else {

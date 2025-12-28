@@ -31,6 +31,12 @@ export interface ItemOptions {
   options: OptionGroup[];
 }
 
+export interface SizeOption {
+  label: string;
+  price: number;
+  default?: boolean;
+}
+
 interface MenuItem {
   id: string;
   name: string;
@@ -40,6 +46,8 @@ interface MenuItem {
   category_id: string;
   image_url?: string;
   options?: ItemOptions | null;
+  size_enabled?: boolean;
+  sizes?: SizeOption[] | null;
 }
 
 interface ItemDetailSheetProps {
@@ -52,8 +60,11 @@ interface ItemDetailSheetProps {
 const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSheetProps) => {
   const [quantity, setQuantity] = useState(1);
   const [selections, setSelections] = useState<Record<string, string | string[]>>({});
+  const [selectedSizeIndex, setSelectedSizeIndex] = useState<number>(0);
 
   const options = item?.options?.options || [];
+  const sizes = item?.sizes || [];
+  const sizeEnabled = item?.size_enabled || false;
 
   // Initialize selections with defaults when item changes
   useEffect(() => {
@@ -77,6 +88,12 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
 
     setSelections(initialSelections);
     setQuantity(1);
+
+    // Auto-select default size for size-enabled items
+    if (sizeEnabled && sizes.length > 0) {
+      const defaultIndex = sizes.findIndex(s => s.default);
+      setSelectedSizeIndex(defaultIndex >= 0 ? defaultIndex : 0);
+    }
   }, [item?.id, open]);
 
   // Calculate options total (can be negative for discounts)
@@ -97,11 +114,19 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
     return total;
   }, [options, selections]);
 
+  // Get base price (from size or item.price_usd)
+  const basePrice = useMemo(() => {
+    if (!item) return 0;
+    if (sizeEnabled && sizes.length > 0) {
+      return sizes[selectedSizeIndex]?.price || 0;
+    }
+    return item.price_usd;
+  }, [item, sizeEnabled, sizes, selectedSizeIndex]);
+
   // Calculate final unit price (base + options, must be >= 0)
   const finalUnitPrice = useMemo(() => {
-    if (!item) return 0;
-    return Math.max(0, item.price_usd + optionsTotal);
-  }, [item, optionsTotal]);
+    return Math.max(0, basePrice + optionsTotal);
+  }, [basePrice, optionsTotal]);
 
   // Calculate total price (final unit price * quantity)
   const totalPrice = useMemo(() => {
@@ -144,8 +169,21 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
   const handleAddToCart = () => {
     if (!item) return;
 
-    // Build selected options array
+    // Build selected options array (including size if size-enabled)
     const selectedOptions: SelectedOption[] = [];
+
+    // Add size as a selected option if size-enabled
+    if (sizeEnabled && sizes.length > 0) {
+      const selectedSize = sizes[selectedSizeIndex];
+      if (selectedSize) {
+        selectedOptions.push({
+          groupName: 'Size',
+          label: selectedSize.label,
+          price: selectedSize.price,
+        });
+      }
+    }
+
     options.forEach(group => {
       const selected = selections[group.name];
       if (group.type === 'single' && typeof selected === 'string' && selected) {
@@ -202,7 +240,7 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
               <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
             )}
             <p className="text-lg font-bold text-primary mt-2">
-              ${item.price_usd.toFixed(2)}
+              ${basePrice.toFixed(2)}
               {optionsTotal !== 0 && (
                 <span className={`text-sm font-normal ml-2 ${optionsTotal > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
                   {optionsTotal > 0 ? '+' : ''}{optionsTotal.toFixed(2)} options
@@ -210,6 +248,36 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
               )}
             </p>
           </DrawerHeader>
+
+          {/* Size Selection (for size-enabled items) */}
+          {sizeEnabled && sizes.length > 0 && (
+            <div className="px-4 pb-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold">Size</Label>
+                <Badge variant="secondary" className="text-xs">Required</Badge>
+              </div>
+              <div className="space-y-2">
+                {sizes.map((size, index) => {
+                  const isSelected = selectedSizeIndex === index;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors cursor-pointer ${isSelected ? 'border-primary ring-1 ring-primary' : ''}`}
+                      onClick={() => setSelectedSizeIndex(index)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary' : 'border-muted-foreground/50'}`}>
+                          {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
+                        </div>
+                        <span className="font-normal">{size.label}</span>
+                      </div>
+                      <span className="text-sm font-medium">${size.price.toFixed(2)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Option Groups */}
           {options.length > 0 && (
