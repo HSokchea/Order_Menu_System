@@ -3,6 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, GripVertical, ImageIcon } from 'lucide-react';
 
+interface SizeOption {
+  label: string;
+  price: number;
+  default?: boolean;
+}
+
 interface Category {
   id: string;
   name: string;
@@ -18,7 +24,18 @@ interface MenuItem {
   is_available: boolean;
   image_url?: string;
   category?: Category;
+  size_enabled?: boolean;
+  sizes?: SizeOption[] | null;
 }
+
+// Get display price: for size-based items, use default size price
+const getDisplayPrice = (item: MenuItem): number => {
+  if (item.size_enabled && item.sizes && item.sizes.length > 0) {
+    const defaultSize = item.sizes.find(s => s.default);
+    return defaultSize ? defaultSize.price : item.sizes[0].price;
+  }
+  return item.price_usd;
+};
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -66,7 +83,7 @@ const MenuItemCard = ({ item, onEdit, onDelete, dragProps }: MenuItemCardProps) 
                 )}
                 <div className="flex items-center gap-3 mt-2">
                   <span className="font-bold text-primary text-lg">
-                    ${item.price_usd.toFixed(2)}
+                    ${getDisplayPrice(item).toFixed(2)}
                   </span>
                   {item.category && (
                     <Badge variant="secondary" className="text-xs">

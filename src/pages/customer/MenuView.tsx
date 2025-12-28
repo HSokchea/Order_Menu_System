@@ -499,6 +499,15 @@ const MenuView = () => {
                   const itemCount = getItemCount(item.id);
                   const hasOptions = item.options?.options && item.options.options.length > 0;
                   
+                  // Get display price: for size-based items, use default size price
+                  const displayPrice = (() => {
+                    if (item.size_enabled && item.sizes && item.sizes.length > 0) {
+                      const defaultSize = item.sizes.find(s => s.default);
+                      return defaultSize ? defaultSize.price : item.sizes[0].price;
+                    }
+                    return item.price_usd;
+                  })();
+                  
                   return (
                     <div
                       key={item.id}
@@ -570,7 +579,7 @@ const MenuView = () => {
                       <div className="p-3">
                         <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">{item.name}</h6>
                         <div className="flex items-center justify-between">
-                          <span className="text-primary font-bold text-base md:text-lg">${item.price_usd.toFixed(2)}</span>
+                          <span className="text-primary font-bold text-base md:text-lg">${displayPrice.toFixed(2)}</span>
                           {!item.is_available && (
                             <Badge variant="secondary" className="text-xs">Unavailable</Badge>
                           )}
