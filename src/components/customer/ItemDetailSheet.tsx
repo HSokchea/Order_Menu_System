@@ -79,7 +79,7 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
     setQuantity(1);
   }, [item?.id, open]);
 
-  // Calculate options total
+  // Calculate options total (can be negative for discounts)
   const optionsTotal = useMemo(() => {
     let total = 0;
     options.forEach(group => {
@@ -97,11 +97,16 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
     return total;
   }, [options, selections]);
 
-  // Calculate total price
-  const totalPrice = useMemo(() => {
+  // Calculate final unit price (base + options, must be >= 0)
+  const finalUnitPrice = useMemo(() => {
     if (!item) return 0;
-    return (item.price_usd + optionsTotal) * quantity;
-  }, [item, optionsTotal, quantity]);
+    return Math.max(0, item.price_usd + optionsTotal);
+  }, [item, optionsTotal]);
+
+  // Calculate total price (final unit price * quantity)
+  const totalPrice = useMemo(() => {
+    return finalUnitPrice * quantity;
+  }, [finalUnitPrice, quantity]);
 
   // Check if all required groups are selected
   const isValid = useMemo(() => {
@@ -198,9 +203,9 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
             )}
             <p className="text-lg font-bold text-primary mt-2">
               ${item.price_usd.toFixed(2)}
-              {optionsTotal > 0 && (
-                <span className="text-sm font-normal text-muted-foreground ml-2">
-                  + ${optionsTotal.toFixed(2)} options
+              {optionsTotal !== 0 && (
+                <span className={`text-sm font-normal ml-2 ${optionsTotal > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
+                  {optionsTotal > 0 ? '+' : ''}{optionsTotal.toFixed(2)} options
                 </span>
               )}
             </p>
@@ -237,9 +242,9 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
                               </div>
                               <span className="font-normal">{option.label}</span>
                             </div>
-                            {option.price > 0 && (
-                              <span className="text-sm text-muted-foreground">
-                                +${option.price.toFixed(2)}
+                            {option.price !== 0 && (
+                              <span className={`text-sm ${option.price > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
+                                {option.price > 0 ? '+' : ''}{option.price.toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -270,9 +275,9 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
                                 {option.label}
                               </Label>
                             </div>
-                            {option.price > 0 && (
-                              <span className="text-sm text-muted-foreground">
-                                +${option.price.toFixed(2)}
+                            {option.price !== 0 && (
+                              <span className={`text-sm ${option.price > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
+                                {option.price > 0 ? '+' : ''}{option.price.toFixed(2)}
                               </span>
                             )}
                           </div>

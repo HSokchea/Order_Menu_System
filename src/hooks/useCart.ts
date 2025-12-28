@@ -11,14 +11,16 @@ export interface CartItem {
   cartItemId: string; // Unique ID for each cart entry (same item with different options = different entries)
   name: string;
   description?: string;
-  price: number;
+  basePrice: number; // Base price of the item (Rule 1)
+  price: number; // Legacy field for compatibility
   price_usd?: number;
   price_khr?: number;
   is_available?: boolean;
   image_url?: string;
   quantity: number;
   selectedOptions?: SelectedOption[];
-  optionsTotal?: number;
+  optionsTotal: number; // Sum of option price adjustments (can be negative)
+  finalUnitPrice: number; // basePrice + optionsTotal, must be >= 0 (Rule 4)
   hasValidationError?: boolean;
   validationReason?: string;
 }
@@ -77,14 +79,19 @@ export const useCart = (tableId?: string) => {
     }
   }, [cart, tableId, isLoaded]);
 
-  // Add item with options
+  // Add item with options (Rule 4, 5, 6)
   const addToCartWithOptions = useCallback((
     item: MenuItem,
     quantity: number,
     selectedOptions?: SelectedOption[]
   ) => {
     const cartItemId = generateCartItemId(item.id, selectedOptions);
+    const basePrice = item.price_usd;
     const optionsTotal = selectedOptions?.reduce((sum, opt) => sum + opt.price, 0) || 0;
+    const finalUnitPrice = Math.max(0, basePrice + optionsTotal); // Rule 4: must be >= 0
+
+    // Rule 6: Validate before adding - quantity must be >= 1
+    if (quantity < 1) return;
 
     setCart(prev => {
       const existing = prev.find(cartItem => cartItem.cartItemId === cartItemId);
@@ -100,13 +107,15 @@ export const useCart = (tableId?: string) => {
         cartItemId,
         name: item.name,
         description: item.description,
+        basePrice, // Store base price (Rule 7)
         price: item.price_usd,
         price_usd: item.price_usd,
         is_available: item.is_available,
         image_url: item.image_url,
         quantity,
         selectedOptions,
-        optionsTotal,
+        optionsTotal, // Store options total (Rule 7)
+        finalUnitPrice, // Store final unit price (Rule 7)
       }];
     });
   }, []);
@@ -131,9 +140,10 @@ export const useCart = (tableId?: string) => {
     });
   }, []);
 
-  // Update quantity by cartItemId
+  // Update quantity by cartItemId (Rule 5: quantity must be >= 1)
   const updateCartItem = useCallback((cartItemId: string, quantity: number) => {
-    if (quantity === 0) {
+    if (quantity < 1) {
+      // Remove item if quantity is 0 or less
       setCart(prev => prev.filter(item => item.cartItemId !== cartItemId));
     } else {
       setCart(prev => prev.map(item =>
@@ -154,12 +164,11 @@ export const useCart = (tableId?: string) => {
     }
   }, [tableId]);
 
-  // Get total including options prices
+  // Get total including options prices (Rule 5: Total = finalUnitPrice * quantity)
   const getTotalAmount = useCallback(() => {
     return cart.reduce((total, item) => {
-      const basePrice = item.price_usd || item.price || 0;
-      const optionsPrice = item.optionsTotal || 0;
-      return total + ((basePrice + optionsPrice) * item.quantity);
+      // Use stored finalUnitPrice for accurate calculation
+      return total + (item.finalUnitPrice * item.quantity);
     }, 0);
   }, [cart]);
 

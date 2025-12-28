@@ -81,12 +81,29 @@ const CartSummary = () => {
     try {
       const totalAmount = getTotalAmount();
 
-      const orderItemsPayload = cart.map((item) => ({
-        menu_item_id: item.id,
-        quantity: item.quantity,
-        price_usd: item.price_usd || item.price || 0,
-        notes: item.selectedOptions?.map(o => `${o.groupName}: ${o.label}${o.price > 0 ? ` (+$${o.price.toFixed(2)})` : ''}`).join(', ') || null,
-      }));
+      // Rule 7: Store complete price snapshot with order item
+      const orderItemsPayload = cart.map((item) => {
+        // Build price snapshot data for order item notes (JSON format)
+        const priceSnapshot = {
+          basePrice: item.basePrice,
+          selectedOptions: item.selectedOptions?.map(o => ({
+            group: o.groupName,
+            value: o.label,
+            price: o.price,
+          })) || [],
+          optionsTotal: item.optionsTotal,
+          finalUnitPrice: item.finalUnitPrice,
+          quantity: item.quantity,
+          totalItemPrice: item.finalUnitPrice * item.quantity,
+        };
+
+        return {
+          menu_item_id: item.id,
+          quantity: item.quantity,
+          price_usd: item.finalUnitPrice, // Store final unit price (base + options)
+          notes: JSON.stringify(priceSnapshot), // Store complete price snapshot as JSON
+        };
+      });
 
       const { data: response, error: rpcError } = await supabase.rpc(
         'create_order_with_items_validated',
@@ -184,7 +201,7 @@ const CartSummary = () => {
               <CardContent>
                 <div className="space-y-4">
                   {cart.map((item) => {
-                    const itemTotal = ((item.price_usd || item.price || 0) + (item.optionsTotal || 0)) * item.quantity;
+                    const itemTotal = item.finalUnitPrice * item.quantity;
                     
                     return (
                       <div 
@@ -204,20 +221,24 @@ const CartSummary = () => {
                               )}
                             </div>
                             
-                            {/* Selected Options */}
+                            {/* Selected Options with price adjustments */}
                             {item.selectedOptions && item.selectedOptions.length > 0 && (
                               <div className="mt-1 space-y-0.5">
                                 {item.selectedOptions.map((opt, idx) => (
                                   <p key={idx} className="text-xs text-muted-foreground">
                                     {opt.groupName}: {opt.label}
-                                    {opt.price > 0 && ` (+$${opt.price.toFixed(2)})`}
+                                    {opt.price !== 0 && (
+                                      <span className={opt.price > 0 ? '' : 'text-green-600'}>
+                                        {' '}({opt.price > 0 ? '+' : ''}{opt.price.toFixed(2)})
+                                      </span>
+                                    )}
                                   </p>
                                 ))}
                               </div>
                             )}
                             
                             <p className="text-sm text-muted-foreground mt-1">
-                              ${((item.price_usd || item.price || 0) + (item.optionsTotal || 0)).toFixed(2)} each
+                              ${item.finalUnitPrice.toFixed(2)} each
                             </p>
                             
                             {item.hasValidationError && item.validationReason && (

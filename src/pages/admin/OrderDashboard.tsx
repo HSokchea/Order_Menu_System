@@ -285,11 +285,53 @@ const OrderDashboard = () => {
     setIsModalOpen(true);
   };
 
+  // Helper to parse price snapshot from notes
+  const parsePriceSnapshot = (notes: string | null) => {
+    if (!notes) return null;
+    try {
+      const snapshot = JSON.parse(notes);
+      if (snapshot && typeof snapshot === 'object' && 'selectedOptions' in snapshot) {
+        return snapshot as {
+          basePrice: number;
+          selectedOptions: Array<{ group: string; value: string; price: number }>;
+          optionsTotal: number;
+          finalUnitPrice: number;
+          quantity: number;
+          totalItemPrice: number;
+        };
+      }
+    } catch {
+      // Fallback for legacy string format
+      return null;
+    }
+    return null;
+  };
+
+  // Format options for display (handles both JSON and legacy formats)
+  const formatItemOptions = (notes: string | null) => {
+    const snapshot = parsePriceSnapshot(notes);
+    if (snapshot) {
+      return snapshot.selectedOptions.map(opt => {
+        let text = `${opt.group}: ${opt.value}`;
+        if (opt.price !== 0) {
+          text += ` (${opt.price > 0 ? '+' : ''}${opt.price.toFixed(2)})`;
+        }
+        return text;
+      });
+    }
+    // Legacy format: comma-separated string
+    if (notes) {
+      return notes.split(', ').filter(Boolean);
+    }
+    return [];
+  };
+
   const getItemsSummary = (orderItems: OrderItem[]) => {
     const formatItem = (item: OrderItem) => {
+      const options = formatItemOptions(item.notes);
       let text = `${item.quantity}x ${item.menu_item.name}`;
-      if (item.notes) {
-        text += ` (${item.notes})`;
+      if (options.length > 0) {
+        text += ` (${options.join(', ')})`;
       }
       return text;
     };
@@ -676,31 +718,48 @@ const OrderDashboard = () => {
               <div>
                 <h4 className="font-medium text-sm mb-3 text-muted-foreground">Order Items</h4>
                 <div className="space-y-3">
-                  {selectedOrder.order_items.map((item) => (
-                    <div key={item.id} className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-start gap-3">
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-medium shrink-0">
-                            {item.quantity}
-                          </span>
-                          <div className="min-w-0">
-                            <span className="font-medium">{item.menu_item.name}</span>
-                            {item.notes && (
-                              <div className="mt-1 space-y-0.5">
-                                {item.notes.split(', ').map((option, idx) => (
-                                  <p key={idx} className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <span className="text-muted-foreground/60">•</span>
-                                    {option}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
+                  {selectedOrder.order_items.map((item) => {
+                    const snapshot = parsePriceSnapshot(item.notes);
+                    const options = formatItemOptions(item.notes);
+                    
+                    return (
+                      <div key={item.id} className="p-3 bg-muted/50 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-start gap-3">
+                            <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-medium shrink-0">
+                              {item.quantity}
+                            </span>
+                            <div className="min-w-0">
+                              <span className="font-medium">{item.menu_item.name}</span>
+                              {/* Price breakdown */}
+                              {snapshot && (
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Base: ${snapshot.basePrice.toFixed(2)}
+                                  {snapshot.optionsTotal !== 0 && (
+                                    <span className={snapshot.optionsTotal > 0 ? '' : 'text-green-600'}>
+                                      {' '}→ ${snapshot.finalUnitPrice.toFixed(2)}/each
+                                    </span>
+                                  )}
+                                </p>
+                              )}
+                              {/* Selected options */}
+                              {options.length > 0 && (
+                                <div className="mt-1 space-y-0.5">
+                                  {options.map((option, idx) => (
+                                    <p key={idx} className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <span className="text-muted-foreground/60">•</span>
+                                      {option}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
+                          <span className="font-semibold shrink-0">${(item.quantity * item.price_usd).toFixed(2)}</span>
                         </div>
-                        <span className="font-semibold shrink-0">${(item.quantity * item.price_usd).toFixed(2)}</span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
