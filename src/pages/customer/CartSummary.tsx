@@ -49,16 +49,31 @@ const CartSummary = () => {
     const fetchTableData = async () => {
       if (!tableId) return;
 
-      const { data: tableData } = await supabase
-        .from('tables')
-        .select('*, restaurant:restaurants(*)')
-        .eq('id', tableId)
-        .single();
+      // Use secure RPC functions to fetch table and restaurant data (works for anonymous users)
+      const { data: tableResult, error: tableError } = await supabase
+        .rpc('get_public_table', { p_table_id: tableId });
+      
+      const tableData = tableResult?.[0] || null;
 
-      if (tableData) {
-        setTable(tableData);
-        setRestaurant(tableData.restaurant);
+      if (tableError || !tableData) {
+        console.error('Table fetch error:', tableError);
+        return;
       }
+
+      setTable(tableData);
+
+      // Fetch restaurant using secure RPC
+      const { data: restaurantResult, error: restaurantError } = await supabase
+        .rpc('get_public_restaurant', { p_restaurant_id: tableData.restaurant_id });
+      
+      const restaurantData = restaurantResult?.[0] || null;
+
+      if (restaurantError || !restaurantData) {
+        console.error('Restaurant fetch error:', restaurantError);
+        return;
+      }
+
+      setRestaurant(restaurantData);
     };
 
     fetchTableData();
