@@ -95,12 +95,11 @@ const MenuView = () => {
 
       setTable(tableData);
 
-      // Fetch restaurant info using public view (excludes owner_id for privacy)
-      const { data: restaurantData, error: restaurantError } = await supabase
-        .from('public_restaurants')
-        .select('id, name')
-        .eq('id', tableData.restaurant_id)
-        .maybeSingle();
+      // Fetch restaurant info using secure RPC (SECURITY DEFINER bypasses RLS)
+      const { data: restaurantResult, error: restaurantError } = await supabase
+        .rpc('get_public_restaurant', { p_restaurant_id: tableData.restaurant_id });
+      
+      const restaurantData = restaurantResult?.[0] || null;
 
       if (restaurantError || !restaurantData) {
         console.error('Restaurant fetch error:', restaurantError);

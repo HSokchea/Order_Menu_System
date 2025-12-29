@@ -527,6 +527,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_public_restaurant: {
+        Args: { p_restaurant_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }[]
+      }
       get_public_table: {
         Args: { p_table_id: string }
         Returns: {
