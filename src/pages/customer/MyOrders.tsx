@@ -276,46 +276,58 @@ const MyOrders = () => {
                           <h4 className="font-medium">Order Items</h4>
                           <div className="space-y-2">
                             {items.map((item) => {
-                              // Parse notes to extract selected options
+                              // Parse notes to extract selected options and special instructions
                               let selectedOptions: Array<{group: string; value: string; price?: number}> = [];
+                              let specialInstructions: string | undefined = undefined;
                               try {
                                 if (item.notes) {
                                   const parsed = JSON.parse(item.notes);
-                                  if (parsed.selectedOptions && Array.isArray(parsed.selectedOptions)) {
+                                  if (parsed.selectedOptions && Array.isArray(parsed.selectedOptions) && parsed.selectedOptions.length > 0) {
                                     selectedOptions = parsed.selectedOptions;
+                                  }
+                                  // Accept both 'note' and 'specialInstructions' fields for flexibility
+                                  if (parsed.note && typeof parsed.note === 'string' && parsed.note.trim() !== '') {
+                                    specialInstructions = parsed.note;
+                                  } else if (parsed.specialInstructions && typeof parsed.specialInstructions === 'string' && parsed.specialInstructions.trim() !== '') {
+                                    specialInstructions = parsed.specialInstructions;
                                   }
                                 }
                               } catch {
-                                // Notes is plain text, not JSON - will show as regular note below
+                                // Notes is plain text, not JSON - treat as special instructions
+                                if (item.notes && item.notes.trim() !== '') {
+                                  specialInstructions = item.notes;
+                                }
                               }
 
-                              const isJsonNotes = selectedOptions.length > 0;
-
                               return (
-                                <div key={item.id} className="flex items-start justify-between p-3 bg-muted/20 rounded-lg">
-                                  <div className="flex-1">
-                                    <p className="font-medium">
-                                      {item.quantity}x {item.menu_item_name}
-                                    </p>
-                                    {isJsonNotes && selectedOptions.length > 0 && (
-                                      <div className="mt-1 space-y-0.5">
-                                        {selectedOptions.map((opt, idx) => (
-                                          <p key={idx} className="text-sm text-muted-foreground">
-                                            • {opt.group}: {opt.value}
-                                            {opt.price && opt.price > 0 ? ` (+$${opt.price.toFixed(2)})` : ''}
-                                          </p>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {!isJsonNotes && item.notes && (
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        Note: {item.notes}
+                                <div key={item.id} className="flex flex-col gap-1 p-3 bg-muted/20 rounded-lg">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <p className="font-medium">
+                                        {item.quantity}x {item.menu_item_name}
                                       </p>
-                                    )}
+                                      {/* Only show selected options if non-empty */}
+                                      {selectedOptions.length > 0 && (
+                                        <div className="mt-1 space-y-0.5">
+                                          {selectedOptions.map((opt, idx) => (
+                                            <p key={idx} className="text-sm text-muted-foreground">
+                                              • {opt.group}: {opt.value}
+                                              {opt.price && opt.price > 0 ? ` (+$${opt.price.toFixed(2)})` : ''}
+                                            </p>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <span className="font-semibold text-primary">
+                                      ${(item.price_usd * item.quantity).toFixed(2)}
+                                    </span>
                                   </div>
-                                  <span className="font-semibold text-primary">
-                                    ${(item.price_usd * item.quantity).toFixed(2)}
-                                  </span>
+                                  {/* Show special instructions in a new section under Order Items if present */}
+                                  {specialInstructions && (
+                                    <div className="mt-2 p-2 rounded bg-muted/40 text-sm text-muted-foreground">
+                                      <span className="font-semibold">Special Instructions:</span> {specialInstructions}
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
