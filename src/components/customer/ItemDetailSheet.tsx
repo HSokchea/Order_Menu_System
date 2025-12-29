@@ -4,6 +4,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { ImageIcon } from 'lucide-react';
 import {
   Drawer,
   DrawerContent,
@@ -218,7 +219,7 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[90vh]">
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="overflow-y-auto max-h-[calc(90vh-140px)] mt-6">
           {/* Item Image */}
           {item.image_url ? (
             <div className="relative w-full aspect-video bg-muted">
@@ -230,7 +231,7 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
             </div>
           ) : (
             <div className="w-full aspect-video bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
-              <span className="text-8xl">🍽️</span>
+              <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
             </div>
           )}
 

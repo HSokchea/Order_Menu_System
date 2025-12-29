@@ -32,7 +32,7 @@ const CartSummary = () => {
   const [restaurant, setRestaurant] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<UnavailableItem[]>([]);
-  
+
   const {
     cart,
     isLoaded: cartLoaded,
@@ -74,7 +74,7 @@ const CartSummary = () => {
 
   const placeOrder = async () => {
     if (cart.length === 0) return;
-    
+
     clearValidationErrors();
     setLoading(true);
 
@@ -141,7 +141,7 @@ const CartSummary = () => {
         storedTokens[orderResponse.order_id] = orderResponse.order_token;
         localStorage.setItem('order_tokens', JSON.stringify(storedTokens));
       }
-      
+
       clearCart();
 
       toast({
@@ -167,15 +167,20 @@ const CartSummary = () => {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      <header className="border-b bg-background">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="ghost" asChild className="mr-4">
-            <Link to={`/menu/${tableId}`}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Order Summary</h1>
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" asChild className="mr-2">
+                <Link to={`/menu/${tableId}`}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-xl font-bold text-primary">Order Summary</h1>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -202,15 +207,14 @@ const CartSummary = () => {
                 <div className="space-y-4">
                   {cart.map((item) => {
                     const itemTotal = item.finalUnitPrice * item.quantity;
-                    
+
                     return (
-                      <div 
-                        key={item.cartItemId} 
-                        className={`p-3 rounded-lg border ${
-                          item.hasValidationError 
-                            ? 'border-destructive bg-destructive/5' 
+                      <div
+                        key={item.cartItemId}
+                        className={`p-3 rounded-lg border ${item.hasValidationError
+                            ? 'border-destructive bg-destructive/5'
                             : 'border-border'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
@@ -220,7 +224,7 @@ const CartSummary = () => {
                                 <span className="text-xs text-destructive">❌</span>
                               )}
                             </div>
-                            
+
                             {/* Selected Options with price adjustments */}
                             {item.selectedOptions && item.selectedOptions.length > 0 && (
                               <div className="mt-1 space-y-0.5">
@@ -236,16 +240,16 @@ const CartSummary = () => {
                                 ))}
                               </div>
                             )}
-                            
+
                             <p className="text-sm text-muted-foreground mt-1">
                               ${item.finalUnitPrice.toFixed(2)} each
                             </p>
-                            
+
                             {item.hasValidationError && item.validationReason && (
                               <p className="text-xs text-destructive mt-1">{item.validationReason}</p>
                             )}
                           </div>
-                          
+
                           <div className="flex items-center gap-2">
                             <Button
                               size="sm"
@@ -277,7 +281,7 @@ const CartSummary = () => {
                             </Button>
                           </div>
                         </div>
-                        
+
                         <div className="text-right mt-2">
                           <span className="font-semibold">${itemTotal.toFixed(2)}</span>
                         </div>

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, Link } from 'react-router-dom';
-import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2 } from 'lucide-react';
+import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2, ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCart, SelectedOption } from '@/hooks/useCart';
 import { useActiveOrders } from '@/hooks/useActiveOrders';
@@ -524,16 +524,7 @@ const MenuView = () => {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-2xl">
-                            <span className="text-muted-foreground text-8xl">🍽️</span>
-                          </div>
-                        )}
-
-                        {/* Options indicator */}
-                        {hasOptions && (
-                          <div className="absolute top-2 left-2">
-                            <Badge variant="secondary" className="text-xs bg-background/90">
-                              Customizable
-                            </Badge>
+                            <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
                           </div>
                         )}
 

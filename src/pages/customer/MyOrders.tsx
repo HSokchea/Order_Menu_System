@@ -141,7 +141,7 @@ const MyOrders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-background dark:to-background">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
