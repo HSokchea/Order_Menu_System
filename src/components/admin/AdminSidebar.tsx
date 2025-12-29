@@ -7,7 +7,8 @@ import {
   Store,
   BarChart3,
   Package,
-  Gift
+  Gift,
+  Users
 } from "lucide-react";
 
 import {
@@ -46,6 +47,12 @@ const navigationItems = [
     url: "/admin/order-dashboard", 
     icon: ClipboardList,
     description: "Monitor live orders"
+  },
+  {
+    title: "Table Sessions",
+    url: "/admin/table-sessions",
+    icon: Users,
+    description: "Manage dining sessions"
   },
   {
     title: "Generate QR",
