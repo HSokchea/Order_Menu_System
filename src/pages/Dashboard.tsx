@@ -1,126 +1,187 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { 
-  Package, 
-  BarChart3, 
-  Gift, 
   TrendingUp,
-  Users,
+  ShoppingCart,
+  DollarSign,
   Clock,
-  Star
+  ChefHat,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
 } from 'lucide-react';
-
-
-interface Restaurant {
-  id: string;
-  name: string;
-  description?: string;
-}
+import { Button } from '@/components/ui/button';
+import { DateRangeFilter } from '@/components/admin/DateRangeFilter';
+import { ExportMenu } from '@/components/admin/ExportMenu';
+import { AnalyticsCharts } from '@/components/admin/AnalyticsCharts';
+import {
+  useOrderAnalytics,
+  useKPIData,
+  useChartData,
+  getDateRangeFromPreset,
+  type DateRangePreset,
+  type DateRange,
+} from '@/hooks/useOrderAnalytics';
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [preset, setPreset] = useState<DateRangePreset>('today');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  
+  const dateRange = getDateRangeFromPreset(preset, customRange);
+  const { orders, loading, refetch } = useOrderAnalytics(dateRange);
+  const kpi = useKPIData(orders);
+  const chartData = useChartData(orders, dateRange);
 
-  useEffect(() => {
-    const fetchRestaurant = async () => {
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (data) {
-        setRestaurant(data);
-      }
-      setLoading(false);
-    };
-
-    fetchRestaurant();
-  }, [user]);
-
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(value);
+  };
 
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold tracking-tight mb-2">Welcome back</h2>
-        <p className="text-muted-foreground text-lg">
-          Manage your restaurant's digital presence and track performance
-        </p>
+      {/* Header with Filters and Export */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight mb-1">Sales Dashboard</h2>
+          <p className="text-muted-foreground">
+            Track your restaurant's performance and revenue
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <DateRangeFilter
+            preset={preset}
+            customRange={customRange}
+            onPresetChange={setPreset}
+            onCustomRangeChange={setCustomRange}
+          />
+          <ExportMenu orders={orders} dateRange={dateRange} disabled={loading} />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={refetch}
+            disabled={loading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
-      {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Total Revenue */}
         <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-primary/5">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-primary" />
+                <DollarSign className="h-5 w-5 text-primary" />
               </div>
-              <Badge variant="secondary" className="text-xs">Today</Badge>
+              <Badge variant="secondary" className="text-xs">Completed</Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl font-bold">$1,245</div>
-            <p className="text-sm text-muted-foreground">Revenue</p>
+            {loading ? (
+              <div className="h-8 w-24 bg-muted animate-pulse rounded" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{formatCurrency(kpi.totalRevenue)}</div>
+                <p className="text-sm text-muted-foreground">Total Revenue</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
+        {/* Completed Orders */}
         <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-secondary/5">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="h-10 w-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-secondary" />
+                <ShoppingCart className="h-5 w-5 text-secondary" />
               </div>
-              <Badge variant="secondary" className="text-xs">Active</Badge>
+              <Badge variant="secondary" className="text-xs">Completed</Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl font-bold">47</div>
-            <p className="text-sm text-muted-foreground">Orders</p>
+            {loading ? (
+              <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{kpi.completedOrderCount}</div>
+                <p className="text-sm text-muted-foreground">Orders</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
+        {/* Average Order Value */}
         <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-accent/5">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-accent" />
+                <TrendingUp className="h-5 w-5 text-accent-foreground" />
               </div>
-              <Badge variant="secondary" className="text-xs">Avg</Badge>
+              <Badge variant="secondary" className="text-xs">Average</Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl font-bold">12min</div>
-            <p className="text-sm text-muted-foreground">Prep Time</p>
+            {loading ? (
+              <div className="h-8 w-20 bg-muted animate-pulse rounded" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{formatCurrency(kpi.averageOrderValue)}</div>
+                <p className="text-sm text-muted-foreground">Avg Order Value</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-warning/5">
+        {/* Live Status Counts */}
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-muted/30">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <Star className="h-5 w-5 text-warning" />
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                <Clock className="h-5 w-5 text-muted-foreground" />
               </div>
-              <Badge variant="secondary" className="text-xs">Rating</Badge>
+              <Badge variant="secondary" className="text-xs">All Status</Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl font-bold">4.8</div>
-            <p className="text-sm text-muted-foreground">Customer Rating</p>
+            {loading ? (
+              <div className="h-8 w-full bg-muted animate-pulse rounded" />
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <div className="flex items-center gap-1 text-xs">
+                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  <span className="text-muted-foreground">New:</span>
+                  <span className="font-semibold">{kpi.statusCounts.new}</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs">
+                  <ChefHat className="h-3 w-3 text-yellow-500" />
+                  <span className="text-muted-foreground">Prep:</span>
+                  <span className="font-semibold">{kpi.statusCounts.preparing}</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs">
+                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  <span className="text-muted-foreground">Ready:</span>
+                  <span className="font-semibold">{kpi.statusCounts.ready}</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs">
+                  <XCircle className="h-3 w-3 text-red-500" />
+                  <span className="text-muted-foreground">Rej:</span>
+                  <span className="font-semibold">{kpi.statusCounts.rejected}</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Charts Section */}
+      <AnalyticsCharts chartData={chartData} loading={loading} />
     </div>
   );
 };
