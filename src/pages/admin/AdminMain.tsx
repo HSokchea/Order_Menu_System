@@ -5,6 +5,7 @@ import Categories from "./Categories";
 import MenuItems from "./MenuItems";
 import OrderDashboard from "./OrderDashboard";
 import QRGenerator from "./QRGenerator";
+import TableSessions from "./TableSessions";
 
 const getPageInfo = (pathname: string) => {
   switch (pathname) {
@@ -17,6 +18,8 @@ const getPageInfo = (pathname: string) => {
       return { title: "Menu Items", description: "Add and manage your menu items" };
     case "/admin/order-dashboard":
       return { title: "Order Dashboard", description: "Monitor live orders" };
+    case "/admin/table-sessions":
+      return { title: "Table Sessions", description: "Manage dining sessions and billing" };
     case "/admin/qr-generator":
       return { title: "QR Generator", description: "Create QR codes for tables" };
     case "/admin/analytics":
@@ -42,6 +45,7 @@ export default function AdminMain() {
         <Route path="categories" element={<Categories />} />
         <Route path="menu-items" element={<MenuItems />} />
         <Route path="order-dashboard" element={<OrderDashboard />} />
+        <Route path="table-sessions" element={<TableSessions />} />
         <Route path="qr-generator" element={<QRGenerator />} />
         {/* Redirect root admin to dashboard */}
         <Route path="/" element={<Navigate to="/admin" replace />} />

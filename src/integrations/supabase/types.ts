@@ -193,6 +193,7 @@ export type Database = {
           status: string | null
           table_id: string | null
           table_number: string
+          table_session_id: string | null
           total_khr: number | null
           total_usd: number | null
           updated_at: string
@@ -206,6 +207,7 @@ export type Database = {
           status?: string | null
           table_id?: string | null
           table_number: string
+          table_session_id?: string | null
           total_khr?: number | null
           total_usd?: number | null
           updated_at?: string
@@ -219,6 +221,7 @@ export type Database = {
           status?: string | null
           table_id?: string | null
           table_number?: string
+          table_session_id?: string | null
           total_khr?: number | null
           total_usd?: number | null
           updated_at?: string
@@ -243,6 +246,13 @@ export type Database = {
             columns: ["table_id"]
             isOneToOne: false
             referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_table_session_id_fkey"
+            columns: ["table_session_id"]
+            isOneToOne: false
+            referencedRelation: "table_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -330,6 +340,64 @@ export type Database = {
         }
         Relationships: []
       }
+      table_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          restaurant_id: string
+          started_at: string
+          status: string
+          table_id: string
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          restaurant_id: string
+          started_at?: string
+          status?: string
+          table_id: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          restaurant_id?: string
+          started_at?: string
+          status?: string
+          table_id?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_sessions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "public_restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_sessions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_sessions_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tables: {
         Row: {
           created_at: string
@@ -394,6 +462,10 @@ export type Database = {
       }
     }
     Functions: {
+      complete_session_payment: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
       create_order_with_items_validated: {
         Args: {
           p_customer_notes: string
@@ -416,6 +488,10 @@ export type Database = {
           table_number: string
           total_usd: number
         }[]
+      }
+      get_or_create_table_session: {
+        Args: { p_restaurant_id: string; p_table_id: string }
+        Returns: string
       }
       get_order_details: {
         Args: { p_order_id: string; p_order_token?: string }
@@ -459,6 +535,21 @@ export type Database = {
           qr_code_url: string
           restaurant_id: string
           table_number: string
+        }[]
+      }
+      get_session_details: {
+        Args: { p_session_id: string }
+        Returns: {
+          ended_at: string
+          orders: Json
+          restaurant_id: string
+          restaurant_name: string
+          session_id: string
+          started_at: string
+          status: string
+          table_id: string
+          table_number: string
+          total_amount: number
         }[]
       }
     }

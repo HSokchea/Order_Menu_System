@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, Link } from 'react-router-dom';
-import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2, ImageIcon } from 'lucide-react';
+import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2, ImageIcon, Receipt } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCart, SelectedOption } from '@/hooks/useCart';
 import { useActiveOrders } from '@/hooks/useActiveOrders';
@@ -391,6 +391,18 @@ const MenuView = () => {
                   className="h-9 w-9 p-0 md:hidden"
                 >
                   <Search className="h-4 w-4" />
+                </Button>
+
+                {/* Session Bill Icon */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="relative h-9 w-9 p-0"
+                >
+                  <Link to={`/session-bill/${tableId}`}>
+                    <Receipt className="h-4 w-4" />
+                  </Link>
                 </Button>
 
                 {/* My Orders Icon */}
