@@ -59,25 +59,25 @@ const navigationItems = [
     url: "/admin/qr-generator",
     icon: QrCode,
     description: "Create QR codes for tables"
-  },
-  {
-    title: "Analytics",
-    url: "/admin/analytics",
-    icon: BarChart3,
-    description: "Advanced insights and metrics"
-  },
-  {
-    title: "Stock Management",
-    url: "/admin/stock",
-    icon: Package,
-    description: "Track inventory levels"
-  },
-  {
-    title: "Promotions & Discounts",
-    url: "/admin/promotions",
-    icon: Gift,
-    description: "Manage special offers"
   }
+  // {
+  //   title: "Analytics",
+  //   url: "/admin/analytics",
+  //   icon: BarChart3,
+  //   description: "Advanced insights and metrics"
+  // },
+  // {
+  //   title: "Stock Management",
+  //   url: "/admin/stock",
+  //   icon: Package,
+  //   description: "Track inventory levels"
+  // },
+  // {
+  //   title: "Promotions & Discounts",
+  //   url: "/admin/promotions",
+  //   icon: Gift,
+  //   description: "Manage special offers"
+  // }
 ];
 
 export function AdminSidebar() {

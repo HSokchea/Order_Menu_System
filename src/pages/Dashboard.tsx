@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   TrendingUp,
   ShoppingCart,
   DollarSign,
@@ -27,7 +27,7 @@ import {
 const Dashboard = () => {
   const [preset, setPreset] = useState<DateRangePreset>('today');
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
-  
+
   const dateRange = getDateRangeFromPreset(preset, customRange);
   const { orders, loading, refetch } = useOrderAnalytics(dateRange);
   const kpi = useKPIData(orders);
@@ -59,9 +59,9 @@ const Dashboard = () => {
             onCustomRangeChange={setCustomRange}
           />
           <ExportMenu orders={orders} dateRange={dateRange} disabled={loading} />
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={refetch}
             disabled={loading}
             className="gap-2"
@@ -74,7 +74,7 @@ const Dashboard = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Revenue */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-primary/5">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-background hover:shadow-md transition-all">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -96,7 +96,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Completed Orders */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-secondary/5">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-whitedark:from-blue-950/40 dark:to-background hover:shadow-md transition-all">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="h-10 w-10 rounded-lg bg-secondary/10 flex items-center justify-center">
@@ -118,7 +118,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Average Order Value */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-accent/5">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-violet-50 to-white dark:from-violet-950/40 dark:to-background hover:shadow-md transition-all">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -140,7 +140,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Live Status Counts */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-muted/30">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/60 dark:to-background hover:shadow-md transition-all">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
