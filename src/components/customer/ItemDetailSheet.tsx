@@ -328,6 +328,7 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
                           <div
                             key={optionIndex}
                             className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
+                            onClick={() => handleMultipleSelect(group.name, option.label, !isChecked)}
                           >
                             <div className="flex items-center gap-3">
                               <Checkbox
