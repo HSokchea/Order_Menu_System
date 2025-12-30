@@ -20,7 +20,7 @@ interface OrderItem {
 const MyOrders = () => {
   const { tableId } = useParams();
   const navigate = useNavigate();
-  const { activeOrders, loading } = useActiveOrders(tableId || '');
+  const { activeOrders, loading, refetch } = useActiveOrders(tableId || '');
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [refreshing, setRefreshing] = useState(false);
 
@@ -123,8 +123,11 @@ const MyOrders = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    // The useActiveOrders hook will automatically refresh, so we just need to wait a moment
-    setTimeout(() => setRefreshing(false), 500);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   if (loading) {
