@@ -80,27 +80,55 @@ export const useActiveOrders = (tableId: string) => {
     fetchActiveOrders();
 
     // Set up real-time subscription for order status updates
-    // Note: This will only show updates for orders the user has tokens for
+    // Using a unique channel name to avoid conflicts
+    const channelName = `active-orders-${tableId}-${Date.now()}`;
+    console.log('Setting up realtime channel:', channelName);
+    
     const channel = supabase
-      .channel('active-orders')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'orders'
         },
         (payload) => {
-          console.log('Realtime order update received:', payload);
-          // Refetch orders when any order changes
+          console.log('Realtime order UPDATE received:', payload);
+          // Update the order in state if we have it
+          setActiveOrders(prev => {
+            const updated = prev.map(order => {
+              if (order.id === payload.new.id) {
+                return { ...order, status: payload.new.status as string };
+              }
+              return order;
+            });
+            return updated;
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Realtime order INSERT received:', payload);
+          // Refetch to get new orders
           fetchActiveOrders();
         }
       )
       .subscribe((status) => {
         console.log('Realtime subscription status:', status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Channel error - attempting to resubscribe');
+        }
       });
 
     return () => {
+      console.log('Removing realtime channel:', channelName);
       supabase.removeChannel(channel);
     };
   }, [tableId, fetchActiveOrders]);
