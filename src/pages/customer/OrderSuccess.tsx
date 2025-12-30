@@ -65,8 +65,12 @@ const OrderSuccess = () => {
     fetchOrder();
 
     // Set up real-time subscription for order status updates
+    // Using unique channel name with orderId and timestamp to avoid conflicts
+    const channelName = `order-status-${orderId}-${Date.now()}`;
+    console.log('Setting up realtime channel for order:', channelName);
+    
     const channel = supabase
-      .channel('order-status')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -76,12 +80,19 @@ const OrderSuccess = () => {
           filter: `id=eq.${orderId}`
         },
         (payload) => {
-          setOrder(prev => prev ? { ...prev, status: payload.new.status } : null);
+          console.log('Realtime order status update received:', payload);
+          setOrder(prev => prev ? { ...prev, status: payload.new.status as string } : null);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('OrderSuccess realtime subscription status:', status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Channel error on order status subscription');
+        }
+      });
 
     return () => {
+      console.log('Removing order status channel:', channelName);
       supabase.removeChannel(channel);
     };
   }, [orderId, searchParams]);
