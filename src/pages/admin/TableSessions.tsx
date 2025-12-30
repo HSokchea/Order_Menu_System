@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useRef } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,6 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, CheckCircle, CreditCard, Eye, Users } from 'lucide-react';
 import { format } from 'date-fns';
+import { SessionReceipt, ReceiptSession } from '@/components/receipt/SessionReceipt';
+import { ReceiptActions } from '@/components/receipt/ReceiptActions';
 
 interface SessionOrder {
   id: string;
@@ -17,12 +19,21 @@ interface SessionOrder {
   status: string;
   created_at: string;
   customer_notes: string | null;
+  items: Array<{
+    id: string;
+    quantity: number;
+    price_usd: number;
+    notes: string | null;
+    menu_item_name: string;
+  }>;
 }
 
 interface TableSession {
   id: string;
   table_id: string;
   table_number: string;
+  restaurant_id: string;
+  restaurant_name: string;
   status: 'open' | 'paid';
   started_at: string;
   ended_at: string | null;
@@ -39,13 +50,14 @@ const TableSessions = () => {
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   const fetchSessions = async () => {
     if (!user) return;
 
     const { data: restaurant } = await supabase
       .from('restaurants')
-      .select('id')
+      .select('id, name')
       .eq('owner_id', user.id)
       .single();
 
@@ -76,7 +88,7 @@ const TableSessions = () => {
       return;
     }
 
-    // Fetch orders for each session
+    // Fetch orders with items for each session
     const sessionsWithOrders = await Promise.all(
       (sessionsData || []).map(async (session: any) => {
         const { data: orders } = await supabase
@@ -85,15 +97,59 @@ const TableSessions = () => {
           .eq('table_session_id', session.id)
           .order('created_at', { ascending: true });
 
+        // Fetch items for each order
+        const ordersWithItems = await Promise.all(
+          (orders || []).map(async (order) => {
+            const { data: items } = await supabase
+              .rpc('get_order_items_by_token', { 
+                p_order_id: order.id, 
+                p_order_token: '' // Admin doesn't need token
+              });
+
+            // Fallback: direct query for admin
+            let orderItems = items || [];
+            if (orderItems.length === 0) {
+              const { data: directItems } = await supabase
+                .from('order_items')
+                .select('id, quantity, price_usd, notes, menu_item_id')
+                .eq('order_id', order.id);
+
+              if (directItems && directItems.length > 0) {
+                const menuItemIds = directItems.map(i => i.menu_item_id);
+                const { data: menuItems } = await supabase
+                  .from('menu_items')
+                  .select('id, name')
+                  .in('id', menuItemIds);
+
+                const menuItemMap = new Map(menuItems?.map(m => [m.id, m.name]) || []);
+                orderItems = directItems.map(i => ({
+                  id: i.id,
+                  quantity: i.quantity,
+                  price_usd: Number(i.price_usd),
+                  notes: i.notes,
+                  menu_item_name: menuItemMap.get(i.menu_item_id) || 'Unknown Item',
+                }));
+              }
+            }
+
+            return {
+              ...order,
+              items: orderItems,
+            };
+          })
+        );
+
         return {
           id: session.id,
           table_id: session.table_id,
           table_number: session.tables.table_number,
+          restaurant_id: restaurant.id,
+          restaurant_name: restaurant.name,
           status: session.status,
           started_at: session.started_at,
           ended_at: session.ended_at,
           total_amount: Number(session.total_amount) || 0,
-          orders: orders || [],
+          orders: ordersWithItems,
         };
       })
     );
@@ -109,28 +165,8 @@ const TableSessions = () => {
 
     const channel = supabase
       .channel('sessions-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'table_sessions',
-        },
-        () => {
-          fetchSessions();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-        },
-        () => {
-          fetchSessions();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions' }, () => fetchSessions())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchSessions())
       .subscribe();
 
     return () => {
@@ -213,9 +249,7 @@ const TableSessions = () => {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground text-center">
-              No sessions found.
-            </p>
+            <p className="text-muted-foreground text-center">No sessions found.</p>
           </CardContent>
         </Card>
       ) : (
@@ -236,16 +270,10 @@ const TableSessions = () => {
                 const total = getSessionTotal(session);
                 return (
                   <TableRow key={session.id}>
-                    <TableCell className="font-medium">
-                      Table {session.table_number}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(session.started_at), 'MMM d, h:mm a')}
-                    </TableCell>
+                    <TableCell className="font-medium">Table {session.table_number}</TableCell>
+                    <TableCell>{format(new Date(session.started_at), 'MMM d, h:mm a')}</TableCell>
                     <TableCell>{session.orders.length}</TableCell>
-                    <TableCell className="font-semibold">
-                      ${total.toFixed(2)}
-                    </TableCell>
+                    <TableCell className="font-semibold">${total.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge variant={session.status === 'open' ? 'default' : 'secondary'}>
                         {session.status === 'open' ? (
@@ -287,62 +315,42 @@ const TableSessions = () => {
         </Card>
       )}
 
-      {/* Session Details Modal */}
+      {/* Receipt Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Session Details - Table {selectedSession?.table_number}
-            </DialogTitle>
+            <DialogTitle>Receipt - Table {selectedSession?.table_number}</DialogTitle>
           </DialogHeader>
           {selectedSession && (
             <div className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Started</span>
-                <span>{format(new Date(selectedSession.started_at), 'MMM d, yyyy h:mm a')}</span>
-              </div>
-              {selectedSession.ended_at && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Ended</span>
-                  <span>{format(new Date(selectedSession.ended_at), 'MMM d, yyyy h:mm a')}</span>
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <h4 className="font-medium">Orders ({selectedSession.orders.length})</h4>
-                {selectedSession.orders.map((order, idx) => (
-                  <div key={order.id} className="p-3 bg-muted/30 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">Order #{idx + 1}</span>
-                      <Badge variant="outline">{order.status}</Badge>
-                    </div>
-                    <div className="flex justify-between text-sm mt-1">
-                      <span className="text-muted-foreground">
-                        {format(new Date(order.created_at), 'h:mm a')}
-                      </span>
-                      <span className="font-medium">${Number(order.total_usd).toFixed(2)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {/* Actions */}
+              <ReceiptActions
+                receiptRef={receiptRef}
+                sessionId={selectedSession.id}
+                isPaid={selectedSession.status === 'paid'}
+                isProcessing={processingPayment}
+                onCompletePayment={() => handleCompletePayment(selectedSession.id)}
+              />
 
-              <div className="pt-4 border-t">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span>${getSessionTotal(selectedSession).toFixed(2)}</span>
-                </div>
+              {/* Receipt Preview */}
+              <div className="border rounded-lg overflow-hidden">
+                <SessionReceipt
+                  ref={receiptRef}
+                  session={{
+                    session_id: selectedSession.id,
+                    table_id: selectedSession.table_id,
+                    table_number: selectedSession.table_number,
+                    restaurant_id: selectedSession.restaurant_id,
+                    restaurant_name: selectedSession.restaurant_name,
+                    status: selectedSession.status,
+                    started_at: selectedSession.started_at,
+                    ended_at: selectedSession.ended_at,
+                    total_amount: selectedSession.total_amount,
+                    orders: selectedSession.orders,
+                  }}
+                  isPrintMode
+                />
               </div>
-
-              {selectedSession.status === 'open' && (
-                <Button
-                  className="w-full"
-                  onClick={() => handleCompletePayment(selectedSession.id)}
-                  disabled={processingPayment}
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  {processingPayment ? 'Processing...' : 'Complete Payment'}
-                </Button>
-              )}
             </div>
           )}
         </DialogContent>
