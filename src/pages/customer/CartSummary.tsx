@@ -206,7 +206,9 @@ const CartSummary = () => {
             <CardContent className="text-center py-8">
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
-              <p className="text-muted-foreground mb-4">Add some items from the menu</p>
+              <p
+               className="text-muted-foreground mb-4">Add some items from the menu</p>
+
               <Button asChild>
                 <Link to={`/menu/${tableId}`}>Browse Menu</Link>
               </Button>

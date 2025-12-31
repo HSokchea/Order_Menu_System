@@ -130,6 +130,9 @@ const MyOrders = () => {
     }
   };
 
+  // Only show orders that are not completed
+  const visibleOrders = activeOrders.filter(order => order.status !== 'completed');
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-background dark:to-background">
@@ -177,7 +180,7 @@ const MyOrders = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {activeOrders.length === 0 ? (
+        {visibleOrders.length === 0 ? (
           <div className="text-center py-16">
             <Package2 className="h-24 w-24 mx-auto mb-6 text-muted-foreground/50" />
             <h2 className="text-2xl font-semibold mb-2">No Active Orders</h2>
@@ -192,11 +195,11 @@ const MyOrders = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">
-                Active Orders ({activeOrders.length})
+                Active Orders ({visibleOrders.length})
               </h2>
             </div>
 
-            {activeOrders.map((order) => {
+            {visibleOrders.map((order) => {
               const statusInfo = getStatusInfo(order.status);
               const items = orderItems[order.id] || [];
 

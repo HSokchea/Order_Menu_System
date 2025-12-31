@@ -523,7 +523,7 @@ const MenuView = () => {
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
-                      className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-lg ${!item.is_available ? 'opacity-50' : ''}`}
+                      className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer ${!item.is_available ? 'opacity-50' : ''}`}
                     >
                       {/* Product Image */}
                       <div className="relative w-full aspect-square bg-muted rounded-2xl">
@@ -568,8 +568,9 @@ const MenuView = () => {
                             <Button
                               onClick={(e) => handleQuickAdd(e, item)}
                               disabled={!item.is_available}
+                              variant='outline'
                               size="sm"
-                              className="h-9 w-9 p-0 rounded-full shadow-lg"
+                              className="h-9 w-9 p-0 rounded-full shadow-sm"
                             >
                               <Plus className="h-5 w-5" />
                             </Button>
