@@ -15,6 +15,7 @@ export interface RestaurantProfile {
   cuisine_type: string | null;
   default_tax_percentage: number;
   service_charge_percentage: number;
+  logo_url: string | null;
 }
 
 export const useRestaurantProfile = () => {
@@ -45,7 +46,8 @@ export const useRestaurantProfile = () => {
             business_type,
             cuisine_type,
             default_tax_percentage,
-            service_charge_percentage
+            service_charge_percentage,
+            logo_url
           `)
           .eq('owner_id', user.id)
           .single();
@@ -65,6 +67,7 @@ export const useRestaurantProfile = () => {
           cuisine_type: data.cuisine_type,
           default_tax_percentage: Number(data.default_tax_percentage) || 0,
           service_charge_percentage: Number(data.service_charge_percentage) || 0,
+          logo_url: data.logo_url,
         });
       } catch (err: any) {
         console.error('Error fetching restaurant:', err);
