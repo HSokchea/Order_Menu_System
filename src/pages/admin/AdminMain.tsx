@@ -1,5 +1,9 @@
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 import Dashboard from "../Dashboard";
 import Categories from "./Categories";
 import MenuItems from "./MenuItems";
@@ -35,7 +39,51 @@ const getPageInfo = (pathname: string) => {
 
 export default function AdminMain() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const { title, description } = getPageInfo(location.pathname);
+  
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user) {
+        setCheckingOnboarding(false);
+        return;
+      }
+
+      const { data: restaurant, error } = await supabase
+        .from('restaurants')
+        .select('is_onboarded')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking onboarding status:', error);
+        setCheckingOnboarding(false);
+        return;
+      }
+
+      if (!restaurant?.is_onboarded) {
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+
+      setCheckingOnboarding(false);
+    };
+
+    if (!authLoading) {
+      checkOnboardingStatus();
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading || checkingOnboarding) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <AdminLayout title={title} description={description}>

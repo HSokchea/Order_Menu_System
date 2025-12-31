@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminMain from "./pages/admin/AdminMain";
+import Onboarding from "./pages/admin/Onboarding";
 import MenuView from "./pages/customer/MenuView";
 import CartSummary from "./pages/customer/CartSummary";
 import OrderSuccess from "./pages/customer/OrderSuccess";
@@ -43,6 +44,7 @@ const AppContent = () => {
         <>
           {/* Protected admin routes */}
           <Route path="/" element={<Navigate to="/admin" replace />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin/*" element={<AdminMain />} />
         </>
