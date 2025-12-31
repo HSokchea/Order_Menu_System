@@ -319,6 +319,8 @@ export type Database = {
       restaurants: {
         Row: {
           address: string | null
+          allow_multiple_orders_per_table: boolean | null
+          auto_close_session_after_payment: boolean | null
           business_type: string | null
           city: string | null
           country: string | null
@@ -332,12 +334,18 @@ export type Database = {
           name: string
           owner_id: string
           phone: string | null
+          receipt_footer_text: string | null
+          receipt_header_text: string | null
           service_charge_percentage: number | null
+          show_service_charge_on_receipt: boolean | null
+          show_tax_on_receipt: boolean | null
           timezone: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          allow_multiple_orders_per_table?: boolean | null
+          auto_close_session_after_payment?: boolean | null
           business_type?: string | null
           city?: string | null
           country?: string | null
@@ -351,12 +359,18 @@ export type Database = {
           name: string
           owner_id: string
           phone?: string | null
+          receipt_footer_text?: string | null
+          receipt_header_text?: string | null
           service_charge_percentage?: number | null
+          show_service_charge_on_receipt?: boolean | null
+          show_tax_on_receipt?: boolean | null
           timezone?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          allow_multiple_orders_per_table?: boolean | null
+          auto_close_session_after_payment?: boolean | null
           business_type?: string | null
           city?: string | null
           country?: string | null
@@ -370,7 +384,11 @@ export type Database = {
           name?: string
           owner_id?: string
           phone?: string | null
+          receipt_footer_text?: string | null
+          receipt_header_text?: string | null
           service_charge_percentage?: number | null
+          show_service_charge_on_receipt?: boolean | null
+          show_tax_on_receipt?: boolean | null
           timezone?: string | null
           updated_at?: string
         }

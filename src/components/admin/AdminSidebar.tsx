@@ -8,7 +8,8 @@ import {
   BarChart3,
   Package,
   Gift,
-  Users
+  Users,
+  Settings
 } from "lucide-react";
 
 import {
@@ -59,6 +60,12 @@ const navigationItems = [
     url: "/admin/qr-generator",
     icon: QrCode,
     description: "Create QR codes for tables"
+  },
+  {
+    title: "Settings",
+    url: "/admin/settings",
+    icon: Settings,
+    description: "Shop and receipt settings"
   }
   // {
   //   title: "Analytics",
