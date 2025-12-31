@@ -328,6 +328,7 @@ export type Database = {
           default_tax_percentage: number | null
           id: string
           is_onboarded: boolean | null
+          logo_url: string | null
           name: string
           owner_id: string
           phone: string | null
@@ -346,6 +347,7 @@ export type Database = {
           default_tax_percentage?: number | null
           id?: string
           is_onboarded?: boolean | null
+          logo_url?: string | null
           name: string
           owner_id: string
           phone?: string | null
@@ -364,6 +366,7 @@ export type Database = {
           default_tax_percentage?: number | null
           id?: string
           is_onboarded?: boolean | null
+          logo_url?: string | null
           name?: string
           owner_id?: string
           phone?: string | null

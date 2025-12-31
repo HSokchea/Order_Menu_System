@@ -1,16 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { ChefHat, Store, Loader2 } from 'lucide-react';
-
+import { Store, Loader2, Upload, X, ImageIcon } from 'lucide-react';
 const BUSINESS_TYPES = [
   { value: 'restaurant', label: 'Restaurant' },
   { value: 'cafe', label: 'Café' },
@@ -47,6 +45,9 @@ const Onboarding = () => {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -102,6 +103,52 @@ const Onboarding = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const uploadLogo = async (file: File) => {
+    if (!restaurantId) return;
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `logos/${restaurantId}/${Date.now()}.${fileExt}`;
+    
+    setUploading(true);
+    
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('menu-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('menu-images')
+        .getPublicUrl(fileName);
+
+      setLogoUrl(data.publicUrl);
+      toast({
+        title: "Success",
+        description: "Logo uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeLogo = () => {
+    setLogoUrl(null);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadLogo(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -139,6 +186,7 @@ const Onboarding = () => {
         default_tax_percentage: parseFloat(formData.default_tax_percentage) || 0,
         service_charge_percentage: parseFloat(formData.service_charge_percentage) || 0,
         address: formData.address.trim() || null,
+        logo_url: logoUrl,
         is_onboarded: true,
       })
       .eq('id', restaurantId);
@@ -186,6 +234,52 @@ const Onboarding = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Shop Logo */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Shop Logo</h3>
+              <div className="flex flex-col items-center gap-4">
+                {logoUrl ? (
+                  <div className="relative group">
+                    <img
+                      src={logoUrl}
+                      alt="Shop logo"
+                      className="w-32 h-32 object-cover rounded-full border-4 border-primary/20"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2 h-8 w-8 rounded-full p-0"
+                      onClick={removeLogo}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 border-2 border-dashed border-border rounded-full flex flex-col items-center justify-center bg-muted/20">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground mb-1" />
+                    <p className="text-xs text-muted-foreground">No logo</p>
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || !restaurantId}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {uploading ? 'Uploading...' : logoUrl ? 'Change Logo' : 'Upload Logo'}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
             {/* Basic Info */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground">Basic Information</h3>
