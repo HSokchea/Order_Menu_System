@@ -582,10 +582,17 @@ export type Database = {
       get_session_details: {
         Args: { p_session_id: string }
         Returns: {
+          currency: string
+          default_tax_percentage: number
           ended_at: string
           orders: Json
+          restaurant_address: string
+          restaurant_city: string
+          restaurant_country: string
           restaurant_id: string
           restaurant_name: string
+          restaurant_phone: string
+          service_charge_percentage: number
           session_id: string
           started_at: string
           status: string

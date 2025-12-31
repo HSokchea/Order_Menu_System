@@ -23,6 +23,7 @@ import {
   type DateRangePreset,
   type DateRange,
 } from '@/hooks/useOrderAnalytics';
+import { useRestaurantProfile } from '@/hooks/useRestaurantProfile';
 
 const Dashboard = () => {
   const [preset, setPreset] = useState<DateRangePreset>('today');
@@ -32,11 +33,14 @@ const Dashboard = () => {
   const { orders, loading, refetch } = useOrderAnalytics(dateRange);
   const kpi = useKPIData(orders);
   const chartData = useChartData(orders, dateRange);
+  const { restaurant } = useRestaurantProfile();
+
+  const currency = restaurant?.currency || 'USD';
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
       minimumFractionDigits: 2,
     }).format(value);
   };
@@ -46,7 +50,9 @@ const Dashboard = () => {
       {/* Header with Filters and Export */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight mb-1">Sales Dashboard</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-1">
+            {restaurant?.name ? `${restaurant.name} Dashboard` : 'Sales Dashboard'}
+          </h2>
           <p className="text-muted-foreground">
             Track your restaurant's performance and revenue
           </p>
@@ -58,7 +64,7 @@ const Dashboard = () => {
             onPresetChange={setPreset}
             onCustomRangeChange={setCustomRange}
           />
-          <ExportMenu orders={orders} dateRange={dateRange} disabled={loading} />
+          <ExportMenu orders={orders} dateRange={dateRange} disabled={loading} restaurantName={restaurant?.name} currency={currency} />
           <Button
             variant="ghost"
             size="sm"

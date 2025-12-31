@@ -27,6 +27,13 @@ export interface ReceiptSession {
   table_number: string;
   restaurant_id: string;
   restaurant_name: string;
+  restaurant_phone?: string | null;
+  restaurant_address?: string | null;
+  restaurant_city?: string | null;
+  restaurant_country?: string | null;
+  default_tax_percentage?: number;
+  service_charge_percentage?: number;
+  currency?: string;
   status: 'open' | 'paid';
   started_at: string;
   ended_at: string | null;
@@ -68,6 +75,24 @@ const getSessionTotal = (session: ReceiptSession): number => {
 export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
   ({ session, showActions = false, isPrintMode = false }, ref) => {
     const totalBill = getSessionTotal(session);
+    const taxRate = session.default_tax_percentage || 0;
+    const serviceChargeRate = session.service_charge_percentage || 0;
+    const taxAmount = totalBill * (taxRate / 100);
+    const serviceChargeAmount = totalBill * (serviceChargeRate / 100);
+    const grandTotal = totalBill + taxAmount + serviceChargeAmount;
+    const currency = session.currency || 'USD';
+
+    const formatPrice = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(amount);
+    };
+
+    // Build address line
+    const addressParts = [session.restaurant_address, session.restaurant_city, session.restaurant_country].filter(Boolean);
+    const fullAddress = addressParts.join(', ');
 
     return (
       <div
@@ -84,7 +109,17 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           <h1 className={`font-bold ${isPrintMode ? 'text-sm' : 'text-xl'} print:text-sm`}>
             {session.restaurant_name}
           </h1>
-          <p className="text-muted-foreground print:text-black/70 mt-1">
+          {fullAddress && (
+            <p className="text-muted-foreground print:text-black/70 text-xs mt-1">
+              {fullAddress}
+            </p>
+          )}
+          {session.restaurant_phone && (
+            <p className="text-muted-foreground print:text-black/70 text-xs">
+              Tel: {session.restaurant_phone}
+            </p>
+          )}
+          <p className="text-muted-foreground print:text-black/70 mt-2">
             Table {session.table_number}
           </p>
         </div>
@@ -137,7 +172,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
                         <span>{item.quantity}x {item.menu_item_name}</span>
                       </div>
                       <span className="font-medium ml-2">
-                        ${itemTotal.toFixed(2)}
+                        {formatPrice(itemTotal)}
                       </span>
                     </div>
 
@@ -148,7 +183,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
                           <div key={idx} className="flex justify-between">
                             <span>• {opt.group}: {opt.value}</span>
                             {opt.price > 0 && (
-                              <span>+${opt.price.toFixed(2)}</span>
+                              <span>+{formatPrice(opt.price)}</span>
                             )}
                           </div>
                         ))}
@@ -161,7 +196,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
               {/* Order Subtotal */}
               <div className="flex justify-between pl-2 print:pl-1 text-muted-foreground print:text-black/70">
                 <span>Order subtotal</span>
-                <span>${order.total_usd.toFixed(2)}</span>
+                <span>{formatPrice(order.total_usd)}</span>
               </div>
             </div>
           ))}
@@ -173,13 +208,27 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
         <div className="space-y-2 print:space-y-1">
           <div className="flex justify-between">
             <span>Subtotal</span>
-            <span>${totalBill.toFixed(2)}</span>
+            <span>{formatPrice(totalBill)}</span>
           </div>
+          
+          {taxRate > 0 && (
+            <div className="flex justify-between text-muted-foreground print:text-black/70">
+              <span>Tax ({taxRate}%)</span>
+              <span>{formatPrice(taxAmount)}</span>
+            </div>
+          )}
+          
+          {serviceChargeRate > 0 && (
+            <div className="flex justify-between text-muted-foreground print:text-black/70">
+              <span>Service Charge ({serviceChargeRate}%)</span>
+              <span>{formatPrice(serviceChargeAmount)}</span>
+            </div>
+          )}
           
           {/* Total */}
           <div className={`flex justify-between font-bold ${isPrintMode ? 'text-sm' : 'text-lg'} print:text-sm pt-2 border-t border-dashed`}>
             <span>TOTAL</span>
-            <span>${totalBill.toFixed(2)}</span>
+            <span>{formatPrice(grandTotal)}</span>
           </div>
         </div>
 
