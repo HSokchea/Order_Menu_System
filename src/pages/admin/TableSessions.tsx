@@ -34,6 +34,13 @@ interface TableSession {
   table_number: string;
   restaurant_id: string;
   restaurant_name: string;
+  restaurant_phone: string | null;
+  restaurant_address: string | null;
+  restaurant_city: string | null;
+  restaurant_country: string | null;
+  default_tax_percentage: number;
+  service_charge_percentage: number;
+  currency: string;
   status: 'open' | 'paid';
   started_at: string;
   ended_at: string | null;
@@ -57,7 +64,7 @@ const TableSessions = () => {
 
     const { data: restaurant } = await supabase
       .from('restaurants')
-      .select('id, name')
+      .select('id, name, phone, address, city, country, default_tax_percentage, service_charge_percentage, currency')
       .eq('owner_id', user.id)
       .single();
 
@@ -145,6 +152,13 @@ const TableSessions = () => {
           table_number: session.tables.table_number,
           restaurant_id: restaurant.id,
           restaurant_name: restaurant.name,
+          restaurant_phone: restaurant.phone || null,
+          restaurant_address: restaurant.address || null,
+          restaurant_city: restaurant.city || null,
+          restaurant_country: restaurant.country || null,
+          default_tax_percentage: Number(restaurant.default_tax_percentage) || 0,
+          service_charge_percentage: Number(restaurant.service_charge_percentage) || 0,
+          currency: restaurant.currency || 'USD',
           status: session.status,
           started_at: session.started_at,
           ended_at: session.ended_at,
@@ -342,6 +356,13 @@ const TableSessions = () => {
                     table_number: selectedSession.table_number,
                     restaurant_id: selectedSession.restaurant_id,
                     restaurant_name: selectedSession.restaurant_name,
+                    restaurant_phone: selectedSession.restaurant_phone,
+                    restaurant_address: selectedSession.restaurant_address,
+                    restaurant_city: selectedSession.restaurant_city,
+                    restaurant_country: selectedSession.restaurant_country,
+                    default_tax_percentage: selectedSession.default_tax_percentage,
+                    service_charge_percentage: selectedSession.service_charge_percentage,
+                    currency: selectedSession.currency,
                     status: selectedSession.status,
                     started_at: selectedSession.started_at,
                     ended_at: selectedSession.ended_at,

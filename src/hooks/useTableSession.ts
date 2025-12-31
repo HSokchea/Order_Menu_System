@@ -22,6 +22,13 @@ interface TableSession {
   table_number: string;
   restaurant_id: string;
   restaurant_name: string;
+  restaurant_phone: string | null;
+  restaurant_address: string | null;
+  restaurant_city: string | null;
+  restaurant_country: string | null;
+  default_tax_percentage: number;
+  service_charge_percentage: number;
+  currency: string;
   status: 'open' | 'paid';
   started_at: string;
   ended_at: string | null;
@@ -75,6 +82,13 @@ export const useTableSession = (tableId: string | undefined) => {
           table_number: sessionRow.table_number,
           restaurant_id: sessionRow.restaurant_id,
           restaurant_name: sessionRow.restaurant_name,
+          restaurant_phone: sessionRow.restaurant_phone || null,
+          restaurant_address: sessionRow.restaurant_address || null,
+          restaurant_city: sessionRow.restaurant_city || null,
+          restaurant_country: sessionRow.restaurant_country || null,
+          default_tax_percentage: Number(sessionRow.default_tax_percentage) || 0,
+          service_charge_percentage: Number(sessionRow.service_charge_percentage) || 0,
+          currency: sessionRow.currency || 'USD',
           status: sessionRow.status as 'open' | 'paid',
           started_at: sessionRow.started_at,
           ended_at: sessionRow.ended_at,
