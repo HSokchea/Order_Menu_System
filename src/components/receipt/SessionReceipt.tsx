@@ -31,6 +31,7 @@ export interface ReceiptSession {
   restaurant_address?: string | null;
   restaurant_city?: string | null;
   restaurant_country?: string | null;
+  restaurant_logo_url?: string | null;
   default_tax_percentage?: number;
   service_charge_percentage?: number;
   currency?: string;
@@ -106,6 +107,15 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
       >
         {/* Header */}
         <div className="text-center mb-4 print:mb-2">
+          {session.restaurant_logo_url && (
+            <div className="flex justify-center mb-3 print:mb-2">
+              <img 
+                src={session.restaurant_logo_url} 
+                alt={session.restaurant_name}
+                className={`object-contain ${isPrintMode ? 'h-12 w-12' : 'h-16 w-16'} print:h-12 print:w-12 rounded-lg`}
+              />
+            </div>
+          )}
           <h1 className={`font-bold ${isPrintMode ? 'text-sm' : 'text-xl'} print:text-sm`}>
             {session.restaurant_name}
           </h1>
