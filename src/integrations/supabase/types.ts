@@ -318,24 +318,57 @@ export type Database = {
       }
       restaurants: {
         Row: {
+          address: string | null
+          business_type: string | null
+          city: string | null
+          country: string | null
           created_at: string
+          cuisine_type: string | null
+          currency: string | null
+          default_tax_percentage: number | null
           id: string
+          is_onboarded: boolean | null
           name: string
           owner_id: string
+          phone: string | null
+          service_charge_percentage: number | null
+          timezone: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          business_type?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          cuisine_type?: string | null
+          currency?: string | null
+          default_tax_percentage?: number | null
           id?: string
+          is_onboarded?: boolean | null
           name: string
           owner_id: string
+          phone?: string | null
+          service_charge_percentage?: number | null
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          business_type?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
+          cuisine_type?: string | null
+          currency?: string | null
+          default_tax_percentage?: number | null
           id?: string
+          is_onboarded?: boolean | null
           name?: string
           owner_id?: string
+          phone?: string | null
+          service_charge_percentage?: number | null
+          timezone?: string | null
           updated_at?: string
         }
         Relationships: []
