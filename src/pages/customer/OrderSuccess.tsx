@@ -24,6 +24,7 @@ const OrderSuccess = () => {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch order details
   useEffect(() => {
     const fetchOrder = async () => {
       if (!orderId) return;
@@ -63,14 +64,21 @@ const OrderSuccess = () => {
     };
 
     fetchOrder();
+  }, [orderId, searchParams]);
 
-    // Set up real-time subscription for order status updates
-    // Using unique channel name with orderId and timestamp to avoid conflicts
-    const channelName = `order-status-${orderId}-${Date.now()}`;
+  // Separate effect for realtime subscription
+  useEffect(() => {
+    if (!orderId) return;
+
+    const channelName = `order-status-${orderId}`;
     console.log('Setting up realtime channel for order:', channelName);
     
     const channel = supabase
-      .channel(channelName)
+      .channel(channelName, {
+        config: {
+          broadcast: { self: true },
+        },
+      })
       .on(
         'postgres_changes',
         {
@@ -81,13 +89,17 @@ const OrderSuccess = () => {
         },
         (payload) => {
           console.log('Realtime order status update received:', payload);
+          console.log('New status:', payload.new.status);
           setOrder(prev => prev ? { ...prev, status: payload.new.status as string } : null);
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('OrderSuccess realtime subscription status:', status);
-        if (status === 'CHANNEL_ERROR') {
-          console.error('Channel error on order status subscription');
+        if (err) {
+          console.error('Realtime subscription error:', err);
+        }
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to order', orderId, 'updates');
         }
       });
 
@@ -95,7 +107,7 @@ const OrderSuccess = () => {
       console.log('Removing order status channel:', channelName);
       supabase.removeChannel(channel);
     };
-  }, [orderId, searchParams]);
+  }, [orderId]);
 
   const getStatusMessage = (status: string) => {
     switch (status) {

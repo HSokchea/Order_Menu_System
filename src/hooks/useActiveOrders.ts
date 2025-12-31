@@ -78,14 +78,22 @@ export const useActiveOrders = (tableId: string) => {
 
   useEffect(() => {
     fetchActiveOrders();
+  }, [fetchActiveOrders]);
+
+  // Separate effect for realtime subscription to avoid recreation issues
+  useEffect(() => {
+    if (!tableId) return;
 
     // Set up real-time subscription for order status updates
-    // Using a unique channel name to avoid conflicts
-    const channelName = `active-orders-${tableId}-${Date.now()}`;
+    const channelName = `active-orders-${tableId}`;
     console.log('Setting up realtime channel:', channelName);
     
     const channel = supabase
-      .channel(channelName)
+      .channel(channelName, {
+        config: {
+          broadcast: { self: true },
+        },
+      })
       .on(
         'postgres_changes',
         {
@@ -99,6 +107,7 @@ export const useActiveOrders = (tableId: string) => {
           setActiveOrders(prev => {
             const updated = prev.map(order => {
               if (order.id === payload.new.id) {
+                console.log('Updating order status from', order.status, 'to', payload.new.status);
                 return { ...order, status: payload.new.status as string };
               }
               return order;
@@ -120,10 +129,13 @@ export const useActiveOrders = (tableId: string) => {
           fetchActiveOrders();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Realtime subscription status:', status);
-        if (status === 'CHANNEL_ERROR') {
-          console.error('Channel error - attempting to resubscribe');
+        if (err) {
+          console.error('Realtime subscription error:', err);
+        }
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to order updates');
         }
       });
 
