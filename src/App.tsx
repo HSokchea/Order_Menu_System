@@ -44,6 +44,7 @@ const AppContent = () => {
         <>
           {/* Protected admin routes */}
           <Route path="/" element={<Navigate to="/admin" replace />} />
+          <Route path="/auth" element={<Navigate to="/admin" replace />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin/*" element={<AdminMain />} />
