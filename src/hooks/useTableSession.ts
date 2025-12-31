@@ -26,6 +26,7 @@ interface TableSession {
   restaurant_address: string | null;
   restaurant_city: string | null;
   restaurant_country: string | null;
+  restaurant_logo_url: string | null;
   default_tax_percentage: number;
   service_charge_percentage: number;
   currency: string;
@@ -86,6 +87,7 @@ export const useTableSession = (tableId: string | undefined) => {
           restaurant_address: sessionRow.restaurant_address || null,
           restaurant_city: sessionRow.restaurant_city || null,
           restaurant_country: sessionRow.restaurant_country || null,
+          restaurant_logo_url: sessionRow.restaurant_logo_url || null,
           default_tax_percentage: Number(sessionRow.default_tax_percentage) || 0,
           service_charge_percentage: Number(sessionRow.service_charge_percentage) || 0,
           currency: sessionRow.currency || 'USD',

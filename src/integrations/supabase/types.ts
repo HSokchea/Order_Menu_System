@@ -593,6 +593,7 @@ export type Database = {
           restaurant_city: string
           restaurant_country: string
           restaurant_id: string
+          restaurant_logo_url: string
           restaurant_name: string
           restaurant_phone: string
           service_charge_percentage: number
