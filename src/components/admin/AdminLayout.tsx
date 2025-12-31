@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -8,7 +10,6 @@ import {
 } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { Settings, LogOut, Menu } from "lucide-react";
-
 interface AdminLayoutProps {
   children: ReactNode;
   title?: string;
@@ -16,10 +17,20 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children, title, description }: AdminLayoutProps) {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSignOut = async () => {
-    await signOut();
+    const { error } = await signOut();
+    if (error) {
+      console.warn("Sign out warning:", error);
+    }
+    toast({
+      title: "Signed out",
+      description: "You have been successfully signed out.",
+    });
+    navigate("/auth", { replace: true });
   };
 
   return (
