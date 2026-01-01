@@ -32,6 +32,7 @@ export interface ReceiptSession {
   restaurant_city?: string | null;
   restaurant_country?: string | null;
   restaurant_logo_url?: string | null;
+  restaurant_vat_tin?: string | null;
   default_tax_percentage?: number;
   service_charge_percentage?: number;
   currency?: string;
@@ -39,6 +40,9 @@ export interface ReceiptSession {
   started_at: string;
   ended_at: string | null;
   total_amount: number;
+  order_type?: string;
+  invoice_number?: string | null;
+  cashier_name?: string | null;
   orders: SessionOrder[];
 }
 
@@ -91,6 +95,15 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
       }).format(amount);
     };
 
+    const formatOrderType = (type?: string) => {
+      switch (type) {
+        case 'dine_in': return 'Dine In';
+        case 'takeaway': return 'Takeaway';
+        case 'delivery': return 'Delivery';
+        default: return 'Dine In';
+      }
+    };
+
     // Build address line
     const addressParts = [session.restaurant_address, session.restaurant_city, session.restaurant_country].filter(Boolean);
     const fullAddress = addressParts.join(', ');
@@ -129,15 +142,25 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
               Tel: {session.restaurant_phone}
             </p>
           )}
-          <p className="text-muted-foreground print:text-black/70 mt-2">
-            Table {session.table_number}
-          </p>
+          {session.restaurant_vat_tin && (
+            <p className="text-muted-foreground print:text-black/70 text-xs">
+              VAT TIN: {session.restaurant_vat_tin}
+            </p>
+          )}
         </div>
 
         <Separator className="my-3 print:my-1 print:border-dashed" />
 
         {/* Session Info */}
         <div className="space-y-1 text-center mb-4 print:mb-2">
+          {session.invoice_number && (
+            <p className="font-semibold text-sm">
+              Invoice: {session.invoice_number}
+            </p>
+          )}
+          <p className="text-muted-foreground print:text-black/70">
+            Table {session.table_number} • {formatOrderType(session.order_type)}
+          </p>
           <p className="text-muted-foreground print:text-black/70">
             {format(new Date(session.started_at), 'MMM d, yyyy')}
           </p>
@@ -149,9 +172,11 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
               Ended: {format(new Date(session.ended_at), 'h:mm a')}
             </p>
           )}
-          <p className={`text-[10px] text-muted-foreground print:text-black/50 ${isPrintMode ? '' : 'text-xs'}`}>
-            Session: {session.session_id.slice(0, 8).toUpperCase()}
-          </p>
+          {!session.invoice_number && (
+            <p className={`text-[10px] text-muted-foreground print:text-black/50 ${isPrintMode ? '' : 'text-xs'}`}>
+              Session: {session.session_id.slice(0, 8).toUpperCase()}
+            </p>
+          )}
         </div>
 
         <Separator className="my-3 print:my-1 print:border-dashed" />
@@ -252,6 +277,11 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
                 <CheckCircle className="h-4 w-4 print:h-3 print:w-3" />
                 <span className="font-semibold">PAID</span>
               </div>
+              {session.cashier_name && (
+                <p className="text-muted-foreground print:text-black/70 text-xs">
+                  Cashier: {session.cashier_name}
+                </p>
+              )}
               {session.ended_at && (
                 <p className="text-muted-foreground print:text-black/70">
                   {format(new Date(session.ended_at), 'MMM d, yyyy h:mm a')}

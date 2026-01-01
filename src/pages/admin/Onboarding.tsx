@@ -61,6 +61,8 @@ const Onboarding = () => {
     default_tax_percentage: '0',
     service_charge_percentage: '0',
     address: '',
+    vat_tin: '',
+    default_order_type: 'dine_in',
   });
 
   useEffect(() => {
@@ -187,6 +189,8 @@ const Onboarding = () => {
         service_charge_percentage: parseFloat(formData.service_charge_percentage) || 0,
         address: formData.address.trim() || null,
         logo_url: logoUrl,
+        vat_tin: formData.vat_tin.trim() || null,
+        default_order_type: formData.default_order_type,
         is_onboarded: true,
       })
       .eq('id', restaurantId);
@@ -395,7 +399,7 @@ const Onboarding = () => {
             {/* Financial */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-muted-foreground">Financial Settings</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="currency">Currency</Label>
                   <Select
@@ -414,6 +418,17 @@ const Onboarding = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vat_tin">VAT TIN (Optional)</Label>
+                  <Input
+                    id="vat_tin"
+                    value={formData.vat_tin}
+                    onChange={(e) => handleChange('vat_tin', e.target.value)}
+                    placeholder="e.g., K001-12345678"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="default_tax_percentage">Tax %</Label>
                   <Input
@@ -440,6 +455,27 @@ const Onboarding = () => {
                     placeholder="0"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Operation Defaults */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Operation Defaults</h3>
+              <div className="space-y-2">
+                <Label htmlFor="default_order_type">Default Order Type</Label>
+                <Select
+                  value={formData.default_order_type}
+                  onValueChange={(value) => handleChange('default_order_type', value)}
+                >
+                  <SelectTrigger id="default_order_type">
+                    <SelectValue placeholder="Select order type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dine_in">Dine In</SelectItem>
+                    <SelectItem value="takeaway">Takeaway</SelectItem>
+                    <SelectItem value="delivery">Delivery</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

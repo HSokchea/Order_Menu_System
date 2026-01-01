@@ -603,9 +603,13 @@ export type Database = {
       get_session_details: {
         Args: { p_session_id: string }
         Returns: {
+          cashier_name: string
           currency: string
           default_tax_percentage: number
           ended_at: string
+          invoice_number: string
+          is_invoice_locked: boolean
+          order_type: string
           orders: Json
           restaurant_address: string
           restaurant_city: string
@@ -614,6 +618,7 @@ export type Database = {
           restaurant_logo_url: string
           restaurant_name: string
           restaurant_phone: string
+          restaurant_vat_tin: string
           service_charge_percentage: number
           session_id: string
           started_at: string
