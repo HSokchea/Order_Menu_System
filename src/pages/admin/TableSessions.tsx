@@ -91,6 +91,9 @@ const TableSessions = () => {
         started_at,
         ended_at,
         total_amount,
+        order_type,
+        invoice_number,
+        cashier_name,
         tables!inner(table_number)
       `)
       .eq('restaurant_id', rest.id)
@@ -177,9 +180,9 @@ const TableSessions = () => {
           started_at: session.started_at,
           ended_at: session.ended_at,
           total_amount: Number(session.total_amount) || 0,
-          order_type: 'dine_in',
-          invoice_number: null,
-          cashier_name: null,
+          order_type: session.order_type || 'dine_in',
+          invoice_number: session.invoice_number || null,
+          cashier_name: session.cashier_name || null,
           orders: ordersWithItems,
         };
       })
