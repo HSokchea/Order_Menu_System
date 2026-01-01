@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,10 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, CheckCircle, CreditCard, Eye, Users } from 'lucide-react';
+import { Clock, CheckCircle, CreditCard, Eye, Users, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { SessionReceipt, ReceiptSession } from '@/components/receipt/SessionReceipt';
 import { ReceiptActions } from '@/components/receipt/ReceiptActions';
@@ -61,12 +62,19 @@ const TableSessions = () => {
   const [sessions, setSessions] = useState<TableSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('open');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [cashierName, setCashierName] = useState('');
   const [processingPayment, setProcessingPayment] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
+  
+  // Pagination and sorting state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<'table_number' | 'started_at' | 'total' | 'status' | null>('started_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const itemsPerPage = 10;
 
   const fetchSessions = async () => {
     if (!user) return;
@@ -270,6 +278,79 @@ const TableSessions = () => {
 
   const openSessionsCount = sessions.filter(s => s.status === 'open').length;
 
+  // Filter, search, sort and paginate sessions
+  const filteredAndPaginatedSessions = useMemo(() => {
+    let filtered = sessions;
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(session => session.status === statusFilter);
+    }
+
+    // Apply search filter (search by table number)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(session =>
+        session.table_number.toLowerCase().includes(query) ||
+        session.id.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply sorting
+    if (sortField) {
+      filtered.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sortField) {
+          case 'table_number':
+            aValue = parseInt(a.table_number) || 0;
+            bValue = parseInt(b.table_number) || 0;
+            break;
+          case 'started_at':
+            aValue = new Date(a.started_at).getTime();
+            bValue = new Date(b.started_at).getTime();
+            break;
+          case 'total':
+            aValue = getSessionTotal(a);
+            bValue = getSessionTotal(b);
+            break;
+          case 'status':
+            aValue = a.status;
+            bValue = b.status;
+            break;
+          default:
+            return 0;
+        }
+
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    // Calculate pagination
+    const totalItems = filtered.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    const paginatedItems = filtered.slice(startIndex, endIndex);
+
+    return {
+      items: paginatedItems,
+      totalItems,
+      totalPages,
+      startIndex: startIndex + 1,
+      endIndex,
+      currentPage,
+    };
+  }, [sessions, statusFilter, searchQuery, sortField, sortDirection, currentPage, itemsPerPage]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchQuery]);
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-[400px]">Loading...</div>;
   }
@@ -281,19 +362,24 @@ const TableSessions = () => {
         <div>
           <h2 className="text-xl font-semibold">Table Sessions</h2>
           <p className="text-sm text-muted-foreground">
-            {openSessionsCount} active session{openSessionsCount !== 1 ? 's' : ''}
+            Showing {filteredAndPaginatedSessions.totalItems > 0 ? filteredAndPaginatedSessions.startIndex : 0}–{filteredAndPaginatedSessions.endIndex} of {filteredAndPaginatedSessions.totalItems} sessions ({openSessionsCount} active)
           </p>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Filter" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Sessions</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-          </SelectContent>
-        </Select>
+        
+        {/* Controls: Search and Filters */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sessions</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Sessions Table */}
@@ -309,16 +395,22 @@ const TableSessions = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Table</TableHead>
-                <TableHead>Started</TableHead>
+                <TableHead className="cursor-pointer">
+                  Table
+                </TableHead>
+                <TableHead className="cursor-pointer">
+                  Started
+                </TableHead>
                 <TableHead>Orders</TableHead>
-                <TableHead>Total</TableHead>
+                <TableHead className="cursor-pointer">
+                  Total 
+                </TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sessions.map((session) => {
+              {filteredAndPaginatedSessions.items.map((session) => {
                 const total = getSessionTotal(session);
                 return (
                   <TableRow key={session.id}>
@@ -365,6 +457,73 @@ const TableSessions = () => {
             </TableBody>
           </Table>
         </Card>
+      )}
+
+      {/* Pagination */}
+      {filteredAndPaginatedSessions.totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
+          <div className="text-sm text-muted-foreground">
+            Page {filteredAndPaginatedSessions.currentPage} of {filteredAndPaginatedSessions.totalPages}
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) setCurrentPage(currentPage - 1);
+                  }}
+                  className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              {Array.from({ length: filteredAndPaginatedSessions.totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // Show first page, last page, current page, and pages around current
+                  return page === 1 || 
+                         page === filteredAndPaginatedSessions.totalPages || 
+                         Math.abs(page - currentPage) <= 1;
+                })
+                .map((page, index, array) => {
+                  // Add ellipsis if there's a gap
+                  const shouldShowEllipsis = index > 0 && page - array[index - 1] > 1;
+                  return (
+                    <div key={page} className="flex items-center">
+                      {shouldShowEllipsis && (
+                        <PaginationItem>
+                          <span className="px-3 py-2 text-muted-foreground">...</span>
+                        </PaginationItem>
+                      )}
+                      <PaginationItem>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                          isActive={page === currentPage}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </div>
+                  );
+                })}
+              <PaginationItem>
+                <PaginationNext 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < filteredAndPaginatedSessions.totalPages) {
+                      setCurrentPage(currentPage + 1);
+                    }
+                  }}
+                  className={currentPage >= filteredAndPaginatedSessions.totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       )}
 
       {/* Receipt Modal */}
