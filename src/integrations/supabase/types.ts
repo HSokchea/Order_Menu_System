@@ -522,10 +522,12 @@ export type Database = {
       }
     }
     Functions: {
-      complete_session_payment: {
-        Args: { p_session_id: string }
-        Returns: Json
-      }
+      complete_session_payment:
+        | { Args: { p_session_id: string }; Returns: Json }
+        | {
+            Args: { p_cashier_name?: string; p_session_id: string }
+            Returns: Json
+          }
       create_order_with_items_validated: {
         Args: {
           p_customer_notes: string
