@@ -402,9 +402,13 @@ export type Database = {
       }
       table_sessions: {
         Row: {
+          cashier_name: string | null
           created_at: string
           ended_at: string | null
           id: string
+          invoice_number: string | null
+          is_invoice_locked: boolean | null
+          order_type: string | null
           restaurant_id: string
           started_at: string
           status: string
@@ -413,9 +417,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cashier_name?: string | null
           created_at?: string
           ended_at?: string | null
           id?: string
+          invoice_number?: string | null
+          is_invoice_locked?: boolean | null
+          order_type?: string | null
           restaurant_id: string
           started_at?: string
           status?: string
@@ -424,9 +432,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cashier_name?: string | null
           created_at?: string
           ended_at?: string | null
           id?: string
+          invoice_number?: string | null
+          is_invoice_locked?: boolean | null
+          order_type?: string | null
           restaurant_id?: string
           started_at?: string
           status?: string
