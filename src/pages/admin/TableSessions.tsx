@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +41,7 @@ interface TableSession {
   restaurant_city: string | null;
   restaurant_country: string | null;
   restaurant_logo_url: string | null;
+  restaurant_vat_tin: string | null;
   default_tax_percentage: number;
   service_charge_percentage: number;
   currency: string;
@@ -46,6 +49,9 @@ interface TableSession {
   started_at: string;
   ended_at: string | null;
   total_amount: number;
+  order_type: string;
+  invoice_number: string | null;
+  cashier_name: string | null;
   orders: SessionOrder[];
 }
 
@@ -57,6 +63,8 @@ const TableSessions = () => {
   const [statusFilter, setStatusFilter] = useState<string>('open');
   const [selectedSession, setSelectedSession] = useState<TableSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [cashierName, setCashierName] = useState('');
   const [processingPayment, setProcessingPayment] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -65,11 +73,14 @@ const TableSessions = () => {
 
     const { data: restaurant } = await supabase
       .from('restaurants')
-      .select('id, name, phone, address, city, country, logo_url, default_tax_percentage, service_charge_percentage, currency')
+      .select('id, name, phone, address, city, country, logo_url, vat_tin, default_tax_percentage, service_charge_percentage, currency')
       .eq('owner_id', user.id)
       .single();
 
     if (!restaurant) return;
+
+    // Cast to any for new columns
+    const rest = restaurant as any;
 
     let query = supabase
       .from('table_sessions')
@@ -80,9 +91,12 @@ const TableSessions = () => {
         started_at,
         ended_at,
         total_amount,
+        order_type,
+        invoice_number,
+        cashier_name,
         tables!inner(table_number)
       `)
-      .eq('restaurant_id', restaurant.id)
+      .eq('restaurant_id', rest.id)
       .order('started_at', { ascending: false });
 
     if (statusFilter !== 'all') {
@@ -151,20 +165,24 @@ const TableSessions = () => {
           id: session.id,
           table_id: session.table_id,
           table_number: session.tables.table_number,
-          restaurant_id: restaurant.id,
-          restaurant_name: restaurant.name,
-          restaurant_phone: restaurant.phone || null,
-          restaurant_address: restaurant.address || null,
-          restaurant_city: restaurant.city || null,
-          restaurant_country: restaurant.country || null,
-          restaurant_logo_url: restaurant.logo_url || null,
-          default_tax_percentage: Number(restaurant.default_tax_percentage) || 0,
-          service_charge_percentage: Number(restaurant.service_charge_percentage) || 0,
-          currency: restaurant.currency || 'USD',
+          restaurant_id: rest.id,
+          restaurant_name: rest.name,
+          restaurant_phone: rest.phone || null,
+          restaurant_address: rest.address || null,
+          restaurant_city: rest.city || null,
+          restaurant_country: rest.country || null,
+          restaurant_logo_url: rest.logo_url || null,
+          restaurant_vat_tin: rest.vat_tin || null,
+          default_tax_percentage: Number(rest.default_tax_percentage) || 0,
+          service_charge_percentage: Number(rest.service_charge_percentage) || 0,
+          currency: rest.currency || 'USD',
           status: session.status,
           started_at: session.started_at,
           ended_at: session.ended_at,
           total_amount: Number(session.total_amount) || 0,
+          order_type: session.order_type || 'dine_in',
+          invoice_number: session.invoice_number || null,
+          cashier_name: session.cashier_name || null,
           orders: ordersWithItems,
         };
       })
@@ -191,12 +209,22 @@ const TableSessions = () => {
   }, [user, statusFilter]);
 
   const handleCompletePayment = async (sessionId: string) => {
+    if (!cashierName.trim()) {
+      toast({
+        title: 'Cashier Required',
+        description: 'Please enter the cashier name before completing payment.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setProcessingPayment(true);
     
     try {
       const { data, error } = await supabase.rpc('complete_session_payment', {
         p_session_id: sessionId,
-      });
+        p_cashier_name: cashierName.trim(),
+      } as any);
 
       if (error) throw error;
 
@@ -207,10 +235,12 @@ const TableSessions = () => {
 
       toast({
         title: 'Payment Completed',
-        description: `Session closed. Total: $${result.total_amount.toFixed(2)}`,
+        description: `Invoice ${result.invoice_number} generated. Total: $${result.total_amount.toFixed(2)}`,
       });
 
       setIsModalOpen(false);
+      setIsPaymentModalOpen(false);
+      setCashierName('');
       fetchSessions();
     } catch (err: any) {
       toast({
@@ -221,6 +251,12 @@ const TableSessions = () => {
     } finally {
       setProcessingPayment(false);
     }
+  };
+
+  const openPaymentModal = (session: TableSession) => {
+    setSelectedSession(session);
+    setCashierName('');
+    setIsPaymentModalOpen(true);
   };
 
   const getSessionTotal = (session: TableSession) => {
@@ -314,7 +350,7 @@ const TableSessions = () => {
                         {session.status === 'open' && (
                           <Button
                             size="sm"
-                            onClick={() => handleCompletePayment(session.id)}
+                            onClick={() => openPaymentModal(session)}
                             disabled={processingPayment}
                           >
                             <CreditCard className="h-4 w-4 mr-1" />
@@ -345,7 +381,7 @@ const TableSessions = () => {
                 sessionId={selectedSession.id}
                 isPaid={selectedSession.status === 'paid'}
                 isProcessing={processingPayment}
-                onCompletePayment={() => handleCompletePayment(selectedSession.id)}
+                onCompletePayment={() => openPaymentModal(selectedSession)}
               />
 
               {/* Receipt Preview */}
@@ -363,6 +399,7 @@ const TableSessions = () => {
                     restaurant_city: selectedSession.restaurant_city,
                     restaurant_country: selectedSession.restaurant_country,
                     restaurant_logo_url: selectedSession.restaurant_logo_url,
+                    restaurant_vat_tin: selectedSession.restaurant_vat_tin,
                     default_tax_percentage: selectedSession.default_tax_percentage,
                     service_charge_percentage: selectedSession.service_charge_percentage,
                     currency: selectedSession.currency,
@@ -370,6 +407,9 @@ const TableSessions = () => {
                     started_at: selectedSession.started_at,
                     ended_at: selectedSession.ended_at,
                     total_amount: selectedSession.total_amount,
+                    order_type: selectedSession.order_type,
+                    invoice_number: selectedSession.invoice_number,
+                    cashier_name: selectedSession.cashier_name,
                     orders: selectedSession.orders,
                   }}
                   isPrintMode
@@ -377,6 +417,47 @@ const TableSessions = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Modal with Cashier Input */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Complete Payment</DialogTitle>
+            <DialogDescription>
+              Enter cashier name to complete payment for Table {selectedSession?.table_number}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cashier">Cashier Name *</Label>
+              <Input
+                id="cashier"
+                value={cashierName}
+                onChange={(e) => setCashierName(e.target.value)}
+                placeholder="Enter cashier name"
+                autoFocus
+              />
+            </div>
+            {selectedSession && (
+              <div className="text-sm text-muted-foreground">
+                <p>Total: <span className="font-semibold text-foreground">${getSessionTotal(selectedSession).toFixed(2)}</span></p>
+                <p>Orders: {selectedSession.orders.length}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => selectedSession && handleCompletePayment(selectedSession.id)}
+              disabled={processingPayment || !cashierName.trim()}
+            >
+              {processingPayment ? 'Processing...' : 'Complete Payment'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

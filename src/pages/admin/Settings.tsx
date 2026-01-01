@@ -24,6 +24,8 @@ interface RestaurantSettings {
   currency: string;
   default_tax_percentage: number;
   service_charge_percentage: number;
+  vat_tin: string | null;
+  default_order_type: string;
   receipt_header_text: string | null;
   receipt_footer_text: string | null;
   show_tax_on_receipt: boolean;
@@ -76,6 +78,8 @@ export default function Settings() {
           currency,
           default_tax_percentage,
           service_charge_percentage,
+          vat_tin,
+          default_order_type,
           receipt_header_text,
           receipt_footer_text,
           show_tax_on_receipt,
@@ -88,25 +92,30 @@ export default function Settings() {
 
       if (error) throw error;
 
+      // Cast to any to handle new columns not yet in types
+      const restaurant = data as any;
+
       setSettings({
-        id: data.id,
-        name: data.name,
-        phone: data.phone,
-        address: data.address,
-        city: data.city,
-        country: data.country,
-        logo_url: data.logo_url,
-        currency: data.currency || 'USD',
-        default_tax_percentage: Number(data.default_tax_percentage) || 0,
-        service_charge_percentage: Number(data.service_charge_percentage) || 0,
-        receipt_header_text: data.receipt_header_text,
-        receipt_footer_text: data.receipt_footer_text ?? 'Thank you for dining with us!',
-        show_tax_on_receipt: data.show_tax_on_receipt ?? true,
-        show_service_charge_on_receipt: data.show_service_charge_on_receipt ?? true,
-        allow_multiple_orders_per_table: data.allow_multiple_orders_per_table ?? true,
-        auto_close_session_after_payment: data.auto_close_session_after_payment ?? true,
+        id: restaurant.id,
+        name: restaurant.name,
+        phone: restaurant.phone,
+        address: restaurant.address,
+        city: restaurant.city,
+        country: restaurant.country,
+        logo_url: restaurant.logo_url,
+        currency: restaurant.currency || 'USD',
+        default_tax_percentage: Number(restaurant.default_tax_percentage) || 0,
+        service_charge_percentage: Number(restaurant.service_charge_percentage) || 0,
+        vat_tin: restaurant.vat_tin,
+        default_order_type: restaurant.default_order_type || 'dine_in',
+        receipt_header_text: restaurant.receipt_header_text,
+        receipt_footer_text: restaurant.receipt_footer_text ?? 'Thank you for dining with us!',
+        show_tax_on_receipt: restaurant.show_tax_on_receipt ?? true,
+        show_service_charge_on_receipt: restaurant.show_service_charge_on_receipt ?? true,
+        allow_multiple_orders_per_table: restaurant.allow_multiple_orders_per_table ?? true,
+        auto_close_session_after_payment: restaurant.auto_close_session_after_payment ?? true,
       });
-      setOriginalCurrency(data.currency || 'USD');
+      setOriginalCurrency(restaurant.currency || 'USD');
     } catch (err: any) {
       console.error('Error fetching settings:', err);
       toast.error('Failed to load settings');
@@ -156,6 +165,8 @@ export default function Settings() {
           currency: settings.currency,
           default_tax_percentage: settings.default_tax_percentage,
           service_charge_percentage: settings.service_charge_percentage,
+          vat_tin: settings.vat_tin,
+          default_order_type: settings.default_order_type,
           receipt_header_text: settings.receipt_header_text,
           receipt_footer_text: settings.receipt_footer_text,
           show_tax_on_receipt: settings.show_tax_on_receipt,
@@ -457,6 +468,37 @@ export default function Settings() {
                 onChange={(e) => setSettings({ ...settings, service_charge_percentage: parseFloat(e.target.value) || 0 })}
                 placeholder="0"
               />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="vat_tin">VAT TIN (Optional)</Label>
+              <Input
+                id="vat_tin"
+                value={settings.vat_tin || ''}
+                onChange={(e) => setSettings({ ...settings, vat_tin: e.target.value || null })}
+                placeholder="e.g., K001-12345678"
+              />
+              <p className="text-xs text-muted-foreground">
+                Displayed on receipts if provided
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="default_order_type">Default Order Type</Label>
+              <Select 
+                value={settings.default_order_type} 
+                onValueChange={(value) => setSettings({ ...settings, default_order_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select order type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dine_in">Dine In</SelectItem>
+                  <SelectItem value="takeaway">Takeaway</SelectItem>
+                  <SelectItem value="delivery">Delivery</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>

@@ -27,6 +27,7 @@ interface TableSession {
   restaurant_city: string | null;
   restaurant_country: string | null;
   restaurant_logo_url: string | null;
+  restaurant_vat_tin: string | null;
   default_tax_percentage: number;
   service_charge_percentage: number;
   currency: string;
@@ -34,6 +35,9 @@ interface TableSession {
   started_at: string;
   ended_at: string | null;
   total_amount: number;
+  order_type: string;
+  invoice_number: string | null;
+  cashier_name: string | null;
   orders: SessionOrder[];
 }
 
@@ -88,6 +92,7 @@ export const useTableSession = (tableId: string | undefined) => {
           restaurant_city: sessionRow.restaurant_city || null,
           restaurant_country: sessionRow.restaurant_country || null,
           restaurant_logo_url: sessionRow.restaurant_logo_url || null,
+          restaurant_vat_tin: sessionRow.restaurant_vat_tin || null,
           default_tax_percentage: Number(sessionRow.default_tax_percentage) || 0,
           service_charge_percentage: Number(sessionRow.service_charge_percentage) || 0,
           currency: sessionRow.currency || 'USD',
@@ -95,6 +100,9 @@ export const useTableSession = (tableId: string | undefined) => {
           started_at: sessionRow.started_at,
           ended_at: sessionRow.ended_at,
           total_amount: Number(sessionRow.total_amount) || 0,
+          order_type: sessionRow.order_type || 'dine_in',
+          invoice_number: sessionRow.invoice_number || null,
+          cashier_name: sessionRow.cashier_name || null,
           orders: ordersArray.map((o: any) => ({
             id: o.id,
             total_usd: Number(o.total_usd) || 0,
