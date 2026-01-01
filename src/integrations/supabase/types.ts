@@ -327,6 +327,7 @@ export type Database = {
           created_at: string
           cuisine_type: string | null
           currency: string | null
+          default_order_type: string | null
           default_tax_percentage: number | null
           id: string
           is_onboarded: boolean | null
@@ -341,6 +342,7 @@ export type Database = {
           show_tax_on_receipt: boolean | null
           timezone: string | null
           updated_at: string
+          vat_tin: string | null
         }
         Insert: {
           address?: string | null
@@ -352,6 +354,7 @@ export type Database = {
           created_at?: string
           cuisine_type?: string | null
           currency?: string | null
+          default_order_type?: string | null
           default_tax_percentage?: number | null
           id?: string
           is_onboarded?: boolean | null
@@ -366,6 +369,7 @@ export type Database = {
           show_tax_on_receipt?: boolean | null
           timezone?: string | null
           updated_at?: string
+          vat_tin?: string | null
         }
         Update: {
           address?: string | null
@@ -377,6 +381,7 @@ export type Database = {
           created_at?: string
           cuisine_type?: string | null
           currency?: string | null
+          default_order_type?: string | null
           default_tax_percentage?: number | null
           id?: string
           is_onboarded?: boolean | null
@@ -391,6 +396,7 @@ export type Database = {
           show_tax_on_receipt?: boolean | null
           timezone?: string | null
           updated_at?: string
+          vat_tin?: string | null
         }
         Relationships: []
       }
