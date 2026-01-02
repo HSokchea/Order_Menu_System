@@ -67,12 +67,25 @@ const parseItemNotes = (notes: string | null): ParsedItemData => {
     const parsed = JSON.parse(notes);
     const result: ParsedItemData = { options: [] };
     
+    // Check for explicit size field first
     if (parsed.size) {
       result.size = parsed.size;
     }
     
     if (parsed.selectedOptions && Array.isArray(parsed.selectedOptions)) {
-      result.options = parsed.selectedOptions;
+      // Separate size from options - size entries typically have group "Size" or single letter values like "S", "M", "L", "XL"
+      const sizePattern = /^(S|M|L|XL|XXL|Small|Medium|Large|Extra Large)$/i;
+      
+      result.options = parsed.selectedOptions.filter((opt: ParsedOption) => {
+        // If it's a size option, extract it as the size
+        if (opt.group?.toLowerCase() === 'size' || sizePattern.test(opt.value)) {
+          if (!result.size) {
+            result.size = opt.value;
+          }
+          return false; // Remove from options list
+        }
+        return true;
+      });
     }
     
     return result;
