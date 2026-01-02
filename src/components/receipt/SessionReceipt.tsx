@@ -381,17 +381,15 @@ const ItemRow = ({ item, formatPrice, isPrintMode }: ItemRowProps) => {
 
       {/* Options (indented) */}
       {options.length > 0 && (
-        <div className="pl-3 print:pl-2 mt-0.5 space-y-0.5">
+        <div className="pl-4 print:pl-3 mt-1 space-y-0.5">
           {options.map((opt, idx) => (
             <div 
               key={idx} 
-              className={`flex justify-between ${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`}
-              style={{ color: '#666' }}
+              className={`flex justify-between ${isPrintMode ? 'text-[10px]' : 'text-xs'} print:text-[9px]`}
+              style={{ color: '#888' }}
             >
               <span>+ {opt.value}</span>
-              {opt.price > 0 && (
-                <span>{formatPrice(opt.price)}</span>
-              )}
+              <span>{formatPrice(opt.price)}</span>
             </div>
           ))}
         </div>
