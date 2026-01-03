@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +9,8 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
-import { Settings, LogOut, Menu } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { LogOut, Menu } from "lucide-react";
 interface AdminLayoutProps {
   children: ReactNode;
   title?: string;
@@ -20,6 +21,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -31,6 +33,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
       description: "You have been successfully signed out.",
     });
     navigate("/auth", { replace: true });
+    setShowSignOutDialog(false);
   };
 
   return (
@@ -60,7 +63,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
               </div>
 
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <Button variant="outline" size="sm" onClick={() => setShowSignOutDialog(true)}>
                   <LogOut className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Sign Out</span>
                 </Button>
@@ -73,6 +76,16 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
             {children}
           </main>
         </SidebarInset>
+        
+        <ConfirmDialog
+          open={showSignOutDialog}
+          onOpenChange={setShowSignOutDialog}
+          title="Sign Out"
+          description="Are you sure you want to sign out?"
+          confirmLabel="Sign Out"
+          variant="destructive"
+          onConfirm={handleSignOut}
+        />
       </div>
     </SidebarProvider>
   );
