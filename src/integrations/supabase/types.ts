@@ -631,6 +631,8 @@ export type Database = {
           is_invoice_locked: boolean
           order_type: string
           orders: Json
+          receipt_footer_text: string
+          receipt_header_text: string
           restaurant_address: string
           restaurant_city: string
           restaurant_country: string
