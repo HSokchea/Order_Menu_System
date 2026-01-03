@@ -46,6 +46,8 @@ interface TableSession {
   default_tax_percentage: number;
   service_charge_percentage: number;
   currency: string;
+  receipt_header_text: string | null;
+  receipt_footer_text: string | null;
   status: 'open' | 'paid';
   started_at: string;
   ended_at: string | null;
@@ -81,7 +83,7 @@ const TableSessions = () => {
 
     const { data: restaurant } = await supabase
       .from('restaurants')
-      .select('id, name, phone, address, city, country, logo_url, vat_tin, default_tax_percentage, service_charge_percentage, currency')
+      .select('id, name, phone, address, city, country, logo_url, vat_tin, default_tax_percentage, service_charge_percentage, currency, receipt_header_text, receipt_footer_text')
       .eq('owner_id', user.id)
       .single();
 
@@ -184,6 +186,8 @@ const TableSessions = () => {
           default_tax_percentage: Number(rest.default_tax_percentage) || 0,
           service_charge_percentage: Number(rest.service_charge_percentage) || 0,
           currency: rest.currency || 'USD',
+          receipt_header_text: rest.receipt_header_text || null,
+          receipt_footer_text: rest.receipt_footer_text || null,
           status: session.status,
           started_at: session.started_at,
           ended_at: session.ended_at,
