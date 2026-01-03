@@ -30,6 +30,8 @@ interface TableSession {
   restaurant_vat_tin: string | null;
   default_tax_percentage: number;
   service_charge_percentage: number;
+  receipt_header_text: string | null;
+  receipt_footer_text: string | null;
   currency: string;
   status: 'open' | 'paid';
   started_at: string;
@@ -80,7 +82,7 @@ export const useTableSession = (tableId: string | undefined) => {
         const ordersArray = Array.isArray(sessionRow.orders) 
           ? sessionRow.orders 
           : [];
-        
+        //here
         setSession({
           session_id: sessionRow.session_id,
           table_id: sessionRow.table_id,
@@ -95,6 +97,8 @@ export const useTableSession = (tableId: string | undefined) => {
           restaurant_vat_tin: sessionRow.restaurant_vat_tin || null,
           default_tax_percentage: Number(sessionRow.default_tax_percentage) || 0,
           service_charge_percentage: Number(sessionRow.service_charge_percentage) || 0,
+          receipt_header_text: sessionRow.receipt_header_text || null,
+          receipt_footer_text: sessionRow.receipt_footer_text || null,
           currency: sessionRow.currency || 'USD',
           status: sessionRow.status as 'open' | 'paid',
           started_at: sessionRow.started_at,

@@ -71,7 +71,7 @@ const TableSessions = () => {
   const [cashierName, setCashierName] = useState('');
   const [processingPayment, setProcessingPayment] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
-  
+
   // Pagination and sorting state
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<'table_number' | 'started_at' | 'total' | 'status' | null>('started_at');
@@ -133,8 +133,8 @@ const TableSessions = () => {
         const ordersWithItems = await Promise.all(
           (orders || []).map(async (order) => {
             const { data: items } = await supabase
-              .rpc('get_order_items_by_token', { 
-                p_order_id: order.id, 
+              .rpc('get_order_items_by_token', {
+                p_order_id: order.id,
                 p_order_token: '' // Admin doesn't need token
               });
 
@@ -231,7 +231,7 @@ const TableSessions = () => {
     }
 
     setProcessingPayment(true);
-    
+
     try {
       const { data, error } = await supabase.rpc('complete_session_payment', {
         p_session_id: sessionId,
@@ -369,7 +369,7 @@ const TableSessions = () => {
             Showing {filteredAndPaginatedSessions.totalItems > 0 ? filteredAndPaginatedSessions.startIndex : 0}–{filteredAndPaginatedSessions.endIndex} of {filteredAndPaginatedSessions.totalItems} sessions ({openSessionsCount} active)
           </p>
         </div>
-        
+
         {/* Controls: Search and Filters */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
           {/* Status Filter */}
@@ -407,7 +407,7 @@ const TableSessions = () => {
                 </TableHead>
                 <TableHead>Orders</TableHead>
                 <TableHead className="cursor-pointer">
-                  Total 
+                  Total
                 </TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -472,7 +472,7 @@ const TableSessions = () => {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
+                <PaginationPrevious
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
@@ -484,9 +484,9 @@ const TableSessions = () => {
               {Array.from({ length: filteredAndPaginatedSessions.totalPages }, (_, i) => i + 1)
                 .filter(page => {
                   // Show first page, last page, current page, and pages around current
-                  return page === 1 || 
-                         page === filteredAndPaginatedSessions.totalPages || 
-                         Math.abs(page - currentPage) <= 1;
+                  return page === 1 ||
+                    page === filteredAndPaginatedSessions.totalPages ||
+                    Math.abs(page - currentPage) <= 1;
                 })
                 .map((page, index, array) => {
                   // Add ellipsis if there's a gap
@@ -514,7 +514,7 @@ const TableSessions = () => {
                   );
                 })}
               <PaginationItem>
-                <PaginationNext 
+                <PaginationNext
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
@@ -532,13 +532,11 @@ const TableSessions = () => {
 
       {/* Receipt Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" hideCloseButton>
+          <DialogHeader className="flex flex-row items-center justify-between gap-2">
+            {/* <div> */}
             <DialogTitle>Receipt - Table {selectedSession?.table_number}</DialogTitle>
-          </DialogHeader>
-          {selectedSession && (
-            <div className="space-y-4">
-              {/* Actions */}
+            {selectedSession && (
               <ReceiptActions
                 receiptRef={receiptRef}
                 sessionId={selectedSession.id}
@@ -546,9 +544,12 @@ const TableSessions = () => {
                 isProcessing={processingPayment}
                 onCompletePayment={() => openPaymentModal(selectedSession)}
               />
-
+            )}
+          </DialogHeader>
+          {selectedSession && (
+            <div className="space-y-4">
               {/* Receipt Preview */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden flex justify-center items-center h-full">
                 <SessionReceipt
                   ref={receiptRef}
                   session={{
@@ -565,6 +566,8 @@ const TableSessions = () => {
                     restaurant_vat_tin: selectedSession.restaurant_vat_tin,
                     default_tax_percentage: selectedSession.default_tax_percentage,
                     service_charge_percentage: selectedSession.service_charge_percentage,
+                    receipt_footer_text: selectedSession.receipt_footer_text,
+                    receipt_header_text: selectedSession.receipt_header_text,
                     currency: selectedSession.currency,
                     status: selectedSession.status,
                     started_at: selectedSession.started_at,
@@ -614,7 +617,7 @@ const TableSessions = () => {
             <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={() => selectedSession && handleCompletePayment(selectedSession.id)}
               disabled={processingPayment || !cashierName.trim()}
             >

@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer, Download, CreditCard } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Printer, Download, CreditCard, MoreHorizontal} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -155,22 +156,30 @@ export const ReceiptActions = ({
   };
 
   return (
-    <div className="flex flex-wrap gap-2 print:hidden">
-      <Button variant="outline" size="sm" onClick={handlePrint}>
-        <Printer className="h-4 w-4 mr-2" />
-        Print
-      </Button>
-      <Button variant="outline" size="sm" onClick={handleExportPDF}>
-        <Download className="h-4 w-4 mr-2" />
-        Export PDF
-      </Button>
-      {showPayButton && !isPaid && onCompletePayment && (
-        <Button size="sm" onClick={onCompletePayment} disabled={isProcessing}>
-          <CreditCard className="h-4 w-4 mr-2" />
-          {isProcessing ? 'Processing...' : 'Mark as Paid'}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="custom" size="custom" className='pb-2' aria-label="More actions">
+          <MoreHorizontal className="h-4 w-4" />
         </Button>
-      )}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handlePrint}>
+          <Printer className="h-4 w-4 mr-2" /> Print
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExportPDF}>
+          <Download className="h-4 w-4 mr-2" /> Export PDF
+        </DropdownMenuItem>
+        {showPayButton && !isPaid && (
+          <DropdownMenuItem
+            onClick={() => onCompletePayment()}
+            disabled={isProcessing}
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            {isProcessing ? 'Processing...' : 'Mark as Paid'}
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
