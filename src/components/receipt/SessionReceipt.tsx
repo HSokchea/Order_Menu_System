@@ -34,6 +34,8 @@ export interface ReceiptSession {
   default_tax_percentage?: number;
   service_charge_percentage?: number;
   currency?: string;
+  receipt_header_text?: string | null;
+  receipt_footer_text?: string | null;
   status: 'open' | 'paid';
   started_at: string;
   ended_at: string | null;
@@ -164,6 +166,16 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           >
             {session.restaurant_name}
           </h1>
+          
+          {/* Custom Header Text */}
+          {session.receipt_header_text && (
+            <p 
+              className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px] mt-1`}
+              style={{ color: '#666' }}
+            >
+              {session.receipt_header_text}
+            </p>
+          )}
           
           {addressLine && (
             <p 
@@ -355,7 +367,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           className={`text-center mt-4 print:mt-2 ${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px]`}
           style={{ color: '#666' }}
         >
-          <p>Thank you for dining with us</p>
+          <p>{session.receipt_footer_text || 'Thank you for dining with us!'}</p>
         </div>
       </div>
     );

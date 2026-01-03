@@ -311,10 +311,10 @@ export default function Settings() {
                 {settings.logo_url && (
                   <Button
                     type="button"
-                    variant="custom"
-                    size="custom"
+                    variant="destructive"
+                    size="sm"
                     onClick={handleRemoveLogo}
-                    className="gap-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-full px-3"
+                    className="gap-1 rounded-full"
                   >
                     <X className="h-4 w-4" />
                     Remove Logo
@@ -323,11 +323,11 @@ export default function Settings() {
 
                 <Button
                   type="button"
-                  variant="custom"
-                  size="custom"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 rounded-full px-3"
+                  className="gap-1 rounded-full"
                 >
                   {uploading ? (
                     <>
