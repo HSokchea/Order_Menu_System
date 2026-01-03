@@ -13,7 +13,7 @@ import { Download, Plus, Copy, Edit, Trash2 } from 'lucide-react';
 import QRCode from 'qrcode';
 import QRCodeThumbnail from '@/components/QRCodeThumbnail';
 import QRCodeDialog from '@/components/QRCodeDialog';
-
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Table {
   id: string;
@@ -511,30 +511,23 @@ const QRGenerator = () => {
       </Dialog>
 
       {/* Delete Table Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Table</DialogTitle>
-          </DialogHeader>
-          <p className="text-muted-foreground">
-            Are you sure you want to delete Table {deletingTable?.table_number}? This action cannot be undone.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsDeleteDialogOpen(false);
-                setDeletingTable(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={deleteTable}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={!!deletingTable && isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) setDeletingTable(null);
+        }}
+        title={`Delete Table${deletingTable ? ` ${deletingTable.table_number}` : ''}?`}
+        description="Are you sure you want to delete this table? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={deleteTable}
+        onCancel={() => {
+          setIsDeleteDialogOpen(false);
+          setDeletingTable(null);
+        }}
+      />
     </div>
     </TooltipProvider>
   );

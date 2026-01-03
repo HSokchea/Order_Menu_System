@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, GripVertical, Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Category {
   id: string;
@@ -50,6 +51,8 @@ const CategoryManager = ({
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
   const [categoryStatus, setCategoryStatus] = useState('active');
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   // Search and sorting state
   const [searchQuery, setSearchQuery] = useState(externalSearchQuery);
@@ -354,8 +357,10 @@ const CategoryManager = ({
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => handleDeleteCategory(category.id)}
-                                      >
+                                        onClick={() => {
+                                          setCategoryToDelete(category)
+                                          setConfirmOpen(true)
+                                        }}> 
                                         <Trash2 className="h-4 w-4 text-destructive hover:text-destructive" />
                                       </Button>
                                     </TooltipTrigger>
@@ -376,6 +381,26 @@ const CategoryManager = ({
           </Table>
         </div>
       </TooltipProvider>
+
+      {/* Confirm Dialog for Deleting Category */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`Delete category \"${categoryToDelete?.name || ''}\"?`}
+        description={categoryToDelete ? 'This action will permanently delete the category if it has no menu items.' : ''}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={() => {
+          if (!categoryToDelete) return
+          handleDeleteCategory(categoryToDelete.id)
+          setConfirmOpen(false)
+          setCategoryToDelete(null)
+        }}
+        onCancel={() => { 
+          setCategoryToDelete(null); 
+          setConfirmOpen(false); }}
+      />
     </div>
   );
 };
