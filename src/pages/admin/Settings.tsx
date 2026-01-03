@@ -211,7 +211,7 @@ export default function Settings() {
 
   const handleLogoUpload = async (file: File) => {
     if (!settings) return;
-    
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${settings.id}/logo_${Date.now()}.${fileExt}`;
 
@@ -287,40 +287,66 @@ export default function Settings() {
         <CardContent className="space-y-4">
           {/* Logo */}
           <div className="space-y-2">
-            <Label>Restaurant Logo</Label>
-            <div className="flex items-center gap-4">
-              {settings.logo_url ? (
-                <div className="relative">
-                  <img 
-                    src={settings.logo_url} 
-                    alt="Logo" 
-                    className="h-20 w-20 rounded-lg object-cover border"
-                  />
+            <div className="space-y-4">
+              {/* Image display at top */}
+              <div className="flex justify-center">
+                {settings.logo_url ? (
+                  <div className="relative rounded-full border-2 border-dashed border-border">
+                    <img
+                      src={settings.logo_url}
+                      alt="Logo"
+                      className="h-48 w-48 rounded-full object-cover border"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-48 w-48 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center bg-muted/20">
+                    <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground">No logo</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Buttons at bottom */}
+              <div className="flex justify-center gap-3">
+                {settings.logo_url && (
                   <Button
                     type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="absolute -top-2 -right-2 h-6 w-6"
+                    variant="custom"
+                    size="custom"
                     onClick={handleRemoveLogo}
+                    className="gap-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 rounded-full px-3"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
+                    Remove Logo
                   </Button>
-                </div>
-              ) : (
-                <div className="h-20 w-20 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center bg-muted/20">
-                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                </div>
-              )}
-              <div>
+                )}
+
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="custom"
+                  size="custom"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
+                  className="gap-1 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 rounded-full px-3"
                 >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {uploading ? 'Uploading...' : settings.logo_url ? 'Change Logo' : 'Upload Logo'}
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : settings.logo_url ? (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      Change Logo
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      Upload Logo
+                    </>
+                  )}
                 </Button>
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -398,8 +424,8 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="currency">Currency</Label>
-            <Select 
-              value={pendingCurrencyChange || settings.currency} 
+            <Select
+              value={pendingCurrencyChange || settings.currency}
               onValueChange={handleCurrencyChange}
               disabled={hasActiveSessions}
             >
@@ -427,7 +453,7 @@ export default function Settings() {
               <AlertDescription className="text-amber-800">
                 <p className="font-medium mb-2">Warning: Changing currency</p>
                 <p className="text-sm mb-3">
-                  Changing currency will affect how prices are displayed on receipts and reports. 
+                  Changing currency will affect how prices are displayed on receipts and reports.
                   Existing order data will not be converted.
                 </p>
                 <div className="flex gap-2">
@@ -486,8 +512,8 @@ export default function Settings() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="default_order_type">Default Order Type</Label>
-              <Select 
-                value={settings.default_order_type} 
+              <Select
+                value={settings.default_order_type}
                 onValueChange={(value) => setSettings({ ...settings, default_order_type: value })}
               >
                 <SelectTrigger>
