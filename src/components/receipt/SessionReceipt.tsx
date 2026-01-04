@@ -75,16 +75,16 @@ const parseItemNotes = (notes: string | null): ParsedItemData => {
   try {
     const parsed = JSON.parse(notes);
     const result: ParsedItemData = { options: [] };
-    
+
     // Check for explicit size field first
     if (parsed.size) {
       result.size = parsed.size;
     }
-    
+
     if (parsed.selectedOptions && Array.isArray(parsed.selectedOptions)) {
       // Separate size from options - size entries typically have group "Size" or single letter values like "S", "M", "L", "XL"
       const sizePattern = /^(S|M|L|XL|XXL|Small|Medium|Large|Extra Large)$/i;
-      
+
       result.options = parsed.selectedOptions.filter((opt: ParsedOption) => {
         // If it's a size option, extract it as the size
         if (opt.group?.toLowerCase() === 'size' || sizePattern.test(opt.value)) {
@@ -96,7 +96,7 @@ const parseItemNotes = (notes: string | null): ParsedItemData => {
         return true;
       });
     }
-    
+
     return result;
   } catch {
     return { options: [] };
@@ -116,7 +116,7 @@ const getSessionTotal = (session: ReceiptSession): number => {
 const getAllItems = (orders: SessionOrder[]): Array<OrderItem & { orderId: string }> => {
   return orders
     .filter(order => order.status !== 'rejected')
-    .flatMap(order => 
+    .flatMap(order =>
       order.items.map(item => ({ ...item, orderId: order.id }))
     );
 };
@@ -171,43 +171,43 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
       >
         {/* ========== HEADER ========== */}
         <div className="text-center mb-5 print:mb-3">
-          <h1 
+          <h1
             className={`font-bold ${isPrintMode ? 'text-base' : 'text-xl'} print:text-base tracking-tight`}
             style={{ color: '#111' }}
           >
             {session.restaurant_name}
           </h1>
-          
+
           {/* Custom Header Text */}
           {session.receipt_header_text && (
-            <p 
+            <p
               className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px] mt-1`}
               style={{ color: '#666' }}
             >
               {session.receipt_header_text}
             </p>
           )}
-          
+
           {addressLine && (
-            <p 
+            <p
               className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px] mt-1`}
               style={{ color: '#666' }}
             >
               {addressLine}
             </p>
           )}
-          
+
           {session.restaurant_phone && (
-            <p 
+            <p
               className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px]`}
               style={{ color: '#666' }}
             >
               {session.restaurant_phone}
             </p>
           )}
-          
+
           {session.restaurant_vat_tin && (
-            <p 
+            <p
               className={`${isPrintMode ? 'text-[10px]' : 'text-xs'} print:text-[10px] mt-1`}
               style={{ color: '#666' }}
             >
@@ -227,24 +227,24 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
               <span style={{ color: '#111' }}>{session.invoice_number}</span>
             </div>
           )}
-          
+
           <div className="flex justify-between">
             <span>Table</span>
             <span style={{ color: '#111' }}>{session.table_number}</span>
           </div>
-          
+
           <div className="flex justify-between">
             <span>Type</span>
             <span style={{ color: '#111' }}>{formatOrderType(session.order_type)}</span>
           </div>
-          
+
           <div className="flex justify-between">
             <span>Date</span>
             <span style={{ color: '#111' }}>
               {format(new Date(session.started_at), 'MMM d, yyyy')}
             </span>
           </div>
-          
+
           <div className="flex justify-between">
             <span>Time</span>
             <span style={{ color: '#111' }}>
@@ -265,17 +265,17 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
               .filter(order => order.status !== 'rejected')
               .map((order, orderIndex) => (
                 <div key={order.id} className="space-y-2 print:space-y-1">
-                  <p 
+                  <p
                     className={`font-medium ${isPrintMode ? 'text-[10px]' : 'text-xs'} print:text-[10px] uppercase tracking-wide`}
                     style={{ color: '#666' }}
                   >
                     Order {orderIndex + 1}
                   </p>
                   {order.items.map((item) => (
-                    <ItemRow 
-                      key={item.id} 
-                      item={item} 
-                      formatPrice={formatPrice} 
+                    <ItemRow
+                      key={item.id}
+                      item={item}
+                      formatPrice={formatPrice}
                       isPrintMode={isPrintMode}
                     />
                   ))}
@@ -284,10 +284,10 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           ) : (
             // Single flat list when only one order
             allItems.map((item) => (
-              <ItemRow 
-                key={item.id} 
-                item={item} 
-                formatPrice={formatPrice} 
+              <ItemRow
+                key={item.id}
+                item={item}
+                formatPrice={formatPrice}
                 isPrintMode={isPrintMode}
               />
             ))
@@ -308,8 +308,9 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
                       <p className="font-medium" style={{ color: '#777', fontSize: isPrintMode ? '9px' : '12px' }}>
                         Order {idx + 1}:
                       </p>
-                      <p 
-                        className="whitespace-pre-wrap pl-2"
+                      <p
+                        key={order.id}
+                        className="whitespace-pre-wrap break-words max-w-full pl-2"
                         style={{ color: '#888' }}
                       >
                         {order.customer_notes}
@@ -331,14 +332,14 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
             <span>Subtotal</span>
             <span>{formatPrice(totalBill)}</span>
           </div>
-          
+
           {taxRate > 0 && (
             <div className="flex justify-between" style={{ color: '#666' }}>
               <span>Tax ({taxRate}%)</span>
               <span>{formatPrice(taxAmount)}</span>
             </div>
           )}
-          
+
           {serviceChargeRate > 0 && (
             <div className="flex justify-between" style={{ color: '#666' }}>
               <span>Service ({serviceChargeRate}%)</span>
@@ -388,25 +389,25 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
         <div className="text-center py-2">
           {session.status === 'paid' ? (
             <div className="space-y-1">
-              <div 
+              <div
                 className={`inline-flex items-center gap-1.5 font-semibold ${isPrintMode ? 'text-sm' : 'text-base'} print:text-sm`}
                 style={{ color: '#16a34a' }}
               >
                 <Check className="h-4 w-4 print:h-3 print:w-3" strokeWidth={3} />
                 <span>PAID</span>
               </div>
-              
+
               {session.cashier_name && (
-                <p 
+                <p
                   className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px]`}
                   style={{ color: '#666' }}
                 >
                   Cashier: {session.cashier_name}
                 </p>
               )}
-              
+
               {session.ended_at && (
-                <p 
+                <p
                   className={`${isPrintMode ? 'text-[10px]' : 'text-xs'} print:text-[10px]`}
                   style={{ color: '#666' }}
                 >
@@ -415,7 +416,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
               )}
             </div>
           ) : (
-            <div 
+            <div
               className={`font-semibold ${isPrintMode ? 'text-sm' : 'text-base'} print:text-sm`}
               style={{ color: '#666' }}
             >
@@ -425,7 +426,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
         </div>
 
         {/* ========== FOOTER ========== */}
-        <div 
+        <div
           className={`text-center mt-4 print:mt-2 ${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px]`}
           style={{ color: '#666' }}
         >
@@ -448,7 +449,7 @@ const ItemRow = ({ item, formatPrice, isPrintMode }: ItemRowProps) => {
   const itemTotal = item.price_usd * item.quantity;
 
   // Build item name with size
-  const itemName = size 
+  const itemName = size
     ? `${item.menu_item_name} (${size})`
     : item.menu_item_name;
 
@@ -470,8 +471,8 @@ const ItemRow = ({ item, formatPrice, isPrintMode }: ItemRowProps) => {
       {options.length > 0 && (
         <div className="pl-3 print:pl-2 mt-0.5 space-y-0.5">
           {options.map((opt, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className={`flex justify-between ${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`}
               style={{ color: '#666' }}
             >
