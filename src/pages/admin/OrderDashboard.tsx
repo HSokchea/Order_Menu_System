@@ -448,7 +448,7 @@ const OrderDashboard = () => {
                 <TableHead>Time</TableHead>
                 <TableHead>Table No.</TableHead>
                 <TableHead>Items</TableHead>
-                <TableHead>Remark</TableHead>
+                <TableHead>Note</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -482,9 +482,22 @@ const OrderDashboard = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm max-w-[150px] truncate">
-                        {order.customer_notes || '-'}
-                      </div>
+                      {order.customer_notes ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="text-sm text-muted-foreground max-w-[150px] line-clamp-2">
+                                {order.customer_notes}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="whitespace-pre-wrap">{order.customer_notes}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="font-semibold">${order.total_usd.toFixed(2)}</div>
@@ -763,12 +776,12 @@ const OrderDashboard = () => {
                 </div>
               </div>
 
-              {/* Customer Notes */}
+              {/* Special Instruction */}
               {selectedOrder.customer_notes && (
                 <div>
-                  <h4 className="font-medium text-sm mb-2 text-muted-foreground">Customer Notes</h4>
-                  <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
-                    <p className="text-sm">{selectedOrder.customer_notes}</p>
+                  <h4 className="font-medium text-sm mb-2 text-muted-foreground">Special Instruction</h4>
+                  <div className="bg-muted/50 border border-border rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedOrder.customer_notes}</p>
                   </div>
                 </div>
               )}

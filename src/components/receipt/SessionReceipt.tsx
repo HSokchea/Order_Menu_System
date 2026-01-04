@@ -283,6 +283,28 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           )}
         </div>
 
+        {/* ========== SPECIAL INSTRUCTION ========== */}
+        {session.orders.some(order => order.customer_notes && order.customer_notes.trim()) && (
+          <>
+            <div className="border-t my-4 print:my-2" style={{ borderColor: '#E5E7EB' }} />
+            <div className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px]`}>
+              <p className="font-medium mb-1" style={{ color: '#666' }}>Special Instruction</p>
+              {session.orders
+                .filter(order => order.customer_notes && order.customer_notes.trim())
+                .map((order, idx) => (
+                  <p 
+                    key={order.id} 
+                    className="whitespace-pre-wrap"
+                    style={{ color: '#888' }}
+                  >
+                    {order.customer_notes}
+                  </p>
+                ))
+              }
+            </div>
+          </>
+        )}
+
         {/* Divider */}
         <div className="border-t my-4 print:my-2" style={{ borderColor: '#E5E7EB' }} />
 
