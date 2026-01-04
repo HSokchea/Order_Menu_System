@@ -64,7 +64,7 @@ const Dashboard = () => {
             onPresetChange={setPreset}
             onCustomRangeChange={setCustomRange}
           />
-          <ExportMenu orders={orders} dateRange={dateRange} disabled={loading} restaurantName={restaurant?.name} currency={currency} />
+          <ExportMenu orders={orders} dateRange={dateRange} disabled={loading} restaurantName={restaurant?.name} currency={currency} exchangeRate={restaurant?.exchange_rate_usd_to_khr} />
           <Button
             variant="ghost"
             size="sm"

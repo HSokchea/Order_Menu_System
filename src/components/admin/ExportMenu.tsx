@@ -18,11 +18,12 @@ interface ExportMenuProps {
   disabled?: boolean;
   restaurantName?: string;
   currency?: string;
+  exchangeRate?: number;
 }
 
-export function ExportMenu({ orders, dateRange, disabled, restaurantName, currency }: ExportMenuProps) {
+export function ExportMenu({ orders, dateRange, disabled, restaurantName, currency, exchangeRate }: ExportMenuProps) {
   const handleExport = (type: 'orders' | 'revenue-summary', format: 'csv' | 'xlsx') => {
-    const result = exportData({ orders, dateRange, type, format, restaurantName, currency });
+    const result = exportData({ orders, dateRange, type, format, restaurantName, currency, exchangeRate });
     
     if (result.success) {
       toast.success(result.message);

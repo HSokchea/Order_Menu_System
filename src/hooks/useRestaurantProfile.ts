@@ -15,6 +15,7 @@ export interface RestaurantProfile {
   cuisine_type: string | null;
   default_tax_percentage: number;
   service_charge_percentage: number;
+  exchange_rate_usd_to_khr: number;
   logo_url: string | null;
 }
 
@@ -47,6 +48,7 @@ export const useRestaurantProfile = () => {
             cuisine_type,
             default_tax_percentage,
             service_charge_percentage,
+            exchange_rate_usd_to_khr,
             logo_url
           `)
           .eq('owner_id', user.id)
@@ -67,6 +69,7 @@ export const useRestaurantProfile = () => {
           cuisine_type: data.cuisine_type,
           default_tax_percentage: Number(data.default_tax_percentage) || 0,
           service_charge_percentage: Number(data.service_charge_percentage) || 0,
+          exchange_rate_usd_to_khr: Number((data as any).exchange_rate_usd_to_khr) || 4100,
           logo_url: data.logo_url,
         });
       } catch (err: any) {

@@ -9,23 +9,35 @@ interface ExportOptions {
   format: 'csv' | 'xlsx';
   restaurantName?: string;
   currency?: string;
+  exchangeRate?: number;
 }
 
-function generateOrdersData(orders: OrderData[], currency: string = 'USD') {
+function roundKHRto100(khr: number): number {
+  return Math.round(khr / 100) * 100;
+}
+
+function generateOrdersData(orders: OrderData[], currency: string = 'USD', exchangeRate: number = 4100) {
   // Only completed orders for exports per requirements
   const completedOrders = orders.filter(o => o.status === 'completed');
   
-  return completedOrders.map(order => ({
-    'Order ID': order.id,
-    'Date': format(new Date(order.created_at), 'yyyy-MM-dd HH:mm:ss'),
-    'Table': order.table_number,
-    [`Total (${currency})`]: order.total_usd?.toFixed(2) || '0.00',
-    'Status': order.status,
-    'Notes': order.customer_notes || '',
-  }));
+  return completedOrders.map(order => {
+    const totalUSD = order.total_usd || 0;
+    const totalKHR = roundKHRto100(totalUSD * exchangeRate);
+    
+    return {
+      'Order ID': order.id,
+      'Date': format(new Date(order.created_at), 'yyyy-MM-dd HH:mm:ss'),
+      'Table': order.table_number,
+      [`Total (${currency})`]: totalUSD.toFixed(2),
+      'Total (KHR)': totalKHR.toLocaleString(),
+      'Exchange Rate': exchangeRate,
+      'Status': order.status,
+      'Notes': order.customer_notes || '',
+    };
+  });
 }
 
-function generateRevenueSummaryData(orders: OrderData[], dateRange: DateRange, currency: string = 'USD') {
+function generateRevenueSummaryData(orders: OrderData[], dateRange: DateRange, currency: string = 'USD', exchangeRate: number = 4100) {
   // Only completed orders for revenue
   const completedOrders = orders.filter(o => o.status === 'completed');
   
@@ -49,21 +61,29 @@ function generateRevenueSummaryData(orders: OrderData[], dateRange: DateRange, c
   return days.map(day => {
     const dayKey = format(day, 'yyyy-MM-dd');
     const data = revenueByDay.get(dayKey) || { revenue: 0, orderCount: 0 };
+    const revenueKHR = roundKHRto100(data.revenue * exchangeRate);
+    const avgOrderKHR = data.orderCount > 0 
+      ? roundKHRto100((data.revenue / data.orderCount) * exchangeRate) 
+      : 0;
+    
     return {
       'Date': dayKey,
       'Orders': data.orderCount,
       [`Revenue (${currency})`]: data.revenue.toFixed(2),
+      'Revenue (KHR)': revenueKHR.toLocaleString(),
       [`Avg Order Value (${currency})`]: data.orderCount > 0 
         ? (data.revenue / data.orderCount).toFixed(2) 
         : '0.00',
+      'Avg Order Value (KHR)': avgOrderKHR.toLocaleString(),
+      'Exchange Rate': exchangeRate,
     };
   });
 }
 
-export function exportData({ orders, dateRange, type, format: exportFormat, restaurantName, currency = 'USD' }: ExportOptions) {
+export function exportData({ orders, dateRange, type, format: exportFormat, restaurantName, currency = 'USD', exchangeRate = 4100 }: ExportOptions) {
   const data = type === 'orders' 
-    ? generateOrdersData(orders, currency)
-    : generateRevenueSummaryData(orders, dateRange, currency);
+    ? generateOrdersData(orders, currency, exchangeRate)
+    : generateRevenueSummaryData(orders, dateRange, currency, exchangeRate);
 
   if (data.length === 0) {
     return { success: false, message: 'No data to export' };
