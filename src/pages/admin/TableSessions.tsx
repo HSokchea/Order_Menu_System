@@ -87,12 +87,10 @@ const TableSessions = () => {
       .select('id, name, phone, address, city, country, logo_url, vat_tin, default_tax_percentage, service_charge_percentage, exchange_rate_usd_to_khr, currency, receipt_header_text, receipt_footer_text')
       .eq('owner_id', user.id)
       .single();
-
     if (!restaurant) return;
-
+    console.log('Restaurant data:', restaurant);
     // Cast to any for new columns
     const rest = restaurant as any;
-
     let query = supabase
       .from('table_sessions')
       .select(`
@@ -570,6 +568,7 @@ const TableSessions = () => {
                     service_charge_percentage: selectedSession.service_charge_percentage,
                     receipt_footer_text: selectedSession.receipt_footer_text,
                     receipt_header_text: selectedSession.receipt_header_text,
+                    exchange_rate_usd_to_khr: selectedSession.exchange_rate_usd_to_khr,
                     currency: selectedSession.currency,
                     status: selectedSession.status,
                     started_at: selectedSession.started_at,

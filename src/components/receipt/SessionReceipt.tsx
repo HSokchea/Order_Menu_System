@@ -129,7 +129,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
     const taxAmount = totalBill * (taxRate / 100);
     const serviceChargeAmount = totalBill * (serviceChargeRate / 100);
     const grandTotal = totalBill + taxAmount + serviceChargeAmount;
-    const currency = session.currency || 'USD';
+    const currency = 'USD';
     const exchangeRate = session.exchange_rate_usd_to_khr || 4100;
     
     // Calculate KHR amounts
@@ -349,7 +349,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           {/* Exchange Rate Info */}
           <div className="flex justify-between" style={{ color: '#888' }}>
             <span className={`${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`}>
-              Rate: 1 USD = {exchangeRate.toLocaleString()} KHR
+              Rate: 1 USD = {exchangeRate} KHR
             </span>
           </div>
           
@@ -375,10 +375,10 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           </div>
           
           {/* Amount in Words */}
-          <div className={`mt-3 pt-2 border-t print:mt-2 print:pt-1 ${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`} style={{ borderColor: '#E5E7EB', color: '#888' }}>
+          {/* <div className={`mt-3 pt-2 border-t print:mt-2 print:pt-1 ${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`} style={{ borderColor: '#E5E7EB', color: '#888' }}>
             <p className="mb-1">{numberToWordsEnglish(grandTotal, 'USD')}</p>
             <p>{numberToWordsKhmer(grandTotalKHR)}</p>
-          </div>
+          </div> */}
         </div>
 
         {/* Divider */}

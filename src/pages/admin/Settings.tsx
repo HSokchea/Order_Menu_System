@@ -153,7 +153,7 @@ export default function Settings() {
 
   const handleSave = async () => {
     if (!settings) return;
-
+    console.log('Settings update:', settings);
     setSaving(true);
     try {
       const { error } = await supabase
@@ -179,7 +179,6 @@ export default function Settings() {
           auto_close_session_after_payment: settings.auto_close_session_after_payment,
         })
         .eq('id', settings.id);
-
       if (error) throw error;
 
       setOriginalCurrency(settings.currency);
