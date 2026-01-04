@@ -1,6 +1,12 @@
 import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import { Check } from 'lucide-react';
+import { 
+  numberToWordsEnglish, 
+  numberToWordsKhmer, 
+  convertUSDtoKHR, 
+  formatKHR 
+} from '@/lib/amountInWords';
 
 interface OrderItem {
   id: string;
@@ -33,6 +39,7 @@ export interface ReceiptSession {
   restaurant_vat_tin?: string | null;
   default_tax_percentage?: number;
   service_charge_percentage?: number;
+  exchange_rate_usd_to_khr?: number;
   currency?: string;
   receipt_header_text?: string | null;
   receipt_footer_text?: string | null;
@@ -123,6 +130,10 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
     const serviceChargeAmount = totalBill * (serviceChargeRate / 100);
     const grandTotal = totalBill + taxAmount + serviceChargeAmount;
     const currency = session.currency || 'USD';
+    const exchangeRate = session.exchange_rate_usd_to_khr || 4100;
+    
+    // Calculate KHR amounts
+    const grandTotalKHR = convertUSDtoKHR(grandTotal, exchangeRate);
 
     const formatPrice = (amount: number) => {
       return new Intl.NumberFormat('en-US', {
@@ -335,15 +346,38 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
             </div>
           )}
           
+          {/* Exchange Rate Info */}
+          <div className="flex justify-between" style={{ color: '#888' }}>
+            <span className={`${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`}>
+              Rate: 1 USD = {exchangeRate.toLocaleString()} KHR
+            </span>
+          </div>
+          
           {/* Total Divider */}
           <div className="border-t pt-2 mt-2 print:pt-1 print:mt-1" style={{ borderColor: '#E5E7EB' }}>
+            {/* USD Total */}
             <div 
               className={`flex justify-between font-bold ${isPrintMode ? 'text-sm' : 'text-lg'} print:text-sm`}
               style={{ color: '#111' }}
             >
-              <span>TOTAL</span>
+              <span>Total</span>
               <span>{formatPrice(grandTotal)}</span>
             </div>
+            
+            {/* KHR Total */}
+            <div 
+              className={`flex justify-between font-bold ${isPrintMode ? 'text-sm' : 'text-lg'} print:text-sm mt-1`}
+              style={{ color: '#111' }}
+            >
+              <span>សរុប</span>
+              <span>{formatKHR(grandTotalKHR)}</span>
+            </div>
+          </div>
+          
+          {/* Amount in Words */}
+          <div className={`mt-3 pt-2 border-t print:mt-2 print:pt-1 ${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`} style={{ borderColor: '#E5E7EB', color: '#888' }}>
+            <p className="mb-1">{numberToWordsEnglish(grandTotal, 'USD')}</p>
+            <p>{numberToWordsKhmer(grandTotalKHR)}</p>
           </div>
         </div>
 

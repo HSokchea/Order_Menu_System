@@ -45,6 +45,7 @@ interface TableSession {
   restaurant_vat_tin: string | null;
   default_tax_percentage: number;
   service_charge_percentage: number;
+  exchange_rate_usd_to_khr: number;
   currency: string;
   receipt_header_text: string | null;
   receipt_footer_text: string | null;
@@ -83,7 +84,7 @@ const TableSessions = () => {
 
     const { data: restaurant } = await supabase
       .from('restaurants')
-      .select('id, name, phone, address, city, country, logo_url, vat_tin, default_tax_percentage, service_charge_percentage, currency, receipt_header_text, receipt_footer_text')
+      .select('id, name, phone, address, city, country, logo_url, vat_tin, default_tax_percentage, service_charge_percentage, exchange_rate_usd_to_khr, currency, receipt_header_text, receipt_footer_text')
       .eq('owner_id', user.id)
       .single();
 
@@ -185,6 +186,7 @@ const TableSessions = () => {
           restaurant_vat_tin: rest.vat_tin || null,
           default_tax_percentage: Number(rest.default_tax_percentage) || 0,
           service_charge_percentage: Number(rest.service_charge_percentage) || 0,
+          exchange_rate_usd_to_khr: Number(rest.exchange_rate_usd_to_khr) || 4100,
           currency: rest.currency || 'USD',
           receipt_header_text: rest.receipt_header_text || null,
           receipt_footer_text: rest.receipt_footer_text || null,
