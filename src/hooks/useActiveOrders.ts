@@ -8,6 +8,7 @@ interface ActiveOrder {
   status: string;
   created_at: string;
   restaurant_name: string;
+  customer_notes?: string;
 }
 
 export const useActiveOrders = (tableId: string) => {
@@ -57,7 +58,8 @@ export const useActiveOrders = (tableId: string) => {
           total_usd: Number(order.total_usd || 0),
           status: order.status || 'new',
           created_at: order.created_at,
-          restaurant_name: order.restaurant_name || 'Restaurant'
+          restaurant_name: order.restaurant_name || 'Restaurant',
+          customer_notes: order.customer_notes || undefined
         }));
         
         console.log('Mapped orders:', mappedOrders);

@@ -558,6 +558,7 @@ export type Database = {
         Args: { p_order_tokens: string[] }
         Returns: {
           created_at: string
+          customer_notes: string
           id: string
           restaurant_name: string
           status: string
