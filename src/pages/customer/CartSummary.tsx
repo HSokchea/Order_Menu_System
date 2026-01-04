@@ -331,9 +331,22 @@ const CartSummary = () => {
                   id="notes"
                   placeholder="Any special requests or allergies..."
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mt-2"
+                  onChange={(e) => {
+                    // Plain text only - strip any HTML tags and limit to 500 chars
+                    const plainText = e.target.value.replace(/<[^>]*>/g, '');
+                    if (plainText.length <= 500) {
+                      setNotes(plainText);
+                    }
+                  }}
+                  className="mt-2 resize-none"
+                  rows={3}
+                  maxLength={500}
                 />
+                <div className="flex justify-end mt-1">
+                  <span className={`text-xs ${notes.length >= 450 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    {notes.length} / 500
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
