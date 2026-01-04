@@ -283,24 +283,30 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           )}
         </div>
 
-        {/* ========== SPECIAL INSTRUCTION ========== */}
+        {/* ========== SPECIAL INSTRUCTIONS ========== */}
         {session.orders.some(order => order.customer_notes && order.customer_notes.trim()) && (
           <>
             <div className="border-t my-4 print:my-2" style={{ borderColor: '#E5E7EB' }} />
             <div className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px]`}>
-              <p className="font-medium mb-1" style={{ color: '#666' }}>Special Instruction</p>
-              {session.orders
-                .filter(order => order.customer_notes && order.customer_notes.trim())
-                .map((order, idx) => (
-                  <p 
-                    key={order.id} 
-                    className="whitespace-pre-wrap"
-                    style={{ color: '#888' }}
-                  >
-                    {order.customer_notes}
-                  </p>
-                ))
-              }
+              <p className="font-medium mb-2" style={{ color: '#666' }}>Special Instructions</p>
+              <div className="space-y-2 print:space-y-1">
+                {session.orders
+                  .filter(order => order.customer_notes && order.customer_notes.trim())
+                  .map((order, idx) => (
+                    <div key={order.id}>
+                      <p className="font-medium" style={{ color: '#777', fontSize: isPrintMode ? '9px' : '12px' }}>
+                        Order {idx + 1}:
+                      </p>
+                      <p 
+                        className="whitespace-pre-wrap pl-2"
+                        style={{ color: '#888' }}
+                      >
+                        {order.customer_notes}
+                      </p>
+                    </div>
+                  ))
+                }
+              </div>
             </div>
           </>
         )}
