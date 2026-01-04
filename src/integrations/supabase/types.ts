@@ -329,6 +329,7 @@ export type Database = {
           currency: string | null
           default_order_type: string | null
           default_tax_percentage: number | null
+          exchange_rate_usd_to_khr: number | null
           id: string
           is_onboarded: boolean | null
           logo_url: string | null
@@ -356,6 +357,7 @@ export type Database = {
           currency?: string | null
           default_order_type?: string | null
           default_tax_percentage?: number | null
+          exchange_rate_usd_to_khr?: number | null
           id?: string
           is_onboarded?: boolean | null
           logo_url?: string | null
@@ -383,6 +385,7 @@ export type Database = {
           currency?: string | null
           default_order_type?: string | null
           default_tax_percentage?: number | null
+          exchange_rate_usd_to_khr?: number | null
           id?: string
           is_onboarded?: boolean | null
           logo_url?: string | null

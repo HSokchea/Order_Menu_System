@@ -24,6 +24,7 @@ interface RestaurantSettings {
   currency: string;
   default_tax_percentage: number;
   service_charge_percentage: number;
+  exchange_rate_usd_to_khr: number;
   vat_tin: string | null;
   default_order_type: string;
   receipt_header_text: string | null;
@@ -78,6 +79,7 @@ export default function Settings() {
           currency,
           default_tax_percentage,
           service_charge_percentage,
+          exchange_rate_usd_to_khr,
           vat_tin,
           default_order_type,
           receipt_header_text,
@@ -106,6 +108,7 @@ export default function Settings() {
         currency: restaurant.currency || 'USD',
         default_tax_percentage: Number(restaurant.default_tax_percentage) || 0,
         service_charge_percentage: Number(restaurant.service_charge_percentage) || 0,
+        exchange_rate_usd_to_khr: Number(restaurant.exchange_rate_usd_to_khr) || 4100,
         vat_tin: restaurant.vat_tin,
         default_order_type: restaurant.default_order_type || 'dine_in',
         receipt_header_text: restaurant.receipt_header_text,
@@ -165,6 +168,7 @@ export default function Settings() {
           currency: settings.currency,
           default_tax_percentage: settings.default_tax_percentage,
           service_charge_percentage: settings.service_charge_percentage,
+          exchange_rate_usd_to_khr: settings.exchange_rate_usd_to_khr,
           vat_tin: settings.vat_tin,
           default_order_type: settings.default_order_type,
           receipt_header_text: settings.receipt_header_text,
@@ -497,6 +501,38 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Exchange Rate Section */}
+          <div className="space-y-2 pt-4 border-t">
+            <Label htmlFor="exchange_rate">
+              <span className="block">Exchange Rate (USD → KHR)</span>
+              <span className="block text-xs font-normal text-muted-foreground mt-0.5">
+                អត្រាប្តូរប្រាក់ (ដុល្លារ → រៀល)
+              </span>
+            </Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">1 USD =</span>
+              <Input
+                id="exchange_rate"
+                type="number"
+                min="1"
+                max="10000"
+                step="1"
+                value={settings.exchange_rate_usd_to_khr}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  if (value >= 0 && value <= 10000) {
+                    setSettings({ ...settings, exchange_rate_usd_to_khr: value });
+                  }
+                }}
+                className="w-32"
+                placeholder="4100"
+              />
+              <span className="text-sm text-muted-foreground">KHR</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Used for KHR conversion on receipts. Integer only (no decimals).
+            </p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="vat_tin">VAT TIN (Optional)</Label>
