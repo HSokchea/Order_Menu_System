@@ -35,7 +35,7 @@ export const useActiveOrders = (tableId: string) => {
       }
 
       console.log('Fetching active orders with tokens:', tokenValues.length);
-      
+
       // Use secure RPC function with token validation
       const { data: orders, error } = await supabase.rpc('get_active_orders_by_tokens', {
         p_order_tokens: tokenValues
@@ -48,21 +48,29 @@ export const useActiveOrders = (tableId: string) => {
         setActiveOrders([]);
       } else {
         // Filter orders to only those matching the current table
-        const filteredOrders = (orders || []).filter((order: any) => 
+        const filteredOrders = (orders || []).filter((order: any) =>
           order.table_id === tableId || order.table_number === tableId
         );
-        
-        const mappedOrders: ActiveOrder[] = filteredOrders.map((order: any) => ({
-          id: order.id,
-          table_number: order.table_number,
-          total_usd: Number(order.total_usd || 0),
-          status: order.status || 'new',
-          created_at: order.created_at,
-          restaurant_name: order.restaurant_name || 'Restaurant',
-          customer_notes: order.customer_notes || undefined
-        }));
-        
-        console.log('Mapped orders:', mappedOrders);
+
+        // Sort orders by created_at in descending order (newest first)
+        const sortedOrders = filteredOrders.sort((a: any, b: any) => {
+          const timeA = new Date(a.created_at).getTime();
+          const timeB = new Date(b.created_at).getTime();
+          return timeB - timeA; // Descending (newest first)
+        });
+
+        const mappedOrders: ActiveOrder[] = sortedOrders
+          .map((order: any) => ({
+            id: order.id,
+            table_number: order.table_number,
+            total_usd: Number(order.total_usd || 0),
+            status: order.status || 'new',
+            created_at: order.created_at,
+            restaurant_name: order.restaurant_name || 'Restaurant',
+            customer_notes: order.customer_notes || undefined
+          }));
+
+        console.log('Mapped orders (sorted newest first):', mappedOrders);
         setActiveOrders(mappedOrders);
       }
     } catch (error) {
@@ -89,7 +97,7 @@ export const useActiveOrders = (tableId: string) => {
     // Set up real-time subscription for order status updates
     const channelName = `active-orders-${tableId}`;
     console.log('Setting up realtime channel:', channelName);
-    
+
     const channel = supabase
       .channel(channelName, {
         config: {

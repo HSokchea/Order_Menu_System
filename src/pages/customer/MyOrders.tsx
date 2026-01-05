@@ -204,7 +204,7 @@ const MyOrders = () => {
               const items = orderItems[order.id] || [];
 
               return (
-                <Card key={order.id} className="bg-card/70 backdrop-blur-sm shadow-lg">
+                <Card key={order.id} className="bg-card/70 backdrop-blur-sm">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -283,7 +283,7 @@ const MyOrders = () => {
                           <div className="space-y-2">
                             {items.map((item) => {
                               // Parse notes to extract selected options and special instructions
-                              let selectedOptions: Array<{group: string; value: string; price?: number}> = [];
+                              let selectedOptions: Array<{ group: string; value: string; price?: number }> = [];
                               let specialInstructions: string | undefined = undefined;
                               try {
                                 if (item.notes) {

@@ -52,7 +52,7 @@ const CartSummary = () => {
       // Use secure RPC functions to fetch table and restaurant data (works for anonymous users)
       const { data: tableResult, error: tableError } = await supabase
         .rpc('get_public_table', { p_table_id: tableId });
-      
+
       const tableData = tableResult?.[0] || null;
 
       if (tableError || !tableData) {
@@ -65,7 +65,7 @@ const CartSummary = () => {
       // Fetch restaurant using secure RPC
       const { data: restaurantResult, error: restaurantError } = await supabase
         .rpc('get_public_restaurant', { p_restaurant_id: tableData.restaurant_id });
-      
+
       const restaurantData = restaurantResult?.[0] || null;
 
       if (restaurantError || !restaurantData) {
@@ -206,21 +206,19 @@ const CartSummary = () => {
             <CardContent className="text-center py-8">
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
-              <p
-               className="text-muted-foreground mb-4">Add some items from the menu</p>
-
+              <p className="text-muted-foreground mb-4">Add some items from the menu</p>
               <Button asChild>
                 <Link to={`/menu/${tableId}`}>Browse Menu</Link>
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Items</CardTitle>
+          <div className="space-y-2">
+            <Card className='border-none shadow-none bg-transparent'>
+              <CardHeader className='pt-0'>
+                <CardTitle className="text-lg font-semibold">Order Items</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent >
                 <div className="space-y-4">
                   {cart.map((item) => {
                     const itemTotal = item.finalUnitPrice * item.quantity;
@@ -229,8 +227,8 @@ const CartSummary = () => {
                       <div
                         key={item.cartItemId}
                         className={`p-3 rounded-lg border ${item.hasValidationError
-                            ? 'border-destructive bg-destructive/5'
-                            : 'border-border'
+                          ? 'border-destructive bg-destructive/5'
+                          : 'border-border'
                           }`}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -266,33 +264,36 @@ const CartSummary = () => {
                               <p className="text-xs text-destructive mt-1">{item.validationReason}</p>
                             )}
                           </div>
-
                           <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 bg-white rounded-full border border-input bg-background px-2 py-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateCartItem(item.cartItemId, item.quantity - 1)}
+                                disabled={item.hasValidationError}
+                                className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="text-sm font-semibold min-w-[20px] text-center">
+                                {item.quantity}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateCartItem(item.cartItemId, item.quantity + 1)}
+                                disabled={item.hasValidationError}
+                                className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => updateCartItem(item.cartItemId, item.quantity - 1)}
-                              disabled={item.hasValidationError}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="font-semibold min-w-[1.5rem] text-center">
-                              {item.quantity}
-                            </span>
-                            <Button
-                              size="sm"
-                              onClick={() => updateCartItem(item.cartItemId, item.quantity + 1)}
-                              disabled={item.hasValidationError}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
                               onClick={() => removeCartItem(item.cartItemId)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              className="h-9 w-9 p-3 rounded-full text-destructive hover:text-destructive "
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -321,9 +322,9 @@ const CartSummary = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Special Instructions</CardTitle>
+            <Card className='border-none shadow-none bg-transparent'>
+              <CardHeader className='pt-0'>
+                <CardTitle className="text-lg font-semibold">Special Instructions</CardTitle>
               </CardHeader>
               <CardContent>
                 <Label htmlFor="notes">Notes (optional)</Label>
@@ -350,9 +351,9 @@ const CartSummary = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className='px-4 border-none shadow-none p-0 bg-transparent'>
               <CardContent className="p-6">
-                <div className="flex justify-between items-center text-xl font-bold mb-4">
+                <div className="flex justify-between items-center text-lg font-semibold mb-4">
                   <span>Total</span>
                   <span>${getTotalAmount().toFixed(2)}</span>
                 </div>

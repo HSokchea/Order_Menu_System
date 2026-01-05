@@ -46,6 +46,8 @@ interface TableSession {
   default_tax_percentage: number;
   service_charge_percentage: number;
   exchange_rate_usd_to_khr: number;
+  show_tax_on_receipt: boolean | null;
+  show_service_charge_on_receipt: boolean | null;
   currency: string;
   receipt_header_text: string | null;
   receipt_footer_text: string | null;
@@ -84,7 +86,7 @@ const TableSessions = () => {
 
     const { data: restaurant } = await supabase
       .from('restaurants')
-      .select('id, name, phone, address, city, country, logo_url, vat_tin, default_tax_percentage, service_charge_percentage, exchange_rate_usd_to_khr, currency, receipt_header_text, receipt_footer_text')
+      .select('id, name, phone, address, city, country, logo_url, vat_tin, default_tax_percentage, service_charge_percentage, exchange_rate_usd_to_khr, show_tax_on_receipt, show_service_charge_on_receipt , currency, receipt_header_text, receipt_footer_text')
       .eq('owner_id', user.id)
       .single();
     if (!restaurant) return;
@@ -122,6 +124,7 @@ const TableSessions = () => {
     // Fetch orders with items for each session
     const sessionsWithOrders = await Promise.all(
       (sessionsData || []).map(async (session: any) => {
+        console.log('session:', session);
         const { data: orders } = await supabase
           .from('orders')
           .select('id, total_usd, status, created_at, customer_notes')
@@ -188,6 +191,8 @@ const TableSessions = () => {
           currency: rest.currency || 'USD',
           receipt_header_text: rest.receipt_header_text || null,
           receipt_footer_text: rest.receipt_footer_text || null,
+          show_tax_on_receipt: rest.show_tax_on_receipt,
+          show_service_charge_on_receipt: rest.show_service_charge_on_receipt,
           status: session.status,
           started_at: session.started_at,
           ended_at: session.ended_at,
@@ -569,6 +574,8 @@ const TableSessions = () => {
                     receipt_footer_text: selectedSession.receipt_footer_text,
                     receipt_header_text: selectedSession.receipt_header_text,
                     exchange_rate_usd_to_khr: selectedSession.exchange_rate_usd_to_khr,
+                    show_tax_on_receipt: selectedSession.show_tax_on_receipt,
+                    show_service_charge_on_receipt: selectedSession.show_service_charge_on_receipt,
                     currency: selectedSession.currency,
                     status: selectedSession.status,
                     started_at: selectedSession.started_at,

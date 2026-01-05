@@ -40,6 +40,8 @@ export interface ReceiptSession {
   default_tax_percentage?: number;
   service_charge_percentage?: number;
   exchange_rate_usd_to_khr?: number;
+  show_tax_on_receipt?: boolean;
+  show_service_charge_on_receipt?: boolean;
   currency?: string;
   receipt_header_text?: string | null;
   receipt_footer_text?: string | null;
@@ -134,7 +136,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
     
     // Calculate KHR amounts
     const grandTotalKHR = convertUSDtoKHR(grandTotal, exchangeRate);
-
+    console.log('SessionReceipt', session);
     const formatPrice = (amount: number) => {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -333,14 +335,14 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
             <span>{formatPrice(totalBill)}</span>
           </div>
 
-          {taxRate > 0 && (
+          {taxRate > 0 && session.show_tax_on_receipt && (
             <div className="flex justify-between" style={{ color: '#666' }}>
               <span>Tax ({taxRate}%)</span>
               <span>{formatPrice(taxAmount)}</span>
             </div>
           )}
 
-          {serviceChargeRate > 0 && (
+          {serviceChargeRate > 0 && session.show_service_charge_on_receipt && (
             <div className="flex justify-between" style={{ color: '#666' }}>
               <span>Service ({serviceChargeRate}%)</span>
               <span>{formatPrice(serviceChargeAmount)}</span>
