@@ -87,9 +87,9 @@ export function QRCardPreviewDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-center">QR Table Card Preview</DialogTitle>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" hideCloseButton>
+        <DialogHeader className="flex flex-row items-center justify-between gap-2">
+          <DialogTitle>QR Table Card - Table {tableNumber}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col items-center py-4">
