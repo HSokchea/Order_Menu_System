@@ -39,59 +39,57 @@ export const QRTableCard = forwardRef<HTMLDivElement, QRTableCardProps>(
           </h1>
         </div>
 
-        {/* QR Code section - centered with consistent spacing */}
-        <div className="flex flex-col items-center">
+        {/* QR Code section - centered with consistent spacing using gap */}
+        <div className="flex flex-col items-center" style={{ gap: `${spacing}px` }}>
           {/* Scan to Order text - above QR */}
-          <p className="text-gray-600 text-sm font-medium" style={{ marginBottom: `${spacing}px` }}>
+          <p className="text-gray-600 text-sm font-medium">
             Scan to Order
           </p>
 
           {/* QR Code with corner brackets */}
           <div style={{
             position: 'relative',
-            padding: '10px',
             display: 'inline-block'
           }}>
             {/* Corner brackets */}
             <svg
               style={{
                 position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
+                top: '-10px',
+                left: '-10px',
+                width: 'calc(100% + 20px)',
+                height: 'calc(100% + 20px)',
                 pointerEvents: 'none',
               }}
-              viewBox="0 0 224 224"
+              viewBox="0 0 212 212"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
               {/* Top-left corner */}
-              <path d="M 0 30 L 0 0 L 30 0" stroke="#999999" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M 0 28 L 0 0 L 28 0" stroke="#999999" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
               {/* Top-right corner */}
-              <path d="M 194 0 L 224 0 L 224 30" stroke="#999999" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M 184 0 L 212 0 L 212 28" stroke="#999999" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
               {/* Bottom-left corner */}
-              <path d="M 0 194 L 0 224 L 30 224" stroke="#999999" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M 0 184 L 0 212 L 28 212" stroke="#999999" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
               {/* Bottom-right corner */}
-              <path d="M 224 194 L 224 224 L 194 224" stroke="#999999" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M 212 184 L 212 212 L 184 212" stroke="#999999" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
 
             {qrCodeDataUrl ? (
               <img
                 src={qrCodeDataUrl}
                 alt={`QR Code for Table ${tableNumber}`}
-                className="w-48 h-48"
-                style={{ display: 'block' }}
+                style={{ display: 'block', width: '192px', height: '192px' }}
               />
             ) : (
-              <div className="w-48 h-48 bg-gray-100 rounded flex items-center justify-center">
+              <div className="bg-gray-100 rounded flex items-center justify-center" style={{ width: '192px', height: '192px' }}>
                 <span className="text-gray-400 text-sm">Generating...</span>
               </div>
             )}
           </div>
 
-          {/* Table number text - below QR with equal spacing */}
-          <p className="text-gray-600 text-sm font-medium" style={{ marginTop: `${spacing}px` }}>
+          {/* Table number text - below QR with equal spacing via gap */}
+          <p className="text-gray-600 text-sm font-medium">
             Table {tableNumber}
           </p>
         </div>
