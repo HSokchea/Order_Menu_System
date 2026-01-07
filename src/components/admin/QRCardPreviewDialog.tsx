@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, FileImage, FileText, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { Download, FileImage, FileText, ChevronDown } from 'lucide-react';
 import QRCode from 'qrcode';
 import { QRTableCard } from './QRTableCard';
 import { downloadQRCard, type PaperSize } from '@/lib/qrCardDownloader';
@@ -35,8 +35,6 @@ export function QRCardPreviewDialog({
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [isDownloading, setIsDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-
-  const [moreOpen, setMoreOpen] = useState(false);
 
   const menuUrl = `${window.location.origin}/menu/${tableId}`;
 
@@ -92,40 +90,6 @@ export function QRCardPreviewDialog({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" hideCloseButton>
         <DialogHeader className="flex flex-row items-center justify-between gap-2">
           <DialogTitle>QR Table Card - Table {tableNumber}</DialogTitle>
-          {/* More button for actions */}
-          <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="custom" size="custom" className='pb-2' aria-label="More actions">
-                <MoreHorizontal className="h-5 w-5 " />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>Download QR Card</DropdownMenuLabel>
-              <DropdownMenuItem
-                disabled={isDownloading || !qrCodeDataUrl}
-                onClick={() => handleDownload('png')}
-              >
-                <FileImage className="h-4 w-4 mr-2" />
-                PNG
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>PDF (Print-Ready)</DropdownMenuLabel>
-              <DropdownMenuItem
-                disabled={isDownloading || !qrCodeDataUrl}
-                onClick={() => handleDownload('pdf', 'A6')}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                A6 (Table Stand)
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={isDownloading || !qrCodeDataUrl}
-                onClick={() => handleDownload('pdf', 'A5')}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                A5 (Flat Table Card)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </DialogHeader>
 
         <div className="flex flex-col items-center py-4">
@@ -139,6 +103,37 @@ export function QRCardPreviewDialog({
               logoUrl={logoUrl}
             />
           </div>
+
+          {/* Download Options */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button disabled={isDownloading || !qrCodeDataUrl} className="gap-2">
+                <Download className="h-4 w-4" />
+                {isDownloading ? 'Downloading...' : 'Download QR Card'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-48">
+              <DropdownMenuLabel>Image Format</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleDownload('png')}>
+                <FileImage className="h-4 w-4 mr-2" />
+                Download as PNG
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuLabel>PDF (Print-Ready)</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleDownload('pdf', 'A6')}>
+                <FileText className="h-4 w-4 mr-2" />
+                A6 (Table Stand)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownload('pdf', 'A5')}>
+                <FileText className="h-4 w-4 mr-2" />
+                A5 (Flat Table Card)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <p className="text-xs text-muted-foreground mt-3 text-center">
             High-resolution output ready for printing
           </p>
