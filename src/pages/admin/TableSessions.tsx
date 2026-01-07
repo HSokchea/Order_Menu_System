@@ -15,6 +15,7 @@ import { Clock, CheckCircle, CreditCard, Eye, Users, Search, ChevronUp, ChevronD
 import { format } from 'date-fns';
 import { SessionReceipt, ReceiptSession } from '@/components/receipt/SessionReceipt';
 import { ReceiptActions } from '@/components/receipt/ReceiptActions';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SessionOrder {
   id: string;
@@ -422,7 +423,9 @@ const TableSessions = () => {
               {filteredAndPaginatedSessions.items.map((session) => {
                 const total = getSessionTotal(session);
                 return (
-                  <TableRow key={session.id}>
+                  <TableRow key={session.id} onClick={() => {
+                    setSelectedSession(session);
+                  }}>
                     <TableCell className="font-medium">Table {session.table_number}</TableCell>
                     <TableCell>{format(new Date(session.started_at), 'MMM d, h:mm a')}</TableCell>
                     <TableCell>{session.orders.length}</TableCell>
@@ -438,25 +441,41 @@ const TableSessions = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedSession(session);
-                            setIsModalOpen(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedSession(session);
+                                setIsModalOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View receipt</p>
+                          </TooltipContent>
+                        </Tooltip>
                         {session.status === 'open' && (
-                          <Button
-                            size="sm"
-                            onClick={() => openPaymentModal(session)}
-                            disabled={processingPayment}
-                          >
-                            <CreditCard className="h-4 w-4 mr-1" />
-                            Pay
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="custom"
+                                variant='custom'
+                                onClick={() => openPaymentModal(session)}
+                                disabled={processingPayment}
+                                className='bg-primary text-white px-3 rounded-full w-auto h-8'
+                              >
+                                <CreditCard className="h-4 w-4 mr-1" />
+                                Pay
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Mark as paid</p>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                       </div>
                     </TableCell>
