@@ -30,13 +30,19 @@ const MyOrders = () => {
       const itemsMap: Record<string, OrderItem[]> = {};
       const storedTokens = JSON.parse(localStorage.getItem('order_tokens') || '{}');
       
-      for (const order of activeOrders) {
+      console.log('Fetching order items for orders:', activeOrders.map(o => o.id));
+      console.log('Available tokens in localStorage:', Object.keys(storedTokens));
+      
+      // Use Promise.all to fetch all order items in parallel
+      const fetchPromises = activeOrders.map(async (order) => {
         try {
           const orderToken = storedTokens[order.id];
           if (!orderToken) {
             console.log('No token found for order:', order.id);
-            continue;
+            return { orderId: order.id, items: [] };
           }
+
+          console.log('Fetching items for order:', order.id, 'with token:', orderToken.substring(0, 8) + '...');
 
           // Use secure RPC function with token validation
           const { data: items, error } = await supabase.rpc('get_order_items_by_token', {
@@ -44,25 +50,45 @@ const MyOrders = () => {
             p_order_token: orderToken
           });
 
-          if (!error && items) {
-            itemsMap[order.id] = (items as any[]).map(item => ({
-              id: item.id,
-              quantity: item.quantity,
-              price_usd: Number(item.price_usd || 0),
-              menu_item_name: item.menu_item_name || 'Unknown Item',
-              notes: item.notes || undefined
-            }));
+          if (error) {
+            console.error('Error fetching order items for order:', order.id, error);
+            return { orderId: order.id, items: [] };
           }
+
+          console.log('Fetched items for order:', order.id, items);
+
+          const mappedItems = (items as any[] || []).map(item => ({
+            id: item.id,
+            quantity: item.quantity,
+            price_usd: Number(item.price_usd || 0),
+            menu_item_name: item.menu_item_name || 'Unknown Item',
+            notes: item.notes || undefined
+          }));
+
+          return { orderId: order.id, items: mappedItems };
         } catch (error) {
-          console.error('Error fetching order items:', error);
+          console.error('Exception fetching order items for order:', order.id, error);
+          return { orderId: order.id, items: [] };
         }
-      }
+      });
+
+      const results = await Promise.all(fetchPromises);
       
+      results.forEach(result => {
+        if (result.items.length > 0) {
+          itemsMap[result.orderId] = result.items;
+        }
+      });
+      
+      console.log('Final order items map:', itemsMap);
       setOrderItems(itemsMap);
     };
 
     if (activeOrders.length > 0) {
       fetchOrderItems();
+    } else {
+      // Clear order items if no active orders
+      setOrderItems({});
     }
   }, [activeOrders]);
 
@@ -275,81 +301,81 @@ const MyOrders = () => {
                     </div>
 
                     {/* Order Items */}
-                    {items.length > 0 && (
-                      <>
-                        <Separator />
-                        <div className="space-y-3">
-                          <h4 className="font-medium">Order Items</h4>
-                          <div className="space-y-2">
-                            {items.map((item) => {
-                              // Parse notes to extract selected options and special instructions
-                              let selectedOptions: Array<{ group: string; value: string; price?: number }> = [];
-                              let specialInstructions: string | undefined = undefined;
-                              try {
-                                if (item.notes) {
-                                  const parsed = JSON.parse(item.notes);
-                                  if (parsed.selectedOptions && Array.isArray(parsed.selectedOptions) && parsed.selectedOptions.length > 0) {
-                                    selectedOptions = parsed.selectedOptions;
-                                  }
-                                  // Accept both 'note' and 'specialInstructions' fields for flexibility
-                                  if (parsed.note && typeof parsed.note === 'string' && parsed.note.trim() !== '') {
-                                    specialInstructions = parsed.note;
-                                  } else if (parsed.specialInstructions && typeof parsed.specialInstructions === 'string' && parsed.specialInstructions.trim() !== '') {
-                                    specialInstructions = parsed.specialInstructions;
-                                  }
+                    <Separator />
+                    <div className="space-y-3">
+                      <h4 className="font-medium">Order Items</h4>
+                      {items.length > 0 ? (
+                        <div className="space-y-2">
+                          {items.map((item) => {
+                            // Parse notes to extract selected options and special instructions
+                            let selectedOptions: Array<{ group: string; value: string; price?: number }> = [];
+                            let specialInstructions: string | undefined = undefined;
+                            try {
+                              if (item.notes) {
+                                const parsed = JSON.parse(item.notes);
+                                if (parsed.selectedOptions && Array.isArray(parsed.selectedOptions) && parsed.selectedOptions.length > 0) {
+                                  selectedOptions = parsed.selectedOptions;
                                 }
-                              } catch {
-                                // Notes is plain text, not JSON - treat as special instructions
-                                if (item.notes && item.notes.trim() !== '') {
-                                  specialInstructions = item.notes;
+                                // Accept both 'note' and 'specialInstructions' fields for flexibility
+                                if (parsed.note && typeof parsed.note === 'string' && parsed.note.trim() !== '') {
+                                  specialInstructions = parsed.note;
+                                } else if (parsed.specialInstructions && typeof parsed.specialInstructions === 'string' && parsed.specialInstructions.trim() !== '') {
+                                  specialInstructions = parsed.specialInstructions;
                                 }
                               }
+                            } catch {
+                              // Notes is plain text, not JSON - treat as special instructions
+                              if (item.notes && item.notes.trim() !== '') {
+                                specialInstructions = item.notes;
+                              }
+                            }
 
-                              return (
-                                <div key={item.id} className="flex flex-col gap-1 p-3 bg-muted/20 rounded-lg">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                      <p className="font-medium">
-                                        {item.quantity}x {item.menu_item_name}
-                                      </p>
-                                      {/* Only show selected options if non-empty */}
-                                      {selectedOptions.length > 0 && (
-                                        <div className="mt-1 space-y-0.5">
-                                          {selectedOptions.map((opt, idx) => (
-                                            <p key={idx} className="text-sm text-muted-foreground">
-                                              • {opt.group}: {opt.value}
-                                              {opt.price && opt.price > 0 ? ` (+$${opt.price.toFixed(2)})` : ''}
-                                            </p>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <span className="font-semibold text-primary">
-                                      ${(item.price_usd * item.quantity).toFixed(2)}
-                                    </span>
+                            return (
+                              <div key={item.id} className="flex flex-col gap-1 p-3 bg-muted/20 rounded-lg">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <p className="font-medium">
+                                      {item.quantity}x {item.menu_item_name}
+                                    </p>
+                                    {/* Only show selected options if non-empty */}
+                                    {selectedOptions.length > 0 && (
+                                      <div className="mt-1 space-y-0.5">
+                                        {selectedOptions.map((opt, idx) => (
+                                          <p key={idx} className="text-sm text-muted-foreground">
+                                            • {opt.group}: {opt.value}
+                                            {opt.price && opt.price > 0 ? ` (+$${opt.price.toFixed(2)})` : ''}
+                                          </p>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                  {/* Show special instructions in a new section under Order Items if present */}
-                                  {specialInstructions && (
-                                    <div className="mt-2 p-2 rounded bg-muted/40 text-sm text-muted-foreground">
-                                      <span className="font-semibold">Special Instructions:</span> {specialInstructions}
-                                    </div>
-                                  )}
+                                  <span className="font-semibold text-primary">
+                                    ${(item.price_usd * item.quantity).toFixed(2)}
+                                  </span>
                                 </div>
-                              );
-                            })}
-                          </div>
+                                {/* Show special instructions in a new section under Order Items if present */}
+                                {specialInstructions && (
+                                  <div className="mt-2 p-2 rounded bg-muted/40 text-sm text-muted-foreground">
+                                    <span className="font-semibold">Special Instructions:</span> {specialInstructions}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Loading order items...</p>
+                      )}
+                    </div>
 
-                        {/* Order-level Special Instructions */}
-                        {order.customer_notes && (
-                          <div className="mt-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                            <p className="text-sm text-amber-800 dark:text-amber-200">
-                              <span className="font-semibold">Special Instructions:</span>{' '}
-                              {order.customer_notes}
-                            </p>
-                          </div>
-                        )}
-                      </>
+                    {/* Order-level Special Instructions */}
+                    {order.customer_notes && (
+                      <div className="mt-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                          <span className="font-semibold">Special Instructions:</span>{' '}
+                          {order.customer_notes}
+                        </p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
