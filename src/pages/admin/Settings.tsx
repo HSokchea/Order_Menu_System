@@ -38,12 +38,12 @@ interface RestaurantSettings {
 const CURRENCIES = [
   { value: 'USD', label: 'USD - US Dollar' },
   { value: 'KHR', label: 'KHR - Cambodian Riel' },
-  { value: 'EUR', label: 'EUR - Euro' },
-  { value: 'GBP', label: 'GBP - British Pound' },
-  { value: 'THB', label: 'THB - Thai Baht' },
-  { value: 'VND', label: 'VND - Vietnamese Dong' },
-  { value: 'SGD', label: 'SGD - Singapore Dollar' },
-  { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
+  // { value: 'EUR', label: 'EUR - Euro' },
+  // { value: 'GBP', label: 'GBP - British Pound' },
+  // { value: 'THB', label: 'THB - Thai Baht' },
+  // { value: 'VND', label: 'VND - Vietnamese Dong' },
+  // { value: 'SGD', label: 'SGD - Singapore Dollar' },
+  // { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
 ];
 
 export default function Settings() {
