@@ -11,6 +11,7 @@ import OrderDashboard from "./OrderDashboard";
 import QRGenerator from "./QRGenerator";
 import TableSessions from "./TableSessions";
 import Settings from "./Settings";
+import RolesPermissions from "./RolesPermissions";
 
 const getPageInfo = (pathname: string) => {
   switch (pathname) {
@@ -27,6 +28,8 @@ const getPageInfo = (pathname: string) => {
       return { title: "Table Sessions", description: "Manage dining sessions and billing" };
     case "/admin/settings":
       return { title: "Settings", description: "Shop profile and configuration" };
+    case "/admin/roles":
+      return { title: "Roles & Permissions", description: "Manage user access" };
     case "/admin/qr-generator":
       return { title: "QR Generator", description: "Create QR codes for tables" };
     case "/admin/analytics":
@@ -99,6 +102,7 @@ export default function AdminMain() {
         <Route path="table-sessions" element={<TableSessions />} />
         <Route path="qr-generator" element={<QRGenerator />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="roles" element={<RolesPermissions />} />
         {/* Redirect root admin to dashboard */}
         <Route path="/" element={<Navigate to="/admin" replace />} />
       </Routes>

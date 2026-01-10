@@ -9,7 +9,8 @@ import {
   Package,
   Gift,
   Users,
-  Settings
+  Settings,
+  Shield
 } from "lucide-react";
 
 import {
@@ -60,6 +61,12 @@ const navigationItems = [
     url: "/admin/qr-generator",
     icon: QrCode,
     description: "Create QR codes for tables"
+  },
+  {
+    title: "Roles & Permissions",
+    url: "/admin/roles",
+    icon: Shield,
+    description: "Manage user access"
   },
   {
     title: "Settings",
