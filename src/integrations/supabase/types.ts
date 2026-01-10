@@ -257,6 +257,77 @@ export type Database = {
           },
         ]
       }
+      permission_conditions: {
+        Row: {
+          condition_json: Json
+          created_at: string
+          id: string
+          owner_id: string
+          owner_type: string
+          permission_id: string
+          updated_at: string
+        }
+        Insert: {
+          condition_json: Json
+          created_at?: string
+          id?: string
+          owner_id: string
+          owner_type: string
+          permission_id: string
+          updated_at?: string
+        }
+        Update: {
+          condition_json?: Json
+          created_at?: string
+          id?: string
+          owner_id?: string
+          owner_type?: string
+          permission_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_conditions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permissions: {
+        Row: {
+          action: string
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          name: string
+          resource: string
+          scope: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          name: string
+          resource: string
+          scope?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          name?: string
+          resource?: string
+          scope?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -403,6 +474,126 @@ export type Database = {
         }
         Relationships: []
       }
+      role_inheritance: {
+        Row: {
+          child_role_id: string
+          created_at: string
+          id: string
+          parent_role_id: string
+        }
+        Insert: {
+          child_role_id: string
+          created_at?: string
+          id?: string
+          parent_role_id: string
+        }
+        Update: {
+          child_role_id?: string
+          created_at?: string
+          id?: string
+          parent_role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_inheritance_child_role_id_fkey"
+            columns: ["child_role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_inheritance_parent_role_id_fkey"
+            columns: ["parent_role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission_id: string
+          role_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_id: string
+          role_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_system_role: boolean
+          name: string
+          restaurant_id: string
+          role_type: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system_role?: boolean
+          name: string
+          restaurant_id: string
+          role_type?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system_role?: boolean
+          name?: string
+          restaurant_id?: string
+          role_type?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roles_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "public_restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roles_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       table_sessions: {
         Row: {
           cashier_name: string | null
@@ -508,6 +699,104 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permissions: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          permission_id: string
+          restaurant_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          permission_id: string
+          restaurant_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          permission_id?: string
+          restaurant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "public_restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          restaurant_id: string
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          restaurant_id: string
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          restaurant_id?: string
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "public_restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
             referencedColumns: ["id"]
           },
         ]
@@ -656,9 +945,22 @@ export type Database = {
           total_amount: number
         }[]
       }
+      get_user_restaurant_id: { Args: { _user_id: string }; Returns: string }
+      user_owns_restaurant: {
+        Args: { _restaurant_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "owner"
+        | "admin"
+        | "manager"
+        | "supervisor"
+        | "cashier"
+        | "waiter"
+        | "kitchen"
+        | "custom"
     }
     CompositeTypes: {
       order_validation_result: {
@@ -789,6 +1091,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "owner",
+        "admin",
+        "manager",
+        "supervisor",
+        "cashier",
+        "waiter",
+        "kitchen",
+        "custom",
+      ],
+    },
   },
 } as const
