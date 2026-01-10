@@ -40,6 +40,7 @@ const QRGenerator = () => {
   const [editTableNumber, setEditTableNumber] = useState('');
   const [deletingTable, setDeletingTable] = useState<TableData | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const fetchData = async () => {
     if (!user) return;
@@ -276,23 +277,11 @@ const QRGenerator = () => {
               </p>
             </div>
 
-            {/* Add Table Form */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
-              <div className="flex-1 lg:w-[200px]">
-                <Label htmlFor="table-number" className="sr-only">Table Number</Label>
-                <Input
-                  id="table-number"
-                  type="number"
-                  value={newTableNumber}
-                  onChange={(e) => setNewTableNumber(e.target.value)}
-                  placeholder="Table number"
-                />
-              </div>
-              <Button onClick={addTable} className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Table
-              </Button>
-            </div>
+            {/* Add Table Button */}
+            <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Table
+            </Button>
           </div>
         </div>
       </div>
@@ -419,6 +408,45 @@ const QRGenerator = () => {
           logoUrl={restaurant.logo_url}
         />
       )}
+
+      {/* Add Table Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Table</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-table-number">Table Number</Label>
+              <Input
+                id="new-table-number"
+                type="number"
+                value={newTableNumber}
+                onChange={(e) => setNewTableNumber(e.target.value)}
+                placeholder="Enter table number"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddDialogOpen(false);
+                setNewTableNumber('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={async () => {
+              await addTable();
+              setIsAddDialogOpen(false);
+            }}>
+              Add Table
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Table Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
