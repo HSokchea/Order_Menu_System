@@ -163,13 +163,6 @@ const OrderDashboard = () => {
           icon: <CheckCircle className="h-4 w-4" />,
           next: null
         };
-      case 'rejected':
-        return {
-          color: 'bg-destructive text-destructive-foreground',
-          label: 'Rejected',
-          icon: <Clock className="h-4 w-4" />,
-          next: null
-        };
       default:
         return {
           color: 'bg-secondary text-secondary-foreground',
@@ -437,7 +430,7 @@ const OrderDashboard = () => {
       {filteredAndPaginatedOrders.totalItems === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4"/>
+            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground text-center">
               {orders.length === 0
                 ? "No orders yet. New orders will appear here."

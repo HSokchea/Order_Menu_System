@@ -38,12 +38,12 @@ interface RestaurantSettings {
 const CURRENCIES = [
   { value: 'USD', label: 'USD - US Dollar' },
   { value: 'KHR', label: 'KHR - Cambodian Riel' },
-  // { value: 'EUR', label: 'EUR - Euro' },
-  // { value: 'GBP', label: 'GBP - British Pound' },
-  // { value: 'THB', label: 'THB - Thai Baht' },
-  // { value: 'VND', label: 'VND - Vietnamese Dong' },
-  // { value: 'SGD', label: 'SGD - Singapore Dollar' },
-  // { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
+  { value: 'EUR', label: 'EUR - Euro' },
+  { value: 'GBP', label: 'GBP - British Pound' },
+  { value: 'THB', label: 'THB - Thai Baht' },
+  { value: 'VND', label: 'VND - Vietnamese Dong' },
+  { value: 'SGD', label: 'SGD - Singapore Dollar' },
+  { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
 ];
 
 export default function Settings() {
@@ -422,20 +422,18 @@ export default function Settings() {
             <DollarSign className="h-5 w-5 text-primary" />
             <CardTitle>Financial Settings</CardTitle>
           </div>
-          <CardDescription>
-            Currency display and tax configuration. All monetary data is stored in base currency (USD).
-          </CardDescription>
+          <CardDescription>Currency and tax configuration</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="currency">Display Currency</Label>
+            <Label htmlFor="currency">Currency</Label>
             <Select
               value={pendingCurrencyChange || settings.currency}
               onValueChange={handleCurrencyChange}
               disabled={hasActiveSessions}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select display currency" />
+                <SelectValue placeholder="Select currency" />
               </SelectTrigger>
               <SelectContent>
                 {CURRENCIES.map((curr) => (
@@ -445,12 +443,9 @@ export default function Settings() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              Affects receipts, bills, and reports display only. Does not modify stored data.
-            </p>
             {hasActiveSessions && (
-              <p className="text-xs text-amber-600">
-                Close all active sessions to change display currency
+              <p className="text-xs text-muted-foreground">
+                Close all active sessions to change currency
               </p>
             )}
           </div>
@@ -459,10 +454,10 @@ export default function Settings() {
             <Alert className="bg-amber-50 border-amber-200">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <AlertDescription className="text-amber-800">
-                <p className="font-medium mb-2">Changing Display Currency</p>
+                <p className="font-medium mb-2">Warning: Changing currency</p>
                 <p className="text-sm mb-3">
-                  This only affects how prices are <strong>displayed</strong> on new receipts and reports.
-                  All monetary data remains stored in base currency (USD). Existing paid orders are not affected.
+                  Changing currency will affect how prices are displayed on receipts and reports.
+                  Existing order data will not be converted.
                 </p>
                 <div className="flex gap-2">
                   <Button size="sm" onClick={confirmCurrencyChange}>
@@ -508,9 +503,9 @@ export default function Settings() {
           {/* Exchange Rate Section */}
           <div className="space-y-2 pt-4 border-t">
             <Label htmlFor="exchange_rate">
-              <span className="block">Current Exchange Rate (USD → KHR)</span>
+              <span className="block">Exchange Rate (USD → KHR)</span>
               <span className="block text-xs font-normal text-muted-foreground mt-0.5">
-                អត្រាប្តូរប្រាក់បច្ចុប្បន្ន (ដុល្លារ → រៀល)
+                អត្រាប្តូរប្រាក់ (ដុល្លារ → រៀល)
               </span>
             </Label>
             <div className="flex items-center gap-2">
@@ -534,10 +529,7 @@ export default function Settings() {
               <span className="text-sm text-muted-foreground">KHR</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Used for KHR conversion on active/unpaid orders. Paid orders use the rate frozen at payment time.
-            </p>
-            <p className="text-xs text-amber-600">
-              ⚠️ Changing this rate does NOT affect past completed orders.
+              Used for KHR conversion on receipts. Integer only (no decimals).
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

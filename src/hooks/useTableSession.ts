@@ -31,7 +31,6 @@ interface TableSession {
   default_tax_percentage: number;
   service_charge_percentage: number;
   exchange_rate_usd_to_khr: number;
-  exchange_rate_at_payment: number | null; // Frozen rate at payment time
   receipt_header_text: string | null;
   receipt_footer_text: string | null;
   currency: string;
@@ -100,7 +99,6 @@ export const useTableSession = (tableId: string | undefined) => {
           default_tax_percentage: Number(sessionRow.default_tax_percentage) || 0,
           service_charge_percentage: Number(sessionRow.service_charge_percentage) || 0,
           exchange_rate_usd_to_khr: Number(sessionRow.exchange_rate_usd_to_khr) || 4100,
-          exchange_rate_at_payment: sessionRow.exchange_rate_at_payment ? Number(sessionRow.exchange_rate_at_payment) : null,
           receipt_header_text: sessionRow.receipt_header_text || null,
           receipt_footer_text: sessionRow.receipt_footer_text || null,
           currency: sessionRow.currency || 'USD',

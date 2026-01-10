@@ -40,7 +40,6 @@ export interface ReceiptSession {
   default_tax_percentage?: number;
   service_charge_percentage?: number;
   exchange_rate_usd_to_khr?: number;
-  exchange_rate_at_payment?: number | null; // Frozen rate at payment time for historical accuracy
   show_tax_on_receipt?: boolean;
   show_service_charge_on_receipt?: boolean;
   currency?: string;
@@ -132,16 +131,12 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
     const taxAmount = totalBill * (taxRate / 100);
     const serviceChargeAmount = totalBill * (serviceChargeRate / 100);
     const grandTotal = totalBill + taxAmount + serviceChargeAmount;
-    const currency = 'USD'; // Base currency - always USD for storage
+    const currency = 'USD';
+    const exchangeRate = session.exchange_rate_usd_to_khr || 4100;
     
-    // CRITICAL: Use frozen exchange rate for paid sessions, current rate for unpaid
-    // This ensures historical accuracy - paid receipts never change
-    const exchangeRate = session.status === 'paid' && session.exchange_rate_at_payment
-      ? session.exchange_rate_at_payment
-      : session.exchange_rate_usd_to_khr || 4100;
-    
-    // Calculate KHR amounts (display only - never stored)
+    // Calculate KHR amounts
     const grandTotalKHR = convertUSDtoKHR(grandTotal, exchangeRate);
+    console.log('SessionReceipt', session);
     const formatPrice = (amount: number) => {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
