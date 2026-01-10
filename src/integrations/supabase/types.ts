@@ -826,6 +826,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_circular_inheritance: {
+        Args: { p_child_role_id: string; p_parent_role_id: string }
+        Returns: boolean
+      }
       complete_session_payment:
         | { Args: { p_session_id: string }; Returns: Json }
         | {
@@ -856,6 +860,7 @@ export type Database = {
           total_usd: number
         }[]
       }
+      get_inherited_role_ids: { Args: { p_role_id: string }; Returns: string[] }
       get_or_create_table_session: {
         Args: { p_restaurant_id: string; p_table_id: string }
         Returns: string
@@ -913,6 +918,29 @@ export type Database = {
           table_number: string
         }[]
       }
+      get_role_effective_permissions: {
+        Args: { p_role_id: string }
+        Returns: {
+          condition_json: Json
+          is_inherited: boolean
+          permission_id: string
+          permission_key: string
+          permission_name: string
+          source_role_id: string
+          source_role_name: string
+        }[]
+      }
+      get_role_inheritance_tree: {
+        Args: { p_restaurant_id: string }
+        Returns: {
+          depth: number
+          parent_role_id: string
+          parent_role_name: string
+          role_id: string
+          role_name: string
+          role_type: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       get_session_details: {
         Args: { p_session_id: string }
         Returns: {
@@ -945,7 +973,27 @@ export type Database = {
           total_amount: number
         }[]
       }
+      get_user_effective_permissions: {
+        Args: { p_restaurant_id: string; p_user_id: string }
+        Returns: {
+          condition_json: Json
+          permission_id: string
+          permission_key: string
+          permission_name: string
+          source_name: string
+          source_type: string
+        }[]
+      }
       get_user_restaurant_id: { Args: { _user_id: string }; Returns: string }
+      user_has_permission: {
+        Args: {
+          p_context?: Json
+          p_permission_key: string
+          p_restaurant_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       user_owns_restaurant: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
