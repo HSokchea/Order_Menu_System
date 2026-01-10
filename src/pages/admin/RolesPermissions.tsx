@@ -3,12 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RolesManagement } from "@/components/admin/roles/RolesManagement";
 import { PermissionsMatrix } from "@/components/admin/roles/PermissionsMatrix";
 import { UserRolesManagement } from "@/components/admin/roles/UserRolesManagement";
+import { StaffManagement } from "@/components/admin/roles/StaffManagement";
 import { usePermissions } from "@/hooks/usePermissions";
-import { Loader2, Shield, Users, Key } from "lucide-react";
+import { Loader2, Shield, Users, Key, UserCog } from "lucide-react";
 
 export default function RolesPermissions() {
   const { loading, error } = usePermissions();
-  const [activeTab, setActiveTab] = useState("roles");
+  const [activeTab, setActiveTab] = useState("staff");
 
   if (loading) {
     return (
@@ -29,7 +30,11 @@ export default function RolesPermissions() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 max-w-lg">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+          <TabsTrigger value="staff" className="flex items-center gap-2">
+            <UserCog className="h-4 w-4" />
+            Staff
+          </TabsTrigger>
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Roles
@@ -43,6 +48,10 @@ export default function RolesPermissions() {
             User Access
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="staff" className="mt-6">
+          <StaffManagement />
+        </TabsContent>
 
         <TabsContent value="roles" className="mt-6">
           <RolesManagement />
