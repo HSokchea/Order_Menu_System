@@ -631,6 +631,7 @@ export type Database = {
           currency: string
           default_tax_percentage: number
           ended_at: string
+          exchange_rate_at_payment: number
           exchange_rate_usd_to_khr: number
           invoice_number: string
           is_invoice_locked: boolean
