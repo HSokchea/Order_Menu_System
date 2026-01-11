@@ -67,28 +67,34 @@ const Onboarding = () => {
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
+      // Wait for auth to complete
+      if (authLoading) return;
+      
       if (!user) {
-        if (!authLoading) {
-          navigate('/auth');
-        }
+        navigate('/auth', { replace: true });
         return;
       }
 
-      // Check if user is the restaurant OWNER (not staff)
+      console.log('[Onboarding] Checking if user is restaurant owner:', user.id);
+
+      // CRITICAL: Check if user is the restaurant OWNER by checking restaurants.owner_id
+      // This is the ONLY way to determine ownership - NOT profiles.role or Supabase Auth role
       const { data: restaurant, error } = await supabase
         .from('restaurants')
         .select('id, name, is_onboarded')
         .eq('owner_id', user.id)
         .single();
 
-      // If no restaurant found where user is owner, they're staff - redirect to dashboard
+      // If error or no restaurant found where user is owner, they're STAFF - redirect to dashboard
       if (error || !restaurant) {
-        console.log('User is not a restaurant owner, redirecting to admin');
+        console.log('[Onboarding] User is NOT a restaurant owner (staff user), redirecting to /admin');
         navigate('/admin', { replace: true });
         return;
       }
 
-      // If owner has already onboarded, redirect to admin
+      console.log('[Onboarding] User IS restaurant owner, onboarded:', restaurant.is_onboarded);
+
+      // Owner has already completed onboarding - redirect to admin
       if (restaurant.is_onboarded) {
         navigate('/admin', { replace: true });
         return;
