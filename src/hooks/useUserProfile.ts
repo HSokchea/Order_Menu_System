@@ -38,42 +38,58 @@ export interface EffectivePermission {
 /**
  * Permission keys for the application
  * ALL access decisions must be based on these permission keys, NOT role names
+ * 
+ * IMPORTANT: These keys MUST match the 'key' column in the 'permissions' table
  */
 export const PERMISSIONS = {
+  // Dashboard
+  DASHBOARD_VIEW: 'dashboard.view',
+  
   // Menu management
   MENU_VIEW: 'menu.view',
   MENU_MANAGE: 'menu.manage',
+  MENU_CATEGORIES_MANAGE: 'menu.categories.manage',
   
   // Orders
   ORDERS_VIEW: 'orders.view',
+  ORDERS_CREATE: 'orders.create',
+  ORDERS_UPDATE: 'orders.update',
+  ORDERS_DELETE: 'orders.delete',
   ORDERS_MANAGE: 'orders.manage',
   ORDERS_UPDATE_STATUS: 'orders.update.status',
+  ORDERS_VIEW_OWN: 'orders.view.own',
   
   // Billing
   BILLING_VIEW: 'billing.view',
   BILLING_COLLECT: 'billing.collect',
+  BILLING_REFUND: 'billing.refund',
   
   // Reports
   REPORTS_VIEW: 'reports.view',
+  REPORTS_EXPORT: 'reports.export',
   
   // Settings
   SETTINGS_VIEW: 'settings.view',
   SETTINGS_MANAGE: 'settings.manage',
   
-  // Users
+  // Users/Staff
   USERS_VIEW: 'users.view',
   USERS_MANAGE: 'users.manage',
+  USERS_ASSIGN_ROLES: 'users.assign_roles',
+  
+  // Roles
+  ROLES_VIEW: 'roles.view',
+  ROLES_MANAGE: 'roles.manage',
   
   // Tables/Sessions
   TABLES_VIEW: 'tables.view',
   TABLES_MANAGE: 'tables.manage',
+  TABLES_SESSIONS_VIEW: 'tables.sessions.view',
+  TABLES_SESSIONS_MANAGE: 'tables.sessions.manage',
   
   // QR Codes
   QR_VIEW: 'qr.view',
   QR_MANAGE: 'qr.manage',
-  
-  // Dashboard access
-  DASHBOARD_VIEW: 'dashboard.view',
 } as const;
 
 /**
@@ -87,18 +103,35 @@ const ALL_PERMISSIONS = Object.values(PERMISSIONS);
  * This is a FALLBACK only when DB permissions aren't set up yet
  * Access decisions should always use hasPermission(), not role names
  */
+/**
+ * Role type to default permissions mapping
+ * This is a FALLBACK only when DB permissions aren't set up yet
+ * Access decisions should always use hasPermission(), not role names
+ * 
+ * NOTE: These should match the defaults in get_default_role_permissions() database function
+ */
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
   owner: ALL_PERMISSIONS,
   admin: ALL_PERMISSIONS,
   manager: [
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.MENU_VIEW,
+    PERMISSIONS.MENU_MANAGE,
+    PERMISSIONS.MENU_CATEGORIES_MANAGE,
     PERMISSIONS.ORDERS_VIEW,
     PERMISSIONS.ORDERS_MANAGE,
+    PERMISSIONS.ORDERS_UPDATE_STATUS,
     PERMISSIONS.BILLING_VIEW,
+    PERMISSIONS.BILLING_COLLECT,
     PERMISSIONS.REPORTS_VIEW,
+    PERMISSIONS.REPORTS_EXPORT,
     PERMISSIONS.TABLES_VIEW,
     PERMISSIONS.TABLES_MANAGE,
+    PERMISSIONS.TABLES_SESSIONS_VIEW,
+    PERMISSIONS.TABLES_SESSIONS_MANAGE,
+    PERMISSIONS.QR_VIEW,
+    PERMISSIONS.QR_MANAGE,
+    PERMISSIONS.USERS_VIEW,
   ],
   supervisor: [
     PERMISSIONS.DASHBOARD_VIEW,
@@ -107,18 +140,23 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     PERMISSIONS.ORDERS_UPDATE_STATUS,
     PERMISSIONS.BILLING_VIEW,
     PERMISSIONS.TABLES_VIEW,
+    PERMISSIONS.TABLES_SESSIONS_VIEW,
+    PERMISSIONS.QR_VIEW,
   ],
   cashier: [
     PERMISSIONS.ORDERS_VIEW,
     PERMISSIONS.BILLING_VIEW,
     PERMISSIONS.BILLING_COLLECT,
     PERMISSIONS.TABLES_VIEW,
-    PERMISSIONS.TABLES_MANAGE,
+    PERMISSIONS.TABLES_SESSIONS_VIEW,
+    PERMISSIONS.TABLES_SESSIONS_MANAGE,
   ],
   waiter: [
     PERMISSIONS.MENU_VIEW,
     PERMISSIONS.ORDERS_VIEW,
+    PERMISSIONS.ORDERS_CREATE,
     PERMISSIONS.TABLES_VIEW,
+    PERMISSIONS.TABLES_SESSIONS_VIEW,
   ],
   kitchen: [
     PERMISSIONS.ORDERS_VIEW,
@@ -252,7 +290,11 @@ export const useUserProfile = () => {
 
         // Fetch effective permissions using the database function
         // This is the PRIMARY source of truth for access control
+        // Permissions are derived from: user_roles -> role_permissions -> permissions
+        // Plus any direct user_permissions overrides
         if (restaurantId) {
+          console.log('[useUserProfile] Fetching effective permissions for user:', user.id, 'restaurant:', restaurantId);
+          
           const { data: permissionsData, error: permError } = await supabase
             .rpc('get_user_effective_permissions', {
               p_user_id: user.id,
@@ -260,9 +302,12 @@ export const useUserProfile = () => {
             });
 
           if (permError) {
-            console.error('Error fetching effective permissions:', permError);
+            console.error('[useUserProfile] Error fetching effective permissions:', permError);
           } else if (permissionsData) {
+            console.log('[useUserProfile] Effective permissions loaded:', permissionsData.length, 'permissions');
             setEffectivePermissions(permissionsData as EffectivePermission[]);
+          } else {
+            console.warn('[useUserProfile] No permissions returned from database');
           }
         }
       }
