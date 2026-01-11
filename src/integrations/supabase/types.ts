@@ -832,6 +832,10 @@ export type Database = {
       }
     }
     Functions: {
+      assign_default_role_permissions: {
+        Args: { p_role_id: string }
+        Returns: undefined
+      }
       check_circular_inheritance: {
         Args: { p_child_role_id: string; p_parent_role_id: string }
         Returns: boolean
@@ -865,6 +869,10 @@ export type Database = {
           table_number: string
           total_usd: number
         }[]
+      }
+      get_default_role_permissions: {
+        Args: { p_role_type: Database["public"]["Enums"]["app_role"] }
+        Returns: string[]
       }
       get_inherited_role_ids: { Args: { p_role_id: string }; Returns: string[] }
       get_or_create_table_session: {
