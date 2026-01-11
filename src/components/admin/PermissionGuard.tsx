@@ -12,11 +12,18 @@ interface PermissionGuardProps {
 }
 
 /**
- * PermissionGuard - Protects routes and UI elements based on user permissions
+ * PermissionGuard - Protects routes and UI elements based on PERMISSIONS ONLY
+ * 
+ * IMPORTANT: This guard uses hasPermission() which:
+ * - Checks effective permissions from database
+ * - Falls back to role-based defaults if needed
+ * - Owners automatically have all permissions
+ * 
+ * NEVER check role names directly - always use permissions
  * 
  * @param permissions - Array of permission keys required
  * @param requireAll - If true, user must have ALL permissions. If false, user needs ANY permission
- * @param fallback - Custom fallback UI when permission denied (default: null for hiding, or redirect)
+ * @param fallback - Custom fallback UI when permission denied (default: null for hiding)
  * @param redirectTo - Redirect path when permission denied (overrides fallback)
  */
 export const PermissionGuard = ({
@@ -26,7 +33,7 @@ export const PermissionGuard = ({
   fallback = null,
   redirectTo,
 }: PermissionGuardProps) => {
-  const { isOwner, hasPermission, hasAnyPermission, hasAllPermissions, loading } = useUserProfile();
+  const { hasAnyPermission, hasAllPermissions, loading } = useUserProfile();
 
   if (loading) {
     return (
@@ -36,17 +43,16 @@ export const PermissionGuard = ({
     );
   }
 
-  // Owner always has access
-  if (isOwner) {
+  // No permissions required = allow access
+  if (permissions.length === 0) {
     return <>{children}</>;
   }
 
-  // Check permissions
-  const hasAccess = permissions.length === 0 
-    ? true 
-    : requireAll 
-      ? hasAllPermissions(permissions)
-      : hasAnyPermission(permissions);
+  // Check permissions using the permission-based check
+  // Note: hasAnyPermission/hasAllPermissions already handle owner check internally
+  const hasAccess = requireAll 
+    ? hasAllPermissions(permissions)
+    : hasAnyPermission(permissions);
 
   if (!hasAccess) {
     if (redirectTo) {
@@ -59,7 +65,7 @@ export const PermissionGuard = ({
 };
 
 /**
- * AccessDenied - Display when user doesn't have permission
+ * AccessDenied - Display when user doesn't have required permission
  */
 export const AccessDenied = ({ message = "You don't have permission to access this page." }: { message?: string }) => {
   return (
@@ -73,11 +79,13 @@ export const AccessDenied = ({ message = "You don't have permission to access th
 
 /**
  * usePermissionCheck - Hook for conditional rendering based on permissions
+ * 
+ * Use this for showing/hiding UI elements based on permissions
+ * Example: const canEdit = usePermissionCheck([PERMISSIONS.MENU_MANAGE]);
  */
 export const usePermissionCheck = (permissions: string[], requireAll = false): boolean => {
-  const { isOwner, hasAnyPermission, hasAllPermissions } = useUserProfile();
+  const { hasAnyPermission, hasAllPermissions } = useUserProfile();
   
-  if (isOwner) return true;
   if (permissions.length === 0) return true;
   
   return requireAll ? hasAllPermissions(permissions) : hasAnyPermission(permissions);

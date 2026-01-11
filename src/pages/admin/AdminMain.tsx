@@ -42,10 +42,18 @@ const getPageInfo = (pathname: string) => {
   }
 };
 
+/**
+ * AdminMain - Main admin layout with permission-based route protection
+ * 
+ * ALL route access is controlled by PERMISSIONS, not role names
+ * - Each route specifies required permissions
+ * - PermissionGuard checks if user has required permissions
+ * - hasPermission() handles owner access automatically
+ */
 export default function AdminMain() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, restaurant, isOwner, loading, getDefaultDashboard } = useUserProfile();
+  const { user, restaurant, isOwner, loading, hasPermission } = useUserProfile();
   const { title, description } = getPageInfo(location.pathname);
   
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
@@ -53,10 +61,9 @@ export default function AdminMain() {
   useEffect(() => {
     if (loading) return;
     
-    // Staff users should NEVER be redirected to onboarding
     // Only owners need onboarding check
+    // Staff users skip onboarding entirely
     if (!isOwner) {
-      // Staff - skip onboarding check entirely
       setCheckingOnboarding(false);
       return;
     }
@@ -67,11 +74,10 @@ export default function AdminMain() {
       return;
     }
 
-    // Owner with completed onboarding
     setCheckingOnboarding(false);
   }, [user, restaurant, isOwner, loading, navigate]);
 
-  // Show loader only while loading OR while checking onboarding for owners
+  // Show loader while loading OR while checking onboarding for owners
   if (loading || (isOwner && checkingOnboarding)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -83,7 +89,7 @@ export default function AdminMain() {
   return (
     <AdminLayout title={title} description={description}>
       <Routes>
-        {/* Dashboard - shows role-appropriate view */}
+        {/* Dashboard - shows permission-appropriate view */}
         <Route index element={<RoleDashboard />} />
         <Route path="dashboard" element={<RoleDashboard />} />
         
@@ -128,34 +134,38 @@ export default function AdminMain() {
         {/* Table Sessions - requires billing or table permissions */}
         <Route path="table-sessions" element={
           <PermissionGuard 
-            permissions={[PERMISSIONS.TABLES_VIEW, PERMISSIONS.BILLING_VIEW]} 
+            permissions={[PERMISSIONS.TABLES_VIEW, PERMISSIONS.BILLING_VIEW, PERMISSIONS.BILLING_COLLECT]} 
             fallback={<AccessDenied message="You don't have permission to view table sessions." />}
           >
             <TableSessions />
           </PermissionGuard>
         } />
         
-        {/* Owner-only routes */}
+        {/* QR Generator - requires QR management permission */}
         <Route path="qr-generator" element={
           <PermissionGuard 
             permissions={[PERMISSIONS.QR_MANAGE]} 
-            fallback={<AccessDenied message="Only restaurant owners can generate QR codes." />}
+            fallback={<AccessDenied message="You don't have permission to generate QR codes." />}
           >
             <QRGenerator />
           </PermissionGuard>
         } />
+        
+        {/* Settings - requires settings permission */}
         <Route path="settings" element={
           <PermissionGuard 
             permissions={[PERMISSIONS.SETTINGS_MANAGE]} 
-            fallback={<AccessDenied message="Only restaurant owners can access settings." />}
+            fallback={<AccessDenied message="You don't have permission to access settings." />}
           >
             <Settings />
           </PermissionGuard>
         } />
+        
+        {/* Staff/Roles Management - requires user management permission */}
         <Route path="roles" element={
           <PermissionGuard 
             permissions={[PERMISSIONS.USERS_MANAGE]} 
-            fallback={<AccessDenied message="Only restaurant owners can manage staff." />}
+            fallback={<AccessDenied message="You don't have permission to manage staff." />}
           >
             <RolesPermissions />
           </PermissionGuard>
@@ -163,7 +173,7 @@ export default function AdminMain() {
         <Route path="permissions" element={
           <PermissionGuard 
             permissions={[PERMISSIONS.USERS_MANAGE]} 
-            fallback={<AccessDenied message="Only restaurant owners can manage permissions." />}
+            fallback={<AccessDenied message="You don't have permission to manage permissions." />}
           >
             <RolesPermissions />
           </PermissionGuard>

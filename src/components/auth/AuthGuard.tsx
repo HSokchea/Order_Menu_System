@@ -8,26 +8,33 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthGuardProps {
   children: ReactNode;
   requireOwner?: boolean;
-  allowedRoleTypes?: string[];
   requiredPermissions?: string[];
+  requireAllPermissions?: boolean;
 }
 
+/**
+ * AuthGuard - Protects routes using PERMISSION-BASED access control
+ * 
+ * IMPORTANT: Access is determined by permissions, NOT role names
+ * - requiredPermissions: Array of permission keys the user needs
+ * - requireAllPermissions: If true, user needs ALL permissions. If false, user needs ANY
+ * - requireOwner: Special case for owner-only features (ownership is checked via restaurant.owner_id)
+ */
 export const AuthGuard = ({ 
   children, 
   requireOwner = false,
-  allowedRoleTypes = [],
-  requiredPermissions = []
+  requiredPermissions = [],
+  requireAllPermissions = false
 }: AuthGuardProps) => {
   const { 
     user, 
     profile, 
-    roles, 
     restaurant, 
     isOwner, 
     isActive, 
     mustChangePassword,
-    hasRoleType,
     hasAnyPermission,
+    hasAllPermissions,
     getDefaultDashboard,
     loading 
   } = useUserProfile();
@@ -45,8 +52,8 @@ export const AuthGuard = ({
       return;
     }
 
-    // Check if user is inactive
-    if (!isActive && !isOwner) {
+    // Check if user is inactive (owners are always active)
+    if (!isActive) {
       toast({
         title: "Account Inactive",
         description: "Your account has been deactivated. Please contact your manager.",
@@ -63,8 +70,8 @@ export const AuthGuard = ({
     }
 
     // Check if owner is required for this route
+    // This is a special ownership check, not a role-name check
     if (requireOwner && !isOwner) {
-      // Staff users attempting to access owner-only routes get redirected
       toast({
         title: "Access Denied",
         description: "Only restaurant owners can access this page.",
@@ -74,12 +81,13 @@ export const AuthGuard = ({
       return;
     }
 
-    // Reset password change screen if not needed
-    setShowPasswordChange(false);
-
-    // Check role-based access
-    if (allowedRoleTypes.length > 0 && !isOwner) {
-      const hasAccess = allowedRoleTypes.some(roleType => hasRoleType(roleType));
+    // Permission-based access control
+    // This is the PRIMARY access check for all routes
+    if (requiredPermissions.length > 0) {
+      const hasAccess = requireAllPermissions 
+        ? hasAllPermissions(requiredPermissions)
+        : hasAnyPermission(requiredPermissions);
+      
       if (!hasAccess) {
         toast({
           title: "Access Denied",
@@ -91,21 +99,25 @@ export const AuthGuard = ({
       }
     }
 
-    // Check permission-based access
-    if (requiredPermissions.length > 0 && !isOwner) {
-      if (!hasAnyPermission(requiredPermissions)) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access this page.",
-          variant: "destructive",
-        });
-        navigate(getDefaultDashboard(), { replace: true });
-        return;
-      }
-    }
-
+    // Reset password change screen if not needed
     setShowPasswordChange(false);
-  }, [user, profile, isActive, mustChangePassword, isOwner, loading, requireOwner, allowedRoleTypes, requiredPermissions, hasRoleType, hasAnyPermission, getDefaultDashboard, navigate, location.pathname, toast]);
+  }, [
+    user, 
+    profile, 
+    isActive, 
+    mustChangePassword, 
+    isOwner, 
+    loading, 
+    requireOwner, 
+    requiredPermissions, 
+    requireAllPermissions,
+    hasAnyPermission, 
+    hasAllPermissions, 
+    getDefaultDashboard, 
+    navigate, 
+    location.pathname, 
+    toast
+  ]);
 
   if (loading) {
     return (
