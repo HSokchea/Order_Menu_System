@@ -1,9 +1,10 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ChangePassword from '@/pages/ChangePassword';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -38,10 +39,15 @@ export const AuthGuard = ({
     getDefaultDashboard,
     loading 
   } = useUserProfile();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  
+  // Track if we've already shown the inactive toast to prevent infinite loops
+  const hasShownInactiveToast = useRef(false);
+  const isRedirecting = useRef(false);
 
   useEffect(() => {
     if (loading) return;
@@ -53,13 +59,24 @@ export const AuthGuard = ({
     }
 
     // Check if user is inactive (owners are always active)
-    if (!isActive) {
-      toast({
-        title: "Account Inactive",
-        description: "Your account has been deactivated. Please contact your manager.",
-        variant: "destructive",
+    // Use refs to prevent infinite loop of toasts
+    if (!isActive && !isRedirecting.current) {
+      isRedirecting.current = true;
+      
+      // Show toast only once
+      if (!hasShownInactiveToast.current) {
+        hasShownInactiveToast.current = true;
+        toast({
+          title: "Account Inactive",
+          description: "Your account has been deactivated. Please contact your manager.",
+          variant: "destructive",
+        });
+      }
+      
+      // Sign out and redirect
+      signOut().then(() => {
+        navigate('/auth', { replace: true });
       });
-      navigate('/auth', { replace: true });
       return;
     }
 
@@ -116,10 +133,28 @@ export const AuthGuard = ({
     getDefaultDashboard, 
     navigate, 
     location.pathname, 
-    toast
+    toast,
+    signOut
   ]);
 
+  // Reset refs when user changes (e.g., new login)
+  useEffect(() => {
+    if (user) {
+      hasShownInactiveToast.current = false;
+      isRedirecting.current = false;
+    }
+  }, [user?.id]);
+
   if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If redirecting due to inactive account, show loading
+  if (isRedirecting.current) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
