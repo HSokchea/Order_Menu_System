@@ -10,7 +10,8 @@ import {
   Gift,
   Users,
   Settings,
-  Shield
+  Shield,
+  LucideIcon
 } from "lucide-react";
 
 import {
@@ -24,8 +25,18 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
-const navigationItems = [
+interface NavigationItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  description: string;
+  ownerOnly?: boolean;
+  allowedRoles?: string[];
+}
+
+const navigationItems: NavigationItem[] = [
   {
     title: "Dashboard",
     url: "/admin",
@@ -36,13 +47,15 @@ const navigationItems = [
     title: "Categories",
     url: "/admin/categories",
     icon: LayoutGrid,
-    description: "Manage menu categories"
+    description: "Manage menu categories",
+    allowedRoles: ['owner', 'admin', 'manager']
   },
   {
     title: "Menu Items", 
     url: "/admin/menu-items",
     icon: UtensilsCrossed,
-    description: "Add and edit menu items"
+    description: "Add and edit menu items",
+    allowedRoles: ['owner', 'admin', 'manager']
   },
   {
     title: "View Orders",
@@ -54,49 +67,36 @@ const navigationItems = [
     title: "Table Sessions",
     url: "/admin/table-sessions",
     icon: Users,
-    description: "Manage dining sessions"
+    description: "Manage dining sessions",
+    allowedRoles: ['owner', 'admin', 'manager', 'cashier']
   },
   {
     title: "Generate QR",
     url: "/admin/qr-generator",
     icon: QrCode,
-    description: "Create QR codes for tables"
+    description: "Create QR codes for tables",
+    ownerOnly: true
   },
   {
     title: "Roles & Permissions",
     url: "/admin/roles",
     icon: Shield,
-    description: "Manage user access"
+    description: "Manage user access",
+    ownerOnly: true
   },
   {
     title: "Settings",
     url: "/admin/settings",
     icon: Settings,
-    description: "Shop and receipt settings"
+    description: "Shop and receipt settings",
+    ownerOnly: true
   }
-  // {
-  //   title: "Analytics",
-  //   url: "/admin/analytics",
-  //   icon: BarChart3,
-  //   description: "Advanced insights and metrics"
-  // },
-  // {
-  //   title: "Stock Management",
-  //   url: "/admin/stock",
-  //   icon: Package,
-  //   description: "Track inventory levels"
-  // },
-  // {
-  //   title: "Promotions & Discounts",
-  //   url: "/admin/promotions",
-  //   icon: Gift,
-  //   description: "Manage special offers"
-  // }
 ];
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const { isOwner, hasRoleType } = useUserProfile();
   
   const isActive = (path: string) => {
     // Make Dashboard active for root paths
@@ -114,6 +114,15 @@ export function AdminSidebar() {
         : "text-muted-foreground hover:bg-muted hover:text-foreground"
     }`;
   };
+
+  // Filter navigation items based on user role
+  const visibleItems = navigationItems.filter(item => {
+    if (item.ownerOnly && !isOwner) return false;
+    if (item.allowedRoles && !isOwner) {
+      return item.allowedRoles.some(role => hasRoleType(role));
+    }
+    return true;
+  });
 
   return (
     <Sidebar className="border-r border-border/40">
@@ -137,7 +146,7 @@ export function AdminSidebar() {
         <SidebarGroup className="px-0">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {navigationItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="h-auto p-0">
                     <NavLink to={item.url} className={getNavClassName(item.url)}>

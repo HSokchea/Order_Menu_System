@@ -333,6 +333,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          must_change_password: boolean
           restaurant_id: string | null
           role: string | null
           status: string
@@ -343,6 +344,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          must_change_password?: boolean
           restaurant_id?: string | null
           role?: string | null
           status?: string
@@ -353,6 +355,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          must_change_password?: boolean
           restaurant_id?: string | null
           role?: string | null
           status?: string

@@ -4,11 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminMain from "./pages/admin/AdminMain";
 import Onboarding from "./pages/admin/Onboarding";
+import ChangePassword from "./pages/ChangePassword";
 import MenuView from "./pages/customer/MenuView";
 import CartSummary from "./pages/customer/CartSummary";
 import OrderSuccess from "./pages/customer/OrderSuccess";
@@ -45,9 +47,22 @@ const AppContent = () => {
           {/* Protected admin routes */}
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/auth" element={<Navigate to="/admin" replace />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/admin/*" element={<AdminMain />} />
+          <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/onboarding" element={
+            <AuthGuard requireOwner>
+              <Onboarding />
+            </AuthGuard>
+          } />
+          <Route path="/dashboard" element={
+            <AuthGuard>
+              <Dashboard />
+            </AuthGuard>
+          } />
+          <Route path="/admin/*" element={
+            <AuthGuard>
+              <AdminMain />
+            </AuthGuard>
+          } />
         </>
       )}
       

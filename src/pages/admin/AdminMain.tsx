@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { Loader2 } from "lucide-react";
 import Dashboard from "../Dashboard";
 import Categories from "./Categories";
@@ -46,7 +45,7 @@ const getPageInfo = (pathname: string) => {
 export default function AdminMain() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, restaurant, isOwner, loading } = useUserProfile();
   const { title, description } = getPageInfo(location.pathname);
   
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
@@ -58,19 +57,8 @@ export default function AdminMain() {
         return;
       }
 
-      const { data: restaurant, error } = await supabase
-        .from('restaurants')
-        .select('is_onboarded')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error checking onboarding status:', error);
-        setCheckingOnboarding(false);
-        return;
-      }
-
-      if (!restaurant?.is_onboarded) {
+      // Only owners need to complete onboarding
+      if (isOwner && restaurant && !restaurant.is_onboarded) {
         navigate('/onboarding', { replace: true });
         return;
       }
@@ -78,12 +66,12 @@ export default function AdminMain() {
       setCheckingOnboarding(false);
     };
 
-    if (!authLoading) {
+    if (!loading) {
       checkOnboardingStatus();
     }
-  }, [user, authLoading, navigate]);
+  }, [user, restaurant, isOwner, loading, navigate]);
 
-  if (authLoading || checkingOnboarding) {
+  if (loading || checkingOnboarding) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
