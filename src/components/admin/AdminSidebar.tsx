@@ -30,17 +30,20 @@ interface NavigationItem {
   url: string;
   icon: LucideIcon;
   description: string;
-  permissions?: string[];
-  ownerOnly?: boolean;
+  permissions: string[]; // Required permissions (user needs ANY of these)
 }
 
+/**
+ * Navigation items with permission requirements
+ * Access is controlled purely by permissions - no role name checks
+ */
 const navigationItems: NavigationItem[] = [
   {
     title: "Dashboard",
     url: "/admin",
     icon: LayoutGrid,
     description: "Overview and statistics",
-    permissions: [PERMISSIONS.REPORTS_VIEW],
+    permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.REPORTS_VIEW],
   },
   {
     title: "Categories",
@@ -75,7 +78,7 @@ const navigationItems: NavigationItem[] = [
     url: "/admin/table-sessions",
     icon: CreditCard,
     description: "Manage dining sessions",
-    permissions: [PERMISSIONS.TABLES_VIEW, PERMISSIONS.BILLING_VIEW],
+    permissions: [PERMISSIONS.TABLES_VIEW, PERMISSIONS.BILLING_VIEW, PERMISSIONS.BILLING_COLLECT],
   },
   {
     title: "Generate QR",
@@ -83,7 +86,6 @@ const navigationItems: NavigationItem[] = [
     icon: QrCode,
     description: "Create QR codes for tables",
     permissions: [PERMISSIONS.QR_MANAGE],
-    ownerOnly: true,
   },
   {
     title: "Staff Management",
@@ -91,7 +93,6 @@ const navigationItems: NavigationItem[] = [
     icon: Users,
     description: "Manage staff accounts",
     permissions: [PERMISSIONS.USERS_MANAGE],
-    ownerOnly: true,
   },
   {
     title: "Roles & Permissions",
@@ -99,7 +100,6 @@ const navigationItems: NavigationItem[] = [
     icon: Shield,
     description: "Configure access control",
     permissions: [PERMISSIONS.USERS_MANAGE],
-    ownerOnly: true,
   },
   {
     title: "Settings",
@@ -107,14 +107,13 @@ const navigationItems: NavigationItem[] = [
     icon: Settings,
     description: "Shop and receipt settings",
     permissions: [PERMISSIONS.SETTINGS_MANAGE],
-    ownerOnly: true,
   }
 ];
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const { isOwner, hasPermission, hasAnyPermission, restaurant } = useUserProfile();
+  const { hasAnyPermission, restaurant, getPrimaryRoleType } = useUserProfile();
   
   const isActive = (path: string) => {
     if (path === "/admin") {
@@ -132,21 +131,21 @@ export function AdminSidebar() {
     }`;
   };
 
-  // Filter navigation items based on user permissions
+  /**
+   * Filter navigation items based on user permissions ONLY
+   * No role name checks - purely permission-based
+   */
   const visibleItems = navigationItems.filter(item => {
-    // Owner has access to everything
-    if (isOwner) return true;
-    
-    // Owner-only items are hidden for non-owners
-    if (item.ownerOnly) return false;
-    
-    // Check permissions
-    if (item.permissions && item.permissions.length > 0) {
-      return hasAnyPermission(item.permissions);
-    }
-    
-    return true;
+    // Check if user has any of the required permissions
+    // hasAnyPermission already handles owner access internally
+    return hasAnyPermission(item.permissions);
   });
+
+  // Get display role for the header (display only, not for access control)
+  const displayRole = getPrimaryRoleType();
+  const displayRoleLabel = displayRole === 'owner' ? 'Owner' : 
+                           displayRole === 'admin' ? 'Admin' :
+                           displayRole.charAt(0).toUpperCase() + displayRole.slice(1);
 
   return (
     <Sidebar className="border-r border-border/40">
@@ -163,7 +162,7 @@ export function AdminSidebar() {
                   {restaurant?.name || 'Admin'}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {isOwner ? 'Owner' : 'Staff'}
+                  {displayRoleLabel}
                 </p>
               </div>
             )}

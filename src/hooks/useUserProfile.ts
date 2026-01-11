@@ -35,7 +35,10 @@ export interface EffectivePermission {
   condition_json: any;
 }
 
-// Permission keys for the application
+/**
+ * Permission keys for the application
+ * ALL access decisions must be based on these permission keys, NOT role names
+ */
 export const PERMISSIONS = {
   // Menu management
   MENU_VIEW: 'menu.view',
@@ -68,13 +71,27 @@ export const PERMISSIONS = {
   // QR Codes
   QR_VIEW: 'qr.view',
   QR_MANAGE: 'qr.manage',
+  
+  // Dashboard access
+  DASHBOARD_VIEW: 'dashboard.view',
 } as const;
 
-// Role type to default permissions mapping
+/**
+ * ALL_PERMISSIONS - Owner/Admin gets all these automatically
+ * Used for granting full access without role-name checks
+ */
+const ALL_PERMISSIONS = Object.values(PERMISSIONS);
+
+/**
+ * Role type to default permissions mapping
+ * This is a FALLBACK only when DB permissions aren't set up yet
+ * Access decisions should always use hasPermission(), not role names
+ */
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  owner: Object.values(PERMISSIONS), // All permissions
-  admin: Object.values(PERMISSIONS), // All permissions
+  owner: ALL_PERMISSIONS,
+  admin: ALL_PERMISSIONS,
   manager: [
+    PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.MENU_VIEW,
     PERMISSIONS.ORDERS_VIEW,
     PERMISSIONS.ORDERS_MANAGE,
@@ -84,6 +101,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     PERMISSIONS.TABLES_MANAGE,
   ],
   supervisor: [
+    PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.MENU_VIEW,
     PERMISSIONS.ORDERS_VIEW,
     PERMISSIONS.ORDERS_UPDATE_STATUS,
@@ -109,16 +127,29 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
   custom: [], // Custom roles have explicit permissions only
 };
 
-// Role type to default dashboard mapping
-export const ROLE_DEFAULT_DASHBOARD: Record<string, string> = {
-  owner: '/admin',
-  admin: '/admin',
-  manager: '/admin/order-dashboard',
-  supervisor: '/admin/order-dashboard',
-  cashier: '/admin/table-sessions',
-  waiter: '/admin/order-dashboard',
-  kitchen: '/admin/order-dashboard',
-  custom: '/admin/order-dashboard',
+/**
+ * Permission-based dashboard routing
+ * Determines which dashboard to show based on the user's permissions
+ */
+export const getPermissionBasedDashboard = (hasPermissionFn: (key: string) => boolean): string => {
+  // Full dashboard for users with reports access
+  if (hasPermissionFn(PERMISSIONS.REPORTS_VIEW) || hasPermissionFn(PERMISSIONS.DASHBOARD_VIEW)) {
+    return '/admin';
+  }
+  // Billing focused for users with billing permissions
+  if (hasPermissionFn(PERMISSIONS.BILLING_COLLECT)) {
+    return '/admin/table-sessions';
+  }
+  // Kitchen screen for users with order status update permission
+  if (hasPermissionFn(PERMISSIONS.ORDERS_UPDATE_STATUS)) {
+    return '/admin/order-dashboard';
+  }
+  // Order view for users with order permission
+  if (hasPermissionFn(PERMISSIONS.ORDERS_VIEW)) {
+    return '/admin/order-dashboard';
+  }
+  // Default fallback
+  return '/admin/order-dashboard';
 };
 
 export const useUserProfile = () => {
@@ -171,8 +202,10 @@ export const useUserProfile = () => {
         .single();
 
       let restaurantId: string | null = null;
+      let ownerStatus = false;
 
       if (ownedRestaurant) {
+        ownerStatus = true;
         setIsOwner(true);
         setRestaurant(ownedRestaurant);
         restaurantId = ownedRestaurant.id;
@@ -188,12 +221,13 @@ export const useUserProfile = () => {
           setRestaurant(staffRestaurant);
           restaurantId = staffRestaurant.id;
         }
+        setIsOwner(false);
       }
 
       if (profileData) {
         setProfile(profileData as UserProfile);
         
-        // Fetch user roles
+        // Fetch user roles (for display purposes and fallback permissions)
         const { data: rolesData } = await supabase
           .from('user_roles')
           .select(`
@@ -217,6 +251,7 @@ export const useUserProfile = () => {
         }
 
         // Fetch effective permissions using the database function
+        // This is the PRIMARY source of truth for access control
         if (restaurantId) {
           const { data: permissionsData, error: permError } = await supabase
             .rpc('get_user_effective_permissions', {
@@ -237,7 +272,7 @@ export const useUserProfile = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, clearState]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -249,13 +284,10 @@ export const useUserProfile = () => {
     fetchUserProfile();
   };
 
-  // Helper to check if user has a specific role type
-  const hasRoleType = (roleType: string): boolean => {
-    if (isOwner) return roleType === 'owner';
-    return roles.some(r => r.role_type === roleType);
-  };
-
-  // Get primary role type (highest privilege)
+  /**
+   * Get the primary role type for the user
+   * NOTE: This is for display/fallback only - NOT for access decisions
+   */
   const getPrimaryRoleType = (): string => {
     if (isOwner) return 'owner';
     
@@ -268,36 +300,56 @@ export const useUserProfile = () => {
     return 'custom';
   };
 
-  // Check if user has a specific permission
-  const hasPermission = (permissionKey: string): boolean => {
-    // Owner has all permissions
+  /**
+   * hasPermission - THE PRIMARY ACCESS CHECK
+   * ALL access decisions MUST use this function
+   * Never check role names directly
+   */
+  const hasPermission = useCallback((permissionKey: string): boolean => {
+    // Owner has all permissions (this is the ONLY place isOwner affects access)
     if (isOwner) return true;
     
-    // Check effective permissions from database
+    // Check effective permissions from database (PRIMARY source)
     if (effectivePermissions.some(p => p.permission_key === permissionKey)) {
       return true;
     }
     
-    // Fallback to role-based default permissions
+    // Fallback to role-based default permissions (for initial setup only)
     const primaryRole = getPrimaryRoleType();
     const defaultPerms = ROLE_DEFAULT_PERMISSIONS[primaryRole] || [];
     return defaultPerms.includes(permissionKey);
-  };
+  }, [isOwner, effectivePermissions, roles]);
 
-  // Check if user has any of the specified permissions
-  const hasAnyPermission = (permissionKeys: string[]): boolean => {
+  /**
+   * hasAnyPermission - Check if user has ANY of the specified permissions
+   */
+  const hasAnyPermission = useCallback((permissionKeys: string[]): boolean => {
     return permissionKeys.some(key => hasPermission(key));
-  };
+  }, [hasPermission]);
 
-  // Check if user has all of the specified permissions
-  const hasAllPermissions = (permissionKeys: string[]): boolean => {
+  /**
+   * hasAllPermissions - Check if user has ALL of the specified permissions
+   */
+  const hasAllPermissions = useCallback((permissionKeys: string[]): boolean => {
     return permissionKeys.every(key => hasPermission(key));
-  };
+  }, [hasPermission]);
 
-  // Get the default dashboard for the user based on their role
-  const getDefaultDashboard = (): string => {
-    const primaryRole = getPrimaryRoleType();
-    return ROLE_DEFAULT_DASHBOARD[primaryRole] || '/admin/order-dashboard';
+  /**
+   * getDefaultDashboard - Permission-based dashboard routing
+   * Uses permissions to determine appropriate dashboard
+   */
+  const getDefaultDashboard = useCallback((): string => {
+    return getPermissionBasedDashboard(hasPermission);
+  }, [hasPermission]);
+
+  /**
+   * hasRoleType - Check if user has a specific role type
+   * NOTE: Use only for display purposes, NOT for access decisions
+   * @deprecated Use hasPermission() instead for access control
+   */
+  const hasRoleType = (roleType: string): boolean => {
+    if (isOwner) return roleType === 'owner';
+    return roles.some(r => r.role_type === roleType);
   };
 
   // Check if user is active
@@ -305,6 +357,21 @@ export const useUserProfile = () => {
 
   // Check if user needs to change password
   const mustChangePassword = profile?.must_change_password === true && !isOwner;
+
+  /**
+   * getAllPermissionKeys - Get list of all permissions the user has
+   * Useful for debugging and permission display
+   */
+  const getAllPermissionKeys = useCallback((): string[] => {
+    if (isOwner) return ALL_PERMISSIONS;
+    
+    const dbPerms = effectivePermissions.map(p => p.permission_key);
+    if (dbPerms.length > 0) return dbPerms;
+    
+    // Fallback
+    const primaryRole = getPrimaryRoleType();
+    return ROLE_DEFAULT_PERMISSIONS[primaryRole] || [];
+  }, [isOwner, effectivePermissions, roles]);
 
   return {
     user,
@@ -315,15 +382,18 @@ export const useUserProfile = () => {
     isOwner,
     isActive,
     mustChangePassword,
-    hasRoleType,
-    getPrimaryRoleType,
+    // Primary access check functions
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
     getDefaultDashboard,
+    getAllPermissionKeys,
+    // Role helpers (for display/fallback only)
+    hasRoleType,
+    getPrimaryRoleType,
     loading: authLoading || loading,
     error,
     refetch,
-    clearState, // Expose for sign-out cleanup
+    clearState,
   };
 };
