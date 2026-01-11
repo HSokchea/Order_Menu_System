@@ -74,25 +74,29 @@ const Onboarding = () => {
         return;
       }
 
+      // Check if user is the restaurant OWNER (not staff)
       const { data: restaurant, error } = await supabase
         .from('restaurants')
         .select('id, name, is_onboarded')
         .eq('owner_id', user.id)
         .single();
 
-      if (error) {
-        console.error('Error fetching restaurant:', error);
-        setChecking(false);
+      // If no restaurant found where user is owner, they're staff - redirect to dashboard
+      if (error || !restaurant) {
+        console.log('User is not a restaurant owner, redirecting to admin');
+        navigate('/admin', { replace: true });
         return;
       }
 
-      if (restaurant?.is_onboarded) {
-        navigate('/admin');
+      // If owner has already onboarded, redirect to admin
+      if (restaurant.is_onboarded) {
+        navigate('/admin', { replace: true });
         return;
       }
 
-      setRestaurantId(restaurant?.id || null);
-      if (restaurant?.name) {
+      // Owner with un-onboarded restaurant - show onboarding form
+      setRestaurantId(restaurant.id);
+      if (restaurant.name) {
         setFormData(prev => ({ ...prev, name: restaurant.name }));
       }
       setChecking(false);
