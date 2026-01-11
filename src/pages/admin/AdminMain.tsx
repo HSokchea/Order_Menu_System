@@ -51,27 +51,28 @@ export default function AdminMain() {
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      if (!user) {
-        setCheckingOnboarding(false);
-        return;
-      }
-
-      // Only owners need to complete onboarding
-      if (isOwner && restaurant && !restaurant.is_onboarded) {
-        navigate('/onboarding', { replace: true });
-        return;
-      }
-
+    if (loading) return;
+    
+    // Staff users should NEVER be redirected to onboarding
+    // Only owners need onboarding check
+    if (!isOwner) {
+      // Staff - skip onboarding check entirely
       setCheckingOnboarding(false);
-    };
-
-    if (!loading) {
-      checkOnboardingStatus();
+      return;
     }
+
+    // Owner: check if onboarding is needed
+    if (restaurant && !restaurant.is_onboarded) {
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+
+    // Owner with completed onboarding
+    setCheckingOnboarding(false);
   }, [user, restaurant, isOwner, loading, navigate]);
 
-  if (loading || checkingOnboarding) {
+  // Show loader only while loading OR while checking onboarding for owners
+  if (loading || (isOwner && checkingOnboarding)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

@@ -56,14 +56,15 @@ export const AuthGuard = ({
       return;
     }
 
-    // Check if password change is required
+    // Check if password change is required (highest priority after auth)
     if (mustChangePassword) {
       setShowPasswordChange(true);
       return;
     }
 
-    // Check if owner is required
+    // Check if owner is required for this route
     if (requireOwner && !isOwner) {
+      // Staff users attempting to access owner-only routes get redirected
       toast({
         title: "Access Denied",
         description: "Only restaurant owners can access this page.",
@@ -72,6 +73,9 @@ export const AuthGuard = ({
       navigate(getDefaultDashboard(), { replace: true });
       return;
     }
+
+    // Reset password change screen if not needed
+    setShowPasswordChange(false);
 
     // Check role-based access
     if (allowedRoleTypes.length > 0 && !isOwner) {
