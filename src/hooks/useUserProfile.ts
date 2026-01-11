@@ -131,13 +131,19 @@ export const useUserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Clear all state - exposed for sign-out
+  const clearState = useCallback(() => {
+    setProfile(null);
+    setRoles([]);
+    setEffectivePermissions([]);
+    setRestaurant(null);
+    setIsOwner(false);
+    setError(null);
+  }, []);
+
   const fetchUserProfile = useCallback(async () => {
     if (!user) {
-      setProfile(null);
-      setRoles([]);
-      setEffectivePermissions([]);
-      setRestaurant(null);
-      setIsOwner(false);
+      clearState();
       setLoading(false);
       return;
     }
@@ -317,6 +323,7 @@ export const useUserProfile = () => {
     getDefaultDashboard,
     loading: authLoading || loading,
     error,
-    refetch
+    refetch,
+    clearState, // Expose for sign-out cleanup
   };
 };
