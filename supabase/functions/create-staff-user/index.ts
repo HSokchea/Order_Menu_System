@@ -178,6 +178,7 @@ serve(async (req) => {
           restaurant_id: restaurant.id,
           full_name: full_name.trim(),
           status: status || 'active',
+          must_change_password: true, // Force password change on first login
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -197,7 +198,8 @@ serve(async (req) => {
           user_id: userId,
           restaurant_id: restaurant.id,
           full_name: full_name.trim(),
-          status: status || 'active'
+          status: status || 'active',
+          must_change_password: true // Force password change on first login
         });
 
       if (profileError) {

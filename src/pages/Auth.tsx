@@ -6,13 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ChefHat } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { ChefHat, Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -23,11 +25,37 @@ const Auth = () => {
     const { error } = await signIn(email, password);
     
     if (error) {
+      // Generic error message to avoid revealing user existence
       toast({
         title: "Sign In Failed",
-        description: error.message,
+        description: "Invalid email or password. Please try again.",
         variant: "destructive",
       });
+      setLoading(false);
+      return;
+    }
+
+    // After successful auth, check if user is active
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // Check profile status
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('status')
+        .eq('user_id', user.id)
+        .single();
+
+      // If profile exists and is inactive, sign them out
+      if (profile && profile.status === 'inactive') {
+        await supabase.auth.signOut();
+        toast({
+          title: "Account Inactive",
+          description: "Your account has been deactivated. Please contact your manager.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
     }
     
     setLoading(false);
@@ -86,13 +114,24 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing In..." : "Sign In"}
