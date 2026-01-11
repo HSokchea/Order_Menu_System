@@ -1,8 +1,7 @@
-import { ReactNode, useEffect, useState, useRef } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useAuth } from '@/hooks/useAuth';
 import ChangePassword from '@/pages/ChangePassword';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,7 +26,6 @@ export const AuthGuard = ({
   requiredPermissions = [],
   requireAllPermissions = false
 }: AuthGuardProps) => {
-  const { signOut } = useAuth();
   const { 
     user, 
     profile, 
@@ -38,16 +36,12 @@ export const AuthGuard = ({
     hasAnyPermission,
     hasAllPermissions,
     getDefaultDashboard,
-    loading,
-    clearState
+    loading 
   } = useUserProfile();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const [showPasswordChange, setShowPasswordChange] = useState(false);
-  
-  // Prevent infinite loops - track if we've already handled inactive state
-  const hasHandledInactiveRef = useRef(false);
 
   useEffect(() => {
     if (loading) return;
@@ -59,29 +53,13 @@ export const AuthGuard = ({
     }
 
     // Check if user is inactive (owners are always active)
-    // Only handle this ONCE to prevent infinite toast loop
-    if (!isActive && !hasHandledInactiveRef.current) {
-      hasHandledInactiveRef.current = true;
-      
+    if (!isActive) {
       toast({
         title: "Account Inactive",
         description: "Your account has been deactivated. Please contact your manager.",
         variant: "destructive",
       });
-      
-      // Sign out the user completely
-      const handleSignOut = async () => {
-        clearState();
-        await signOut();
-        navigate('/auth', { replace: true });
-      };
-      
-      handleSignOut();
-      return;
-    }
-    
-    // If inactive, don't proceed with other checks
-    if (!isActive) {
+      navigate('/auth', { replace: true });
       return;
     }
 
@@ -138,26 +116,10 @@ export const AuthGuard = ({
     getDefaultDashboard, 
     navigate, 
     location.pathname, 
-    toast,
-    signOut,
-    clearState
+    toast
   ]);
 
-  // Reset the inactive handler ref when user changes
-  useEffect(() => {
-    hasHandledInactiveRef.current = false;
-  }, [user?.id]);
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // If user is inactive, show nothing while redirecting
-  if (!isActive && user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
