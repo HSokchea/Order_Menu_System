@@ -9,12 +9,14 @@ interface AuthGuardProps {
   children: ReactNode;
   requireOwner?: boolean;
   allowedRoleTypes?: string[];
+  requiredPermissions?: string[];
 }
 
 export const AuthGuard = ({ 
   children, 
   requireOwner = false,
-  allowedRoleTypes = []
+  allowedRoleTypes = [],
+  requiredPermissions = []
 }: AuthGuardProps) => {
   const { 
     user, 
@@ -25,6 +27,8 @@ export const AuthGuard = ({
     isActive, 
     mustChangePassword,
     hasRoleType,
+    hasAnyPermission,
+    getDefaultDashboard,
     loading 
   } = useUserProfile();
   const navigate = useNavigate();
@@ -65,7 +69,7 @@ export const AuthGuard = ({
         description: "Only restaurant owners can access this page.",
         variant: "destructive",
       });
-      navigate('/admin', { replace: true });
+      navigate(getDefaultDashboard(), { replace: true });
       return;
     }
 
@@ -78,13 +82,26 @@ export const AuthGuard = ({
           description: "You don't have permission to access this page.",
           variant: "destructive",
         });
-        navigate('/admin', { replace: true });
+        navigate(getDefaultDashboard(), { replace: true });
+        return;
+      }
+    }
+
+    // Check permission-based access
+    if (requiredPermissions.length > 0 && !isOwner) {
+      if (!hasAnyPermission(requiredPermissions)) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to access this page.",
+          variant: "destructive",
+        });
+        navigate(getDefaultDashboard(), { replace: true });
         return;
       }
     }
 
     setShowPasswordChange(false);
-  }, [user, profile, isActive, mustChangePassword, isOwner, loading, requireOwner, allowedRoleTypes]);
+  }, [user, profile, isActive, mustChangePassword, isOwner, loading, requireOwner, allowedRoleTypes, requiredPermissions, hasRoleType, hasAnyPermission, getDefaultDashboard, navigate, location.pathname, toast]);
 
   if (loading) {
     return (
@@ -105,7 +122,7 @@ export const AuthGuard = ({
         restaurantName={restaurant?.name}
         onComplete={() => {
           setShowPasswordChange(false);
-          navigate('/admin', { replace: true });
+          navigate(getDefaultDashboard(), { replace: true });
         }}
       />
     );
