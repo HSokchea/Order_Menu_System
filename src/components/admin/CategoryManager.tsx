@@ -262,20 +262,20 @@ const CategoryManager = ({
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort('name')}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-left">
                     Name
                     {sortField === 'name' && (
                       sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="hidden md:table-cell">Description</TableHead>
-                <TableHead className="text-center">Item Count</TableHead>
+                <TableHead className="hidden md:table-cell min-w-[100px] max-w-[250px] text-left">Description</TableHead>
+                <TableHead className="text-left">Item Count</TableHead>
                 <TableHead
                   className="cursor-pointer hover:bg-muted/50 text-center"
                   onClick={() => handleSort('status')}
                 >
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-left justify-left gap-2">
                     Status
                     {sortField === 'status' && (
                       sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
@@ -286,14 +286,14 @@ const CategoryManager = ({
                   className="cursor-pointer hover:bg-muted/50 hidden lg:table-cell"
                   onClick={() => handleSort('updated_at')}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-left gap-2">
                     Last Updated
                     {sortField === 'updated_at' && (
                       sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="text-right w-[100px]">Actions</TableHead>
+                <TableHead className="text-right w-[100px] pr-4">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <DragDropContext onDragEnd={handleDragEnd}>
@@ -318,19 +318,19 @@ const CategoryManager = ({
                               {...provided.draggableProps}
                               className={snapshot.isDragging ? "bg-muted/50" : ""}
                             >
-                              <TableCell>
+                              <TableCell className="pl-2">
                                 <div {...provided.dragHandleProps} className="cursor-grab">
                                   <GripVertical className="h-4 w-4 text-muted-foreground" />
                                 </div>
                               </TableCell>
                               <TableCell className="font-medium">{category.name}</TableCell>
-                              <TableCell className="hidden md:table-cell text-muted-foreground">
+                              <TableCell className="hidden md:table-cell min-w-[100px] max-w-[250px] line-clamp-1 text-muted-foreground">
                                 {category.description || '-'}
                               </TableCell>
-                              <TableCell className="text-center">
+                              <TableCell className="text-left">
                                 <ItemCountCell categoryId={category.id} />
                               </TableCell>
-                              <TableCell className="text-center">
+                              <TableCell className="text-left">
                                 <Badge variant={category.status === 'active' ? 'default' : 'secondary'}>
                                   {category.status}
                                 </Badge>

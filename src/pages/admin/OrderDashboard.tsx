@@ -50,7 +50,7 @@ const OrderDashboard = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const itemsPerPage = 10;
 
   // Modal state
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -593,7 +593,10 @@ const OrderDashboard = () => {
 
       {/* Pagination */}
       {filteredAndPaginatedOrders.totalPages > 1 && (
-        <div className="flex justify-center">
+        <div className="flex flex-col sm:flex-row items-center justify-between">
+          <div className="text-sm text-muted-foreground whitespace-nowrap">
+            Page {filteredAndPaginatedOrders.currentPage} of {filteredAndPaginatedOrders.totalPages}
+          </div>
           <Pagination>
             <PaginationContent>
               <PaginationItem>

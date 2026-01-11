@@ -75,7 +75,7 @@ const MenuItems = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const itemsPerPage = 10;
 
   // Form state
   const [itemName, setItemName] = useState('');
@@ -702,9 +702,9 @@ const MenuItems = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">Image</TableHead>
+                  <TableHead className="w-[40px]">Image</TableHead>
                   <TableHead
-                    className="cursor-pointer hover:bg-muted/50 select-none w-[200px]"
+                    className="cursor-pointer hover:bg-muted/50 select-none w-[200px] p"
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center">
@@ -712,12 +712,12 @@ const MenuItems = () => {
                       {getSortIcon('name')}
                     </div>
                   </TableHead>
-                  <TableHead className="w-[200px] hidden md:table-cell">Description</TableHead>
+                  <TableHead className="min-w-[100px] max-w-[200px] hidden md:table-cell">Description</TableHead>
                   <TableHead
-                    className="cursor-pointer hover:bg-muted/50 select-none w-[100px] text-right"
+                    className="cursor-pointer hover:bg-muted/50 select-none w-[100px] text-left"
                     onClick={() => handleSort('price_usd')}
                   >
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-left justify-start">
                       Price
                       {getSortIcon('price_usd')}
                     </div>
@@ -740,26 +740,26 @@ const MenuItems = () => {
                       {getSortIcon('is_available')}
                     </div>
                   </TableHead>
-                  <TableHead className="w-[100px] text-right">Actions</TableHead>
+                  <TableHead className="w-[100px] text-right pr-3">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndPaginatedItems.items.map((item) => (
                   <TableRow key={item.id} className="hover:bg-muted/50">
-                    <TableCell className="w-[80px]">
+                    <TableCell className="w-[80px] pl-3">
                       {item.image_url ? (
                         <img
                           src={item.image_url}
                           alt={item.name}
-                          className="w-12 h-12 object-cover rounded-lg border"
+                          className="w-10 h-10 object-cover rounded-full border"
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-muted/20 rounded-lg border flex items-center justify-center">
+                        <div className="w-10 h-10 bg-muted/20 rounded-full border flex items-center justify-center">
                           <ImageIcon className="h-6 w-6 text-muted-foreground" />
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium min-w-[120px]">
+                    <TableCell className="font-medium min-w-[100px] max-w-[200px]">
                       <div className="flex flex-col">
                         <span className="truncate max-w-[200px]">{item.name}</span>
                         {/* Show description on mobile as secondary text */}
@@ -769,11 +769,11 @@ const MenuItems = () => {
                       </div>
                     </TableCell>
                     <TableCell className="w-[200px] hidden md:table-cell">
-                      <span className="text-sm text-muted-foreground line-clamp-2">
+                      <span className="text-sm text-muted-foreground">
                         {item.description || '—'}
                       </span>
                     </TableCell>
-                    <TableCell className="w-[100px] text-right font-medium">
+                    <TableCell className="w-[100px] text-left font-medium">
                       ${getDisplayPrice(item).toFixed(2)}
                     </TableCell>
                     <TableCell className="w-[120px] hidden sm:table-cell">
@@ -793,7 +793,7 @@ const MenuItems = () => {
                         {item.is_available ? 'Available' : 'Unavailable'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="w-[100px] text-right">
+                    <TableCell className="w-[100px] text-right pr-2">
                       <div className="flex justify-end gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -840,12 +840,10 @@ const MenuItems = () => {
 
       {/* Pagination */}
       {filteredAndPaginatedItems.totalPages > 1 && (
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between">
+          <div className="text-sm text-muted-foreground whitespace-nowrap">
             Page {filteredAndPaginatedItems.currentPage} of {filteredAndPaginatedItems.totalPages}
           </div>
-
           <Pagination>
             <PaginationContent>
               <PaginationItem>

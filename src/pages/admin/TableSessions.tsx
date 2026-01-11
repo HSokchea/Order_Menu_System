@@ -416,7 +416,7 @@ const TableSessions = () => {
                   Total
                 </TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -440,7 +440,7 @@ const TableSessions = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 justify-end">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -489,8 +489,8 @@ const TableSessions = () => {
 
       {/* Pagination */}
       {filteredAndPaginatedSessions.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-muted-foreground whitespace-nowrap">
             Page {filteredAndPaginatedSessions.currentPage} of {filteredAndPaginatedSessions.totalPages}
           </div>
           <Pagination>
