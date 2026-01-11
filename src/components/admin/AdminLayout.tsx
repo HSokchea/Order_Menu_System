@@ -1,7 +1,9 @@
 import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { useToast } from "@/hooks/use-toast";
 import {
   SidebarProvider,
@@ -19,21 +21,45 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children, title, description }: AdminLayoutProps) {
   const { signOut } = useAuth();
+  const { clearState } = useUserProfile();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      console.warn("Sign out warning:", error);
+    try {
+      // 1. Clear all user profile state (roles, permissions, restaurant)
+      clearState();
+      
+      // 2. Clear all React Query cache to prevent data leakage
+      queryClient.clear();
+      
+      // 3. Sign out from Supabase
+      const { error } = await signOut();
+      if (error) {
+        console.warn("Sign out warning:", error);
+      }
+      
+      // 4. Show success toast
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+      
+      // 5. Navigate to login with replace to prevent back-button access
+      navigate("/auth", { replace: true });
+      
+      // 6. Close dialog
+      setShowSignOutDialog(false);
+      
+      // 7. Replace history to prevent back-button to protected pages
+      window.history.pushState(null, '', '/auth');
+    } catch (err) {
+      console.error("Sign out error:", err);
+      // Even on error, redirect to auth
+      navigate("/auth", { replace: true });
     }
-    toast({
-      title: "Signed out",
-      description: "You have been successfully signed out.",
-    });
-    navigate("/auth", { replace: true });
-    setShowSignOutDialog(false);
   };
 
   return (

@@ -49,13 +49,21 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      // Sign out from Supabase (local scope to avoid server errors)
       const { error } = await supabase.auth.signOut({ scope: 'local' });
-      // Always clear local state regardless of error (session might already be gone)
+      
+      // Always clear local state regardless of error
       setUser(null);
+      setSession(null);
+      
+      // Clear any cached data in React Query
+      // This is handled by the component that calls signOut
+      
       return { error };
     } catch (err) {
       // Even if signOut fails, clear local state
       setUser(null);
+      setSession(null);
       return { error: err as Error };
     }
   };
