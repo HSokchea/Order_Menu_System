@@ -5,12 +5,11 @@ import {
   ClipboardList,
   QrCode,
   Store,
-  BarChart3,
-  Package,
-  Gift,
   Users,
   Settings,
   Shield,
+  CreditCard,
+  ChefHat,
   LucideIcon
 } from "lucide-react";
 
@@ -19,21 +18,20 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useUserProfile, PERMISSIONS } from "@/hooks/useUserProfile";
 
 interface NavigationItem {
   title: string;
   url: string;
   icon: LucideIcon;
   description: string;
+  permissions?: string[];
   ownerOnly?: boolean;
-  allowedRoles?: string[];
 }
 
 const navigationItems: NavigationItem[] = [
@@ -41,69 +39,88 @@ const navigationItems: NavigationItem[] = [
     title: "Dashboard",
     url: "/admin",
     icon: LayoutGrid,
-    description: "Overview and statistics"
+    description: "Overview and statistics",
+    permissions: [PERMISSIONS.REPORTS_VIEW],
   },
   {
     title: "Categories",
     url: "/admin/categories",
     icon: LayoutGrid,
     description: "Manage menu categories",
-    allowedRoles: ['owner', 'admin', 'manager']
+    permissions: [PERMISSIONS.MENU_MANAGE],
   },
   {
     title: "Menu Items", 
     url: "/admin/menu-items",
     icon: UtensilsCrossed,
     description: "Add and edit menu items",
-    allowedRoles: ['owner', 'admin', 'manager']
+    permissions: [PERMISSIONS.MENU_VIEW, PERMISSIONS.MENU_MANAGE],
   },
   {
     title: "View Orders",
     url: "/admin/order-dashboard", 
     icon: ClipboardList,
-    description: "Monitor live orders"
+    description: "Monitor live orders",
+    permissions: [PERMISSIONS.ORDERS_VIEW],
+  },
+  {
+    title: "Kitchen",
+    url: "/admin/kitchen",
+    icon: ChefHat,
+    description: "Kitchen order screen",
+    permissions: [PERMISSIONS.ORDERS_UPDATE_STATUS],
   },
   {
     title: "Table Sessions",
     url: "/admin/table-sessions",
-    icon: Users,
+    icon: CreditCard,
     description: "Manage dining sessions",
-    allowedRoles: ['owner', 'admin', 'manager', 'cashier']
+    permissions: [PERMISSIONS.TABLES_VIEW, PERMISSIONS.BILLING_VIEW],
   },
   {
     title: "Generate QR",
     url: "/admin/qr-generator",
     icon: QrCode,
     description: "Create QR codes for tables",
-    ownerOnly: true
+    permissions: [PERMISSIONS.QR_MANAGE],
+    ownerOnly: true,
+  },
+  {
+    title: "Staff Management",
+    url: "/admin/roles",
+    icon: Users,
+    description: "Manage staff accounts",
+    permissions: [PERMISSIONS.USERS_MANAGE],
+    ownerOnly: true,
   },
   {
     title: "Roles & Permissions",
-    url: "/admin/roles",
+    url: "/admin/permissions",
     icon: Shield,
-    description: "Manage user access",
-    ownerOnly: true
+    description: "Configure access control",
+    permissions: [PERMISSIONS.USERS_MANAGE],
+    ownerOnly: true,
   },
   {
     title: "Settings",
     url: "/admin/settings",
     icon: Settings,
     description: "Shop and receipt settings",
-    ownerOnly: true
+    permissions: [PERMISSIONS.SETTINGS_MANAGE],
+    ownerOnly: true,
   }
 ];
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const { isOwner, hasRoleType } = useUserProfile();
+  const { isOwner, hasPermission, hasAnyPermission, restaurant } = useUserProfile();
   
   const isActive = (path: string) => {
-    // Make Dashboard active for root paths
     if (path === "/admin") {
       return location.pathname === "/admin" || location.pathname === "/" || location.pathname === "/dashboard";
     }
-    return location.pathname === path;
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   const getNavClassName = (path: string) => {
@@ -115,12 +132,19 @@ export function AdminSidebar() {
     }`;
   };
 
-  // Filter navigation items based on user role
+  // Filter navigation items based on user permissions
   const visibleItems = navigationItems.filter(item => {
-    if (item.ownerOnly && !isOwner) return false;
-    if (item.allowedRoles && !isOwner) {
-      return item.allowedRoles.some(role => hasRoleType(role));
+    // Owner has access to everything
+    if (isOwner) return true;
+    
+    // Owner-only items are hidden for non-owners
+    if (item.ownerOnly) return false;
+    
+    // Check permissions
+    if (item.permissions && item.permissions.length > 0) {
+      return hasAnyPermission(item.permissions);
     }
+    
     return true;
   });
 
@@ -135,8 +159,12 @@ export function AdminSidebar() {
             </div>
             {state !== "collapsed" && (
               <div>
-                <h2 className="text-lg font-semibold tracking-tight">Admin</h2>
-                <p className="text-xs text-muted-foreground">Restaurant Management</p>
+                <h2 className="text-lg font-semibold tracking-tight truncate max-w-[160px]">
+                  {restaurant?.name || 'Admin'}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {isOwner ? 'Owner' : 'Staff'}
+                </p>
               </div>
             )}
           </div>

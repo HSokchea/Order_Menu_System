@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useUserProfile, PERMISSIONS } from "@/hooks/useUserProfile";
+import { PermissionGuard, AccessDenied } from "@/components/admin/PermissionGuard";
+import { RoleDashboard } from "@/components/admin/RoleDashboard";
 import { Loader2 } from "lucide-react";
-import Dashboard from "../Dashboard";
 import Categories from "./Categories";
 import MenuItems from "./MenuItems";
 import OrderDashboard from "./OrderDashboard";
@@ -11,6 +12,7 @@ import QRGenerator from "./QRGenerator";
 import TableSessions from "./TableSessions";
 import Settings from "./Settings";
 import RolesPermissions from "./RolesPermissions";
+import { KitchenDashboard } from "@/components/admin/dashboards/KitchenDashboard";
 
 const getPageInfo = (pathname: string) => {
   switch (pathname) {
@@ -23,20 +25,18 @@ const getPageInfo = (pathname: string) => {
       return { title: "Menu Items", description: "Add and manage your menu items" };
     case "/admin/order-dashboard":
       return { title: "Order Dashboard", description: "Monitor live orders" };
+    case "/admin/kitchen":
+      return { title: "Kitchen", description: "Kitchen order management" };
     case "/admin/table-sessions":
       return { title: "Table Sessions", description: "Manage dining sessions and billing" };
     case "/admin/settings":
       return { title: "Settings", description: "Shop profile and configuration" };
     case "/admin/roles":
-      return { title: "Roles & Permissions", description: "Manage user access" };
+      return { title: "Staff Management", description: "Manage staff accounts and roles" };
+    case "/admin/permissions":
+      return { title: "Roles & Permissions", description: "Configure access control" };
     case "/admin/qr-generator":
       return { title: "QR Generator", description: "Create QR codes for tables" };
-    case "/admin/analytics":
-      return { title: "Analytics", description: "Advanced insights and metrics" };
-    case "/admin/stock":
-      return { title: "Stock Management", description: "Track inventory levels" };
-    case "/admin/promotions":
-      return { title: "Promotions & Discounts", description: "Manage special offers" };
     default:
       return { title: "Admin", description: "Restaurant Management" };
   }
@@ -45,7 +45,7 @@ const getPageInfo = (pathname: string) => {
 export default function AdminMain() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, restaurant, isOwner, loading } = useUserProfile();
+  const { user, restaurant, isOwner, loading, getDefaultDashboard } = useUserProfile();
   const { title, description } = getPageInfo(location.pathname);
   
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
@@ -82,15 +82,92 @@ export default function AdminMain() {
   return (
     <AdminLayout title={title} description={description}>
       <Routes>
-        <Route index element={<Dashboard />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="categories" element={<Categories />} />
-        <Route path="menu-items" element={<MenuItems />} />
-        <Route path="order-dashboard" element={<OrderDashboard />} />
-        <Route path="table-sessions" element={<TableSessions />} />
-        <Route path="qr-generator" element={<QRGenerator />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="roles" element={<RolesPermissions />} />
+        {/* Dashboard - shows role-appropriate view */}
+        <Route index element={<RoleDashboard />} />
+        <Route path="dashboard" element={<RoleDashboard />} />
+        
+        {/* Menu Management - requires menu permissions */}
+        <Route path="categories" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.MENU_MANAGE]} 
+            fallback={<AccessDenied message="You don't have permission to manage categories." />}
+          >
+            <Categories />
+          </PermissionGuard>
+        } />
+        <Route path="menu-items" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.MENU_VIEW, PERMISSIONS.MENU_MANAGE]} 
+            fallback={<AccessDenied message="You don't have permission to view menu items." />}
+          >
+            <MenuItems />
+          </PermissionGuard>
+        } />
+        
+        {/* Orders - requires order permissions */}
+        <Route path="order-dashboard" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.ORDERS_VIEW]} 
+            fallback={<AccessDenied message="You don't have permission to view orders." />}
+          >
+            <OrderDashboard />
+          </PermissionGuard>
+        } />
+        
+        {/* Kitchen - requires order status update permission */}
+        <Route path="kitchen" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.ORDERS_UPDATE_STATUS]} 
+            fallback={<AccessDenied message="You don't have permission to access the kitchen screen." />}
+          >
+            <KitchenDashboard />
+          </PermissionGuard>
+        } />
+        
+        {/* Table Sessions - requires billing or table permissions */}
+        <Route path="table-sessions" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.TABLES_VIEW, PERMISSIONS.BILLING_VIEW]} 
+            fallback={<AccessDenied message="You don't have permission to view table sessions." />}
+          >
+            <TableSessions />
+          </PermissionGuard>
+        } />
+        
+        {/* Owner-only routes */}
+        <Route path="qr-generator" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.QR_MANAGE]} 
+            fallback={<AccessDenied message="Only restaurant owners can generate QR codes." />}
+          >
+            <QRGenerator />
+          </PermissionGuard>
+        } />
+        <Route path="settings" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.SETTINGS_MANAGE]} 
+            fallback={<AccessDenied message="Only restaurant owners can access settings." />}
+          >
+            <Settings />
+          </PermissionGuard>
+        } />
+        <Route path="roles" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.USERS_MANAGE]} 
+            fallback={<AccessDenied message="Only restaurant owners can manage staff." />}
+          >
+            <RolesPermissions />
+          </PermissionGuard>
+        } />
+        <Route path="permissions" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.USERS_MANAGE]} 
+            fallback={<AccessDenied message="Only restaurant owners can manage permissions." />}
+          >
+            <RolesPermissions />
+          </PermissionGuard>
+        } />
+        
         {/* Redirect root admin to dashboard */}
         <Route path="/" element={<Navigate to="/admin" replace />} />
       </Routes>

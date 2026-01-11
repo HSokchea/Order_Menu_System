@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, ChefHat, CheckCircle, Truck, Filter, Search, ChevronUp, ChevronDown, Eye, MoreHorizontal } from 'lucide-react';
@@ -37,7 +37,7 @@ interface Order {
 }
 
 const OrderDashboard = () => {
-  const { user } = useAuth();
+  const { user, restaurant } = useUserProfile();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,15 +57,7 @@ const OrderDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchOrders = async () => {
-    if (!user) return;
-
-    const { data: restaurant } = await supabase
-      .from('restaurants')
-      .select('id')
-      .eq('owner_id', user.id)
-      .single();
-
-    if (!restaurant) return;
+    if (!restaurant?.id) return;
 
     const { data: ordersData } = await supabase
       .from('orders')
@@ -90,7 +82,7 @@ const OrderDashboard = () => {
     fetchOrders();
 
     // Set up real-time subscription for orders
-    if (!user) return;
+    if (!restaurant?.id) return;
 
     const channel = supabase
       .channel('orders-changes')
@@ -99,7 +91,8 @@ const OrderDashboard = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'orders'
+          table: 'orders',
+          filter: `restaurant_id=eq.${restaurant.id}`
         },
         () => {
           fetchOrders();
@@ -110,7 +103,7 @@ const OrderDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [restaurant?.id]);
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     const { error } = await supabase
