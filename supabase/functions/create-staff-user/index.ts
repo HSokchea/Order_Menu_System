@@ -202,6 +202,7 @@ serve(async (req) => {
         .update({
           restaurant_id: restaurant.id,
           full_name: full_name.trim(),
+          email: email.toLowerCase().trim(),
           status: status || 'active',
           must_change_password: true, // Force password change on first login
           updated_at: new Date().toISOString()
@@ -223,6 +224,7 @@ serve(async (req) => {
           user_id: userId,
           restaurant_id: restaurant.id,
           full_name: full_name.trim(),
+          email: email.toLowerCase().trim(),
           status: status || 'active',
           must_change_password: true // Force password change on first login
         });
