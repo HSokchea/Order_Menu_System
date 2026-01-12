@@ -102,6 +102,31 @@ serve(async (req) => {
       });
     }
 
+    // SECURITY: Validate that none of the roles are 'owner' type
+    const { data: roleTypes, error: roleTypesError } = await supabaseAdmin
+      .from('roles')
+      .select('id, role_type')
+      .in('id', role_ids);
+
+    if (roleTypesError) {
+      console.error('Error checking role types:', roleTypesError);
+      return new Response(JSON.stringify({ error: 'Failed to validate roles' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Block if trying to assign owner role
+    const ownerRole = roleTypes?.find(r => r.role_type === 'owner');
+    if (ownerRole) {
+      return new Response(JSON.stringify({ 
+        error: 'Cannot assign Owner role to staff. Owner role is reserved for the restaurant creator.' 
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Check if email already exists in this restaurant
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
