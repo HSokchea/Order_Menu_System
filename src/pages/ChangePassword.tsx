@@ -116,6 +116,7 @@ const ChangePassword = ({ restaurantName, onComplete }: ChangePasswordProps) => 
               <Label htmlFor="new-password">New Password</Label>
               <div className="relative">
                 <Input
+                  className='pr-10'
                   id="new-password"
                   type={showNewPassword ? "text" : "password"}
                   value={newPassword}
@@ -139,6 +140,7 @@ const ChangePassword = ({ restaurantName, onComplete }: ChangePasswordProps) => 
               <Label htmlFor="confirm-password">Confirm Password</Label>
               <div className="relative">
                 <Input
+                  className='pr-10'
                   id="confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}

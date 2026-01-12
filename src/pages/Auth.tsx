@@ -21,9 +21,9 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     const { error } = await signIn(email, password);
-    
+
     if (error) {
       // Generic error message to avoid revealing user existence
       toast({
@@ -57,16 +57,16 @@ const Auth = () => {
         return;
       }
     }
-    
+
     setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     const { error } = await signUp(email, password, restaurantName);
-    
+
     if (error) {
       toast({
         title: "Sign Up Failed",
@@ -79,7 +79,7 @@ const Auth = () => {
         description: "Please check your email to verify your account.",
       });
     }
-    
+
     setLoading(false);
   };
 
@@ -99,7 +99,7 @@ const Auth = () => {
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
@@ -116,6 +116,7 @@ const Auth = () => {
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
                     <Input
+                      className='pr-10'
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={password}
@@ -138,7 +139,7 @@ const Auth = () => {
                 </Button>
               </form>
             </TabsContent>
-            
+
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
@@ -160,15 +161,25 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="relative space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
                   <Input
+                    className='pr-10'
                     id="signup-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-2 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating Account..." : "Create Account"}
