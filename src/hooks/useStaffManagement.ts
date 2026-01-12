@@ -45,7 +45,7 @@ export const useStaffManagement = () => {
       // Get profiles for this restaurant
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, user_id, full_name, status, created_at')
+        .select('id, user_id, full_name, email, status, created_at')
         .eq('restaurant_id', restaurant.id);
 
       if (profilesError) throw profilesError;
@@ -85,7 +85,7 @@ export const useStaffManagement = () => {
           id: profile.id,
           user_id: profile.user_id,
           full_name: profile.full_name,
-          email: profile.user_id === user.id ? user.email! : profile.full_name || 'Staff Member',
+          email: profile.email || (profile.user_id === user.id ? user.email! : 'No email'),
           status: (profile.status as 'active' | 'inactive') || 'active',
           role_ids: roles.map(r => r.id),
           role_names: isOwner ? ['Owner'] : roles.map(r => r.name),
