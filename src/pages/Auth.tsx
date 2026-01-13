@@ -36,13 +36,13 @@ const Auth = () => {
       return;
     }
 
-    // After successful auth, check if user is active
+    // After successful auth, check if user is active and has restaurant
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      // Check profile status
+      // Check profile status and restaurant association
       const { data: profile } = await supabase
         .from('profiles')
-        .select('status')
+        .select('status, restaurant_id')
         .eq('user_id', user.id)
         .single();
 
@@ -56,6 +56,29 @@ const Auth = () => {
         });
         setLoading(false);
         return;
+      }
+
+      // If profile exists but has no restaurant_id, this is an orphan account
+      // This shouldn't happen with proper flows, but handle gracefully
+      if (profile && !profile.restaurant_id) {
+        // Check if user is a restaurant owner
+        const { data: restaurant } = await supabase
+          .from('restaurants')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+
+        if (!restaurant) {
+          // User has no restaurant association - should complete signup
+          await supabase.auth.signOut();
+          toast({
+            title: "Setup Incomplete",
+            description: "Your account setup is incomplete. Please sign up again to create your shop.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
       }
     }
 
@@ -85,6 +108,23 @@ const Auth = () => {
     }
     
     setLoading(true);
+
+    // ONE-USER-ONE-SHOP: Check if user already exists with a profile
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, restaurant_id')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle();
+
+    if (existingProfile) {
+      toast({
+        title: "Account Already Exists",
+        description: "This account already belongs to a shop. Please sign in instead.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
 
     const { error } = await signUp(email, password, restaurantName, trimmedFullName);
 
