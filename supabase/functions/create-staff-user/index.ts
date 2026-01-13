@@ -127,32 +127,31 @@ serve(async (req) => {
       });
     }
 
-    // Check if email already exists in this restaurant
-    const { data: existingProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('id, user_id')
-      .eq('restaurant_id', restaurant.id)
-      .eq('full_name', email) // We store email in full_name temporarily to check
-      .single();
-
     // Check if email exists in auth.users
     const { data: users } = await supabaseAdmin.auth.admin.listUsers();
     const existingUser = users?.users?.find(u => u.email === email);
 
     if (existingUser) {
-      // Check if this user already belongs to this restaurant
+      // ONE-USER-ONE-SHOP RULE: Check if this user already has a profile (belongs to ANY shop)
       const { data: existingProfileForUser } = await supabaseAdmin
         .from('profiles')
-        .select('id')
+        .select('id, restaurant_id')
         .eq('user_id', existingUser.id)
-        .eq('restaurant_id', restaurant.id)
         .single();
 
       if (existingProfileForUser) {
-        return new Response(JSON.stringify({ error: 'This email is already registered as staff in your restaurant' }), {
-          status: 409,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        // User already belongs to a shop - block creation
+        if (existingProfileForUser.restaurant_id === restaurant.id) {
+          return new Response(JSON.stringify({ error: 'This email is already registered as staff in your restaurant' }), {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else {
+          return new Response(JSON.stringify({ error: 'This user already belongs to another shop' }), {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
     }
 
@@ -188,56 +187,28 @@ serve(async (req) => {
       userId = newUser.user.id;
     }
 
-    // Check if profile already exists for this user
-    const { data: existingProfileCheck } = await supabaseAdmin
+    // Create the profile (one-user-one-shop: user should not have a profile yet)
+    const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+      .insert({
+        user_id: userId,
+        restaurant_id: restaurant.id,
+        full_name: full_name.trim(),
+        email: email.toLowerCase().trim(),
+        status: status || 'active',
+        must_change_password: true // Force password change on first login
+      });
 
-    if (existingProfileCheck) {
-      // Update existing profile to link to this restaurant
-      const { error: updateProfileError } = await supabaseAdmin
-        .from('profiles')
-        .update({
-          restaurant_id: restaurant.id,
-          full_name: full_name.trim(),
-          email: email.toLowerCase().trim(),
-          status: status || 'active',
-          must_change_password: true, // Force password change on first login
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-
-      if (updateProfileError) {
-        console.error('Error updating profile:', updateProfileError);
-        return new Response(JSON.stringify({ error: 'Failed to update profile' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    } else {
-      // Create the profile
-      const { error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .insert({
-          user_id: userId,
-          restaurant_id: restaurant.id,
-          full_name: full_name.trim(),
-          email: email.toLowerCase().trim(),
-          status: status || 'active',
-          must_change_password: true // Force password change on first login
-        });
-
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-        // Try to clean up the created user
+    if (profileError) {
+      console.error('Error creating profile:', profileError);
+      // Try to clean up the created user if we just created them
+      if (!existingUser) {
         await supabaseAdmin.auth.admin.deleteUser(userId);
-        return new Response(JSON.stringify({ error: 'Failed to create profile' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
       }
+      return new Response(JSON.stringify({ error: 'Failed to create profile. User may already belong to another shop.' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Assign roles
