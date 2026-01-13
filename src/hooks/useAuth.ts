@@ -34,13 +34,17 @@ export const useAuth = () => {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, restaurantName: string) => {
+  const signUp = async (email: string, password: string, restaurantName: string, fullName?: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,
       options: {
+        emailRedirectTo: redirectUrl,
         data: {
-          restaurant_name: restaurantName
+          restaurant_name: restaurantName,
+          full_name: fullName || null
         }
       }
     });

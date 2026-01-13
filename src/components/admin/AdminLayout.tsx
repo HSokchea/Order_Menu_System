@@ -21,11 +21,14 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children, title, description }: AdminLayoutProps) {
   const { signOut } = useAuth();
-  const { clearState } = useUserProfile();
+  const { clearState, profile, user } = useUserProfile();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  
+  // Get display name: prefer full_name, fallback to email
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
 
   const handleSignOut = async () => {
     try {
@@ -89,6 +92,9 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
               </div>
 
               <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground hidden md:inline">
+                  Welcome, <span className="font-medium text-foreground">{displayName}</span>
+                </span>
                 <Button variant="outline" size="sm" onClick={() => setShowSignOutDialog(true)}>
                   <LogOut className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Sign Out</span>

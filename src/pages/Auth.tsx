@@ -13,6 +13,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { signIn, signUp } = useAuth();
@@ -63,9 +64,29 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate full name
+    const trimmedFullName = fullName.trim();
+    if (trimmedFullName.length < 2) {
+      toast({
+        title: "Validation Error",
+        description: "Full name must be at least 2 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (trimmedFullName.length > 100) {
+      toast({
+        title: "Validation Error",
+        description: "Full name must be less than 100 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
-    const { error } = await signUp(email, password, restaurantName);
+    const { error } = await signUp(email, password, restaurantName, trimmedFullName);
 
     if (error) {
       toast({
@@ -142,6 +163,18 @@ const Auth = () => {
 
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full-name">Full Name</Label>
+                  <Input
+                    id="full-name"
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    minLength={2}
+                    maxLength={100}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="restaurant-name">Restaurant Name</Label>
                   <Input
