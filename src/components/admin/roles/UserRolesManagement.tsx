@@ -62,7 +62,7 @@ export function UserRolesManagement() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, full_name')
+        .select('user_id, full_name, email')
         .eq('restaurant_id', restaurant.id);
       
       if (error) throw error;
@@ -71,7 +71,7 @@ export function UserRolesManagement() {
       // For now, we'll show the profile info
       return data.map(profile => ({
         id: profile.user_id,
-        email: profile.full_name || 'Staff Member',
+        email: profile.email,
         full_name: profile.full_name
       })) as StaffUser[];
     },

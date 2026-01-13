@@ -152,7 +152,7 @@ const Auth = () => {
             <ChefHat className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">QR Menu System</CardTitle>
-          <CardDescription>Sign in to manage your restaurant</CardDescription>
+          <CardDescription>Sign in to manage your shop</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
@@ -167,6 +167,7 @@ const Auth = () => {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
+                    placeholder="Enter your email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -178,6 +179,7 @@ const Auth = () => {
                   <div className="relative">
                     <Input
                       className='pr-10'
+                      placeholder="Enter your password"
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={password}
@@ -216,9 +218,10 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="restaurant-name">Restaurant Name</Label>
+                  <Label htmlFor="shop-name">Shop Name</Label>
                   <Input
-                    id="restaurant-name"
+                    id="shop-name"
+                    placeholder="Enter your shop name"
                     value={restaurantName}
                     onChange={(e) => setRestaurantName(e.target.value)}
                     required
@@ -228,6 +231,7 @@ const Auth = () => {
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
                     id="signup-email"
+                    placeholder="Enter your email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -238,8 +242,9 @@ const Auth = () => {
                   <Label htmlFor="signup-password">Password</Label>
                   <Input
                     className='pr-10'
+                    placeholder="Enter your password"
                     id="signup-password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
