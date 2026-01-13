@@ -109,7 +109,7 @@ const Auth = () => {
     
     setLoading(true);
 
-    // ONE-USER-ONE-SHOP: Check if user already exists with a profile
+    // ONE-USER-ONE-SHOP: Check if user already exists with a profile (by email)
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id, restaurant_id')
@@ -126,12 +126,34 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await signUp(email, password, restaurantName, trimmedFullName);
+    const { data, error } = await signUp(email, password, restaurantName, trimmedFullName);
 
     if (error) {
+      // Handle specific error for user already registered
+      const errorMessage = error.message.toLowerCase();
+      if (errorMessage.includes('already registered') || errorMessage.includes('already been registered')) {
+        toast({
+          title: "Account Already Exists",
+          description: "This email is already registered. Please sign in instead.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sign Up Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Check if email confirmation is required
+    if (data?.user?.identities?.length === 0) {
+      // User already exists but hasn't confirmed email
       toast({
-        title: "Sign Up Failed",
-        description: error.message,
+        title: "Account Already Exists",
+        description: "This email is already registered. Please check your email or sign in.",
         variant: "destructive",
       });
     } else {
