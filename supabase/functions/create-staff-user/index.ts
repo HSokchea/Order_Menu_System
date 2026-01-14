@@ -96,7 +96,11 @@ serve(async (req) => {
     }
 
     if (!role_ids || !Array.isArray(role_ids) || role_ids.length === 0) {
-      return new Response(JSON.stringify({ error: 'At least one role is required' }), {
+      console.error('No roles provided');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'At least one role is required. Please create roles first in the Roles tab.' 
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

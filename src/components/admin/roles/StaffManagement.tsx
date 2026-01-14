@@ -70,7 +70,10 @@ export function StaffManagement() {
     isDeleting
   } = useStaffManagement();
 
-  const { roles } = usePermissions();
+  const { roles: allRoles } = usePermissions();
+  
+  // Filter out owner role - staff cannot be assigned owner role
+  const roles = allRoles.filter(role => role.role_type !== 'owner');
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
