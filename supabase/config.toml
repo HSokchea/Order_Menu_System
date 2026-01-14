@@ -2,3 +2,12 @@ project_id = "tiounhhmliodkxqdqdog"
 
 [functions.admin-delete-user]
 verify_jwt = false
+
+[functions.create-staff-user]
+verify_jwt = false
+
+[functions.update-staff-user]
+verify_jwt = false
+
+[functions.delete-staff-user]
+verify_jwt = false
