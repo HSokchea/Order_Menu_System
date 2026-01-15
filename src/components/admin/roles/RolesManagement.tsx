@@ -162,9 +162,9 @@ export function RolesManagement() {
       {/* Header with Create Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium">Roles</h3>
+          <h3 className="text-lg font-medium">Role Definitions</h3>
           <p className="text-sm text-muted-foreground">
-            Create and manage roles with inheritance
+            Create and manage roles. Assign permissions in the Permissions tab.
           </p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
