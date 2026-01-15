@@ -259,8 +259,20 @@ export const usePermissions = () => {
     await fetchData();
   };
 
-  // Direct user permission operations
+  /**
+   * Direct user permission operations
+   * 
+   * NOTE: These are DEPRECATED in the clean RBAC model.
+   * Permissions should flow: Permission → Role → User
+   * Direct user permissions bypass this flow and should be used sparingly.
+   * 
+   * The UI no longer exposes these functions to enforce RBAC model:
+   * User → Roles → Permissions (no direct user→permission mapping)
+   * 
+   * @deprecated Use role-based permissions instead
+   */
   const assignPermissionToUser = async (userId: string, permissionId: string) => {
+    console.warn('[RBAC] Direct user permission assignment is deprecated. Use roles instead.');
     if (!restaurant || !user) throw new Error('No restaurant or user');
 
     const { error } = await supabase
@@ -276,7 +288,11 @@ export const usePermissions = () => {
     await fetchData();
   };
 
+  /**
+   * @deprecated Use role-based permissions instead
+   */
   const removePermissionFromUser = async (userId: string, permissionId: string) => {
+    console.warn('[RBAC] Direct user permission removal is deprecated. Use roles instead.');
     if (!restaurant) throw new Error('No restaurant');
 
     const { error } = await supabase

@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Lock, Settings2, X } from "lucide-react";
+import { Lock, Settings2, X, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const CONDITION_OPERATORS = [
@@ -41,6 +41,21 @@ interface ConditionBuilderState {
   value: string;
 }
 
+/**
+ * PermissionsMatrix - Permissions Tab
+ * 
+ * PURPOSE: Manage role → permission mappings
+ * 
+ * ALLOWED:
+ * - View system permission definitions
+ * - Select a role and assign/remove permissions to that role
+ * - Add conditions to permissions
+ * 
+ * FORBIDDEN:
+ * - Creating/editing/deleting permission definitions (system-managed)
+ * - Assigning permissions directly to users (use roles)
+ * - Editing role definitions (use Roles tab)
+ */
 export function PermissionsMatrix() {
   const { 
     permissions, 
@@ -56,6 +71,12 @@ export function PermissionsMatrix() {
 
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [conditionBuilder, setConditionBuilder] = useState<ConditionBuilderState | null>(null);
+
+  // Filter out owner role for permission assignment
+  // Owner has all permissions implicitly
+  const assignableRoles = useMemo(() => {
+    return roles.filter(role => role.role_type !== 'owner');
+  }, [roles]);
 
   // Group permissions by resource
   const groupedPermissions = useMemo(() => {
@@ -99,17 +120,17 @@ export function PermissionsMatrix() {
     
     // Can't toggle inherited permissions
     if (isInheritedPermission(permissionId)) {
-      toast.error("Cannot modify inherited permissions");
+      toast.error("Cannot modify inherited permissions. Edit the parent role instead.");
       return;
     }
 
     try {
       if (hasPermission(permissionId)) {
         await removePermissionFromRole(selectedRole, permissionId);
-        toast.success("Permission removed");
+        toast.success("Permission removed from role");
       } else {
         await assignPermissionToRole(selectedRole, permissionId);
-        toast.success("Permission added");
+        toast.success("Permission added to role");
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to update permission");
@@ -156,12 +177,31 @@ export function PermissionsMatrix() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">Role Permissions</h3>
+        <p className="text-sm text-muted-foreground">
+          Assign permissions to roles. Users inherit permissions from their assigned roles.
+        </p>
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-muted/50 border rounded-lg p-4 flex items-start gap-3">
+        <Info className="h-5 w-5 text-primary mt-0.5" />
+        <div className="text-sm">
+          <p className="font-medium">Permission → Role → User</p>
+          <p className="text-muted-foreground">
+            Select a role below to manage its permissions. These permissions will apply 
+            to all users with that role. Owner role has all permissions by default.
+          </p>
+        </div>
+      </div>
+
       {/* Role Selector */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Permission Matrix</CardTitle>
+          <CardTitle className="text-base">Select Role</CardTitle>
           <CardDescription>
-            Select a role to view and manage its permissions
+            Choose a role to view and manage its permissions
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -170,13 +210,23 @@ export function PermissionsMatrix() {
               <SelectValue placeholder="Select a role..." />
             </SelectTrigger>
             <SelectContent>
-              {roles.map(role => (
+              {assignableRoles.map(role => (
                 <SelectItem key={role.id} value={role.id}>
-                  {role.name}
+                  <div className="flex items-center gap-2">
+                    {role.name}
+                    <Badge variant="outline" className="text-xs ml-2">
+                      {role.role_type}
+                    </Badge>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {assignableRoles.length === 0 && (
+            <p className="text-sm text-muted-foreground mt-2">
+              No roles available. Create roles in the Roles tab first.
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -187,9 +237,9 @@ export function PermissionsMatrix() {
             <CardTitle className="text-base">
               Permissions for: {currentRole.name}
             </CardTitle>
-            <CardDescription>
-              <Lock className="h-3 w-3 inline mr-1" />
-              Locked permissions are inherited from other roles
+            <CardDescription className="flex items-center gap-1">
+              <Lock className="h-3 w-3" />
+              Locked permissions are inherited from parent roles
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -287,7 +337,7 @@ export function PermissionsMatrix() {
         <Card>
           <CardContent className="py-8 text-center">
             <p className="text-muted-foreground">
-              Select a role to view and manage its permissions
+              Select a role above to manage its permissions
             </p>
           </CardContent>
         </Card>

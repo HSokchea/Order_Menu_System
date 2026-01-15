@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { usePermissions, Role, Permission } from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,21 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { User, Plus, X, Shield, Key, ChevronDown, ChevronUp } from "lucide-react";
+import { User, Shield, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantProfile } from "@/hooks/useRestaurantProfile";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface StaffUser {
   id: string;
@@ -34,25 +28,50 @@ interface StaffUser {
   full_name: string | null;
 }
 
+/**
+ * UserRolesManagement - User Access Tab
+ * 
+ * PURPOSE: View users + controlled role assignment ONLY
+ * 
+ * ALLOWED:
+ * - View users with their assigned roles
+ * - View effective permissions (read-only)
+ * - Edit role assignments via modal
+ * 
+ * FORBIDDEN:
+ * - Creating/editing roles (use Roles tab)
+ * - Creating/editing permissions (use Permissions tab)
+ * - Assigning permissions directly to users (RBAC: permissions come from roles)
+ * - Editing user profile data (use Staff tab)
+ */
 export function UserRolesManagement() {
   const { user } = useAuth();
+  const { isOwner } = useUserProfile();
   const { restaurant } = useRestaurantProfile();
+  const queryClient = useQueryClient();
   const {
     permissions,
     roles,
     userRoles,
-    userPermissions,
     assignRoleToUser,
     removeRoleFromUser,
-    assignPermissionToUser,
-    removePermissionFromUser,
     getRoleEffectivePermissions
   } = usePermissions();
 
   const [selectedUser, setSelectedUser] = useState<StaffUser | null>(null);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
-  const [isPermissionDialogOpen, setIsPermissionDialogOpen] = useState(false);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [pendingRoleChanges, setPendingRoleChanges] = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Filter out owner role - only owners can assign owner role
+  const assignableRoles = useMemo(() => {
+    return roles.filter(role => {
+      // Owner role can only be assigned by owners and is generally protected
+      if (role.role_type === 'owner') return false;
+      return true;
+    });
+  }, [roles]);
 
   // Fetch staff users (profiles with same restaurant)
   const { data: staffUsers = [], isLoading: isLoadingStaff } = useQuery({
@@ -67,8 +86,6 @@ export function UserRolesManagement() {
       
       if (error) throw error;
 
-      // Get user emails from auth (we only have access to current user's email)
-      // For now, we'll show the profile info
       return data.map(profile => ({
         id: profile.user_id,
         email: profile.email,
@@ -85,37 +102,20 @@ export function UserRolesManagement() {
       .filter(Boolean) as Role[];
   };
 
-  const getUserDirectPermissions = (userId: string) => {
-    return userPermissions
-      .filter(up => up.user_id === userId)
-      .map(up => permissions.find(p => p.id === up.permission_id))
-      .filter(Boolean) as Permission[];
+  const getUserCurrentRoleIds = (userId: string): Set<string> => {
+    return new Set(
+      userRoles
+        .filter(ur => ur.user_id === userId)
+        .map(ur => ur.role_id)
+    );
   };
 
-  const getAvailableRolesForUser = (userId: string) => {
-    const currentRoleIds = userRoles
-      .filter(ur => ur.user_id === userId)
-      .map(ur => ur.role_id);
-    
-    return roles.filter(r => !currentRoleIds.includes(r.id));
-  };
-
-  const getAvailablePermissionsForUser = (userId: string) => {
-    const currentPermIds = userPermissions
-      .filter(up => up.user_id === userId)
-      .map(up => up.permission_id);
-    
-    return permissions.filter(p => !currentPermIds.includes(p.id));
-  };
-
-  // Get all effective permissions for a user
+  // Get all effective permissions for a user (derived from roles)
   const getUserEffectivePermissions = (userId: string) => {
     const userRolesList = getUserRoles(userId);
-    const directPerms = getUserDirectPermissions(userId);
-    
-    const allPerms: { permission: Permission; source: string; type: 'role' | 'direct' | 'inherited' }[] = [];
+    const allPerms: { permission: Permission; source: string; type: 'role' | 'inherited' }[] = [];
 
-    // Add role permissions
+    // Permissions come from roles ONLY (RBAC model)
     userRolesList.forEach(role => {
       const effectivePerms = getRoleEffectivePermissions(role.id);
       effectivePerms.forEach(ep => {
@@ -130,94 +130,105 @@ export function UserRolesManagement() {
       });
     });
 
-    // Add direct permissions
-    directPerms.forEach(perm => {
-      if (!allPerms.find(ap => ap.permission.id === perm.id)) {
-        allPerms.push({
-          permission: perm,
-          source: 'Direct Permission',
-          type: 'direct'
-        });
-      }
-    });
-
     return allPerms;
   };
 
-  const handleAddRole = async (roleId: string) => {
-    if (!selectedUser) return;
-    
-    try {
-      await assignRoleToUser(selectedUser.id, roleId);
-      toast.success("Role assigned successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to assign role");
-    }
+  const openRoleEditor = (staffUser: StaffUser) => {
+    setSelectedUser(staffUser);
+    setPendingRoleChanges(getUserCurrentRoleIds(staffUser.id));
+    setIsRoleDialogOpen(true);
   };
 
-  const handleRemoveRole = async (userId: string, roleId: string) => {
-    try {
-      await removeRoleFromUser(userId, roleId);
-      toast.success("Role removed successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to remove role");
-    }
-  };
-
-  const handleAddPermission = async (permissionId: string) => {
-    if (!selectedUser) return;
-    
-    try {
-      await assignPermissionToUser(selectedUser.id, permissionId);
-      toast.success("Permission assigned successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to assign permission");
-    }
-  };
-
-  const handleRemovePermission = async (userId: string, permissionId: string) => {
-    try {
-      await removePermissionFromUser(userId, permissionId);
-      toast.success("Permission removed successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to remove permission");
-    }
-  };
-
-  // Group available permissions by resource
-  const groupedAvailablePermissions = useMemo(() => {
-    if (!selectedUser) return {};
-    
-    const available = getAvailablePermissionsForUser(selectedUser.id);
-    const groups: Record<string, Permission[]> = {};
-    
-    available.forEach(perm => {
-      if (!groups[perm.resource]) {
-        groups[perm.resource] = [];
+  const handleRoleToggle = (roleId: string) => {
+    setPendingRoleChanges(prev => {
+      const next = new Set(prev);
+      if (next.has(roleId)) {
+        next.delete(roleId);
+      } else {
+        next.add(roleId);
       }
-      groups[perm.resource].push(perm);
+      return next;
     });
-    
-    return groups;
-  }, [selectedUser, permissions, userPermissions]);
+  };
+
+  const handleSaveRoles = async () => {
+    if (!selectedUser) return;
+
+    setIsSaving(true);
+    try {
+      const currentRoleIds = getUserCurrentRoleIds(selectedUser.id);
+      
+      // Roles to add
+      const toAdd = [...pendingRoleChanges].filter(id => !currentRoleIds.has(id));
+      // Roles to remove  
+      const toRemove = [...currentRoleIds].filter(id => !pendingRoleChanges.has(id));
+
+      // Prevent removing all roles
+      if (pendingRoleChanges.size === 0) {
+        toast.error("Users must have at least one role assigned");
+        setIsSaving(false);
+        return;
+      }
+
+      // Process removals first
+      for (const roleId of toRemove) {
+        await removeRoleFromUser(selectedUser.id, roleId);
+      }
+
+      // Then additions
+      for (const roleId of toAdd) {
+        await assignRoleToUser(selectedUser.id, roleId);
+      }
+
+      toast.success("Roles updated successfully");
+      setIsRoleDialogOpen(false);
+      setSelectedUser(null);
+      
+      // Invalidate queries to refresh
+      queryClient.invalidateQueries({ queryKey: ['staff-users'] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update roles");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoadingStaff) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">User Access Management</h3>
         <p className="text-sm text-muted-foreground">
-          Assign roles and direct permissions to staff members
+          View users and manage their role assignments. Permissions are derived from assigned roles.
         </p>
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-muted/50 border rounded-lg p-4 flex items-start gap-3">
+        <Shield className="h-5 w-5 text-primary mt-0.5" />
+        <div className="text-sm">
+          <p className="font-medium">Role-Based Access Control (RBAC)</p>
+          <p className="text-muted-foreground">
+            Permissions are granted through roles only. To change a user's permissions, 
+            update their assigned roles or modify role permissions in the Roles/Permissions tabs.
+          </p>
+        </div>
       </div>
 
       {/* Staff List */}
       <div className="space-y-4">
         {staffUsers.map(staffUser => {
           const userRolesList = getUserRoles(staffUser.id);
-          const directPerms = getUserDirectPermissions(staffUser.id);
           const isExpanded = expandedUser === staffUser.id;
           const effectivePerms = getUserEffectivePermissions(staffUser.id);
-          const isOwner = staffUser.id === user?.id;
+          const isUserOwner = staffUser.id === user?.id && isOwner;
 
           return (
             <Card key={staffUser.id}>
@@ -230,7 +241,7 @@ export function UserRolesManagement() {
                     <div>
                       <CardTitle className="text-base flex items-center gap-2">
                         {staffUser.full_name || staffUser.email}
-                        {isOwner && (
+                        {isUserOwner && (
                           <Badge variant="secondary">Owner</Badge>
                         )}
                       </CardTitle>
@@ -238,31 +249,15 @@ export function UserRolesManagement() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {!isOwner && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(staffUser);
-                            setIsRoleDialogOpen(true);
-                          }}
-                        >
-                          <Shield className="h-4 w-4 mr-1" />
-                          Add Role
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(staffUser);
-                            setIsPermissionDialogOpen(true);
-                          }}
-                        >
-                          <Key className="h-4 w-4 mr-1" />
-                          Add Permission
-                        </Button>
-                      </>
+                    {!isUserOwner && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openRoleEditor(staffUser)}
+                      >
+                        <Shield className="h-4 w-4 mr-1" />
+                        Edit Roles
+                      </Button>
                     )}
                     <Button
                       variant="ghost"
@@ -283,7 +278,7 @@ export function UserRolesManagement() {
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Assigned Roles</Label>
                   <div className="flex flex-wrap gap-2">
-                    {isOwner ? (
+                    {isUserOwner ? (
                       <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
                         <Shield className="h-3 w-3 mr-1" />
                         All Permissions (Owner)
@@ -293,54 +288,28 @@ export function UserRolesManagement() {
                         <Badge 
                           key={role.id} 
                           variant="secondary"
-                          className="flex items-center gap-1"
                         >
                           {role.name}
-                          <button
-                            onClick={() => handleRemoveRole(staffUser.id, role.id)}
-                            className="ml-1 hover:text-destructive"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-sm text-muted-foreground">No roles assigned</span>
+                      <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>No roles assigned - user has no permissions</span>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* Direct Permissions */}
-                {!isOwner && directPerms.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <Label className="text-xs text-muted-foreground">Direct Permissions</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {directPerms.map(perm => (
-                        <Badge 
-                          key={perm.id} 
-                          variant="outline"
-                          className="flex items-center gap-1 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
-                        >
-                          <Key className="h-3 w-3 mr-1" />
-                          {perm.name}
-                          <button
-                            onClick={() => handleRemovePermission(staffUser.id, perm.id)}
-                            className="ml-1 hover:text-destructive"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Expanded: Effective Permissions Summary */}
-                {isExpanded && !isOwner && (
+                {/* Expanded: Effective Permissions Summary (Read-Only) */}
+                {isExpanded && !isUserOwner && (
                   <div className="mt-4 pt-4 border-t">
                     <Label className="text-xs text-muted-foreground">
-                      Effective Permissions Summary ({effectivePerms.length} permissions)
+                      Effective Permissions ({effectivePerms.length} permissions)
                     </Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      These permissions are derived from the user's assigned roles
+                    </p>
                     <ScrollArea className="h-[200px] mt-2">
                       <div className="space-y-1">
                         {effectivePerms.map(({ permission, source, type }) => (
@@ -352,20 +321,18 @@ export function UserRolesManagement() {
                             <Badge 
                               variant="outline" 
                               className={`text-xs ${
-                                type === 'direct' 
-                                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
-                                  : type === 'inherited'
+                                type === 'inherited'
                                   ? 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                                   : ''
                               }`}
                             >
-                              {source}
+                              via {source}
                             </Badge>
                           </div>
                         ))}
                         {effectivePerms.length === 0 && (
                           <p className="text-sm text-muted-foreground text-center py-4">
-                            No permissions assigned
+                            No permissions - assign roles to grant access
                           </p>
                         )}
                       </div>
@@ -377,48 +344,73 @@ export function UserRolesManagement() {
           );
         })}
 
-        {staffUsers.length === 0 && !isLoadingStaff && (
+        {staffUsers.length === 0 && (
           <Card>
             <CardContent className="py-8 text-center">
               <p className="text-muted-foreground">
-                No staff members found. Add staff members to manage their access.
+                No staff members found. Add staff members in the Staff tab.
               </p>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Add Role Dialog */}
+      {/* Edit Roles Dialog */}
       <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Assign Role</DialogTitle>
+            <DialogTitle>Edit User Roles</DialogTitle>
             <DialogDescription>
-              Select a role to assign to {selectedUser?.full_name || selectedUser?.email}
+              Select roles for {selectedUser?.full_name || selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
-            <div className="py-4 space-y-2">
-              {getAvailableRolesForUser(selectedUser.id).length > 0 ? (
-                getAvailableRolesForUser(selectedUser.id).map(role => (
-                  <div
-                    key={role.id}
-                    className="flex items-center justify-between p-3 border rounded-md hover:bg-muted cursor-pointer"
-                    onClick={() => {
-                      handleAddRole(role.id);
-                      setIsRoleDialogOpen(false);
-                    }}
-                  >
-                    <div>
-                      <p className="font-medium">{role.name}</p>
-                      <p className="text-sm text-muted-foreground">{role.description}</p>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Permissions are determined by the roles assigned below.
+                Users must have at least one role.
+              </p>
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {assignableRoles.length > 0 ? (
+                  assignableRoles.map(role => (
+                    <div
+                      key={role.id}
+                      className="flex items-start gap-3 p-3 border rounded-md hover:bg-muted/50"
+                    >
+                      <Checkbox
+                        id={`role-${role.id}`}
+                        checked={pendingRoleChanges.has(role.id)}
+                        onCheckedChange={() => handleRoleToggle(role.id)}
+                      />
+                      <label 
+                        htmlFor={`role-${role.id}`}
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{role.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {role.role_type}
+                          </Badge>
+                        </div>
+                        {role.description && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {role.description}
+                          </p>
+                        )}
+                      </label>
                     </div>
-                    <Badge variant="outline">{role.role_type}</Badge>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  All available roles are already assigned
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No roles available. Create roles in the Roles tab first.
+                  </p>
+                )}
+              </div>
+              
+              {pendingRoleChanges.size === 0 && (
+                <p className="text-sm text-amber-600 dark:text-amber-400 mt-3 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  At least one role must be selected
                 </p>
               )}
             </div>
@@ -427,55 +419,12 @@ export function UserRolesManagement() {
             <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
               Cancel
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Permission Dialog */}
-      <Dialog open={isPermissionDialogOpen} onOpenChange={setIsPermissionDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Assign Direct Permission</DialogTitle>
-            <DialogDescription>
-              Add a direct permission to {selectedUser?.full_name || selectedUser?.email}
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-4 py-4">
-              {Object.entries(groupedAvailablePermissions).map(([resource, perms]) => (
-                <div key={resource} className="space-y-2">
-                  <h4 className="font-medium text-sm capitalize border-b pb-1">
-                    {resource}
-                  </h4>
-                  {perms.map(permission => (
-                    <div
-                      key={permission.id}
-                      className="flex items-center justify-between p-2 border rounded-md hover:bg-muted cursor-pointer"
-                      onClick={() => {
-                        handleAddPermission(permission.id);
-                      }}
-                    >
-                      <div>
-                        <p className="text-sm font-medium">{permission.name}</p>
-                        <p className="text-xs text-muted-foreground">{permission.key}</p>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ))}
-              {Object.keys(groupedAvailablePermissions).length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  All permissions are already assigned
-                </p>
-              )}
-            </div>
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPermissionDialogOpen(false)}>
-              Done
+            <Button 
+              onClick={handleSaveRoles} 
+              disabled={isSaving || pendingRoleChanges.size === 0}
+            >
+              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save Roles
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -247,14 +247,26 @@ export function StaffManagement() {
         <div>
           <h3 className="text-lg font-medium">Staff Management</h3>
           <p className="text-sm text-muted-foreground">
-            Add and manage staff members for your restaurant
+            Add and manage staff members. Assign roles to control permissions.
           </p>
         </div>
-        <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
+        <Button 
+          onClick={() => { resetForm(); setIsAddDialogOpen(true); }}
+          disabled={roles.length === 0}
+        >
           <UserPlus className="h-4 w-4 mr-2" />
           Add Staff
         </Button>
       </div>
+
+      {/* Info: No roles available */}
+      {roles.length === 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-4">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            <strong>Note:</strong> You need to create roles in the Roles tab before you can add staff members.
+          </p>
+        </div>
+      )}
 
       {/* Staff Table */}
       <Card>
