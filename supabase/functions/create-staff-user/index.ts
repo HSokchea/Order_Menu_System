@@ -137,11 +137,16 @@ serve(async (req) => {
 
     if (existingUser) {
       // ONE-USER-ONE-SHOP RULE: Check if this user already has a profile (belongs to ANY shop)
-      const { data: existingProfileForUser } = await supabaseAdmin
+      const { data: existingProfileForUser, error: profileCheckError } = await supabaseAdmin
         .from('profiles')
         .select('id, restaurant_id')
         .eq('user_id', existingUser.id)
-        .single();
+        .maybeSingle();
+
+      // If there's an error other than not finding data, log it
+      if (profileCheckError) {
+        console.error('Error checking existing profile:', profileCheckError);
+      }
 
       if (existingProfileForUser) {
         // User already belongs to a shop - block creation
