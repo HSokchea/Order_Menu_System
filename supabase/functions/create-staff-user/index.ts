@@ -79,6 +79,9 @@ serve(async (req) => {
     }
 
     const { email, full_name, role_ids, status }: CreateStaffRequest = await req.json();
+    const normalizedEmail = email.toLowerCase().trim();
+
+    console.log(`Creating staff: ${normalizedEmail} for restaurant ${restaurant.id}`);
 
     // Validate input
     if (!email || !email.includes('@')) {
@@ -131,96 +134,158 @@ serve(async (req) => {
       });
     }
 
-    // Check if email exists in auth.users
-    const { data: users } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = users?.users?.find(u => u.email === email);
+    // STEP 1: Check if a profile already exists for this email (in ANY restaurant)
+    // This is the authoritative check - profiles table enforces one-user-one-shop
+    const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, user_id, restaurant_id, email')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
 
-    if (existingUser) {
-      // ONE-USER-ONE-SHOP RULE: Check if this user already has a profile (belongs to ANY shop)
-      const { data: existingProfileForUser, error: profileCheckError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, restaurant_id')
-        .eq('user_id', existingUser.id)
-        .maybeSingle();
+    if (profileCheckError) {
+      console.error('Error checking existing profile by email:', profileCheckError);
+    }
 
-      // If there's an error other than not finding data, log it
-      if (profileCheckError) {
-        console.error('Error checking existing profile:', profileCheckError);
-      }
-
-      if (existingProfileForUser) {
-        // User already belongs to a shop - block creation
-        if (existingProfileForUser.restaurant_id === restaurant.id) {
-          return new Response(JSON.stringify({ error: 'This email is already registered as staff in your restaurant' }), {
-            status: 409,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        } else {
-          return new Response(JSON.stringify({ error: 'This user already belongs to another shop' }), {
-            status: 409,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
+    if (existingProfile) {
+      console.log(`Profile already exists for email ${normalizedEmail}: user_id=${existingProfile.user_id}, restaurant_id=${existingProfile.restaurant_id}`);
+      if (existingProfile.restaurant_id === restaurant.id) {
+        return new Response(JSON.stringify({ error: 'This email is already registered as staff in your restaurant' }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } else {
+        return new Response(JSON.stringify({ error: 'This user already belongs to another shop' }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
-    // Generate a random temporary password
+    // STEP 2: Check if auth user exists (using admin.getUserById via email lookup is not available,
+    // so we try to create and handle the "already exists" error)
     const tempPassword = crypto.randomUUID().slice(0, 12) + 'Aa1!';
-
     let userId: string;
+    let isNewUser = false;
 
-    if (existingUser) {
-      // User exists in auth but not in this restaurant - just create profile
-      userId = existingUser.id;
-    } else {
-      // Create the auth user
-      const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: tempPassword,
-        email_confirm: true, // Auto-confirm email for staff
-        user_metadata: {
-          full_name,
-          restaurant_id: restaurant.id,
-          is_staff: true
+    // Try to create the auth user first
+    const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name,
+        restaurant_id: restaurant.id,
+        is_staff: true
+      }
+    });
+
+    if (createUserError) {
+      // Check if user already exists
+      if (createUserError.message?.includes('already been registered') || 
+          createUserError.message?.includes('already exists') ||
+          createUserError.status === 422) {
+        console.log(`Auth user already exists for ${normalizedEmail}, fetching...`);
+        
+        // User exists in auth, need to find their ID
+        // We need to search for the user - use listUsers with filter
+        const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000 // Get more users to search through
+        });
+
+        if (listError) {
+          console.error('Error listing users:', listError);
+          return new Response(JSON.stringify({ error: 'Failed to verify existing user' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
-      });
 
-      if (createUserError) {
+        const existingAuthUser = usersData?.users?.find(u => u.email?.toLowerCase() === normalizedEmail);
+        
+        if (!existingAuthUser) {
+          console.error(`Could not find auth user for ${normalizedEmail} despite create saying it exists`);
+          return new Response(JSON.stringify({ error: 'User verification failed. Please try again.' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        userId = existingAuthUser.id;
+        console.log(`Found existing auth user: ${userId}`);
+
+        // Double-check no profile exists for this user_id (belt and suspenders)
+        const { data: profileByUserId } = await supabaseAdmin
+          .from('profiles')
+          .select('id, restaurant_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (profileByUserId) {
+          console.log(`Profile found by user_id ${userId}: restaurant_id=${profileByUserId.restaurant_id}`);
+          if (profileByUserId.restaurant_id === restaurant.id) {
+            return new Response(JSON.stringify({ error: 'This user is already staff in your restaurant' }), {
+              status: 409,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          } else {
+            return new Response(JSON.stringify({ error: 'This user already belongs to another shop' }), {
+              status: 409,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
+      } else {
         console.error('Error creating user:', createUserError);
-        return new Response(JSON.stringify({ error: createUserError.message }), {
+        return new Response(JSON.stringify({ error: createUserError.message || 'Failed to create user' }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-
+    } else {
       userId = newUser.user.id;
+      isNewUser = true;
+      console.log(`Created new auth user: ${userId}`);
     }
 
-    // Create the profile (one-user-one-shop: user should not have a profile yet)
+    // STEP 3: Create the profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({
         user_id: userId,
         restaurant_id: restaurant.id,
         full_name: full_name.trim(),
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         status: status || 'active',
-        must_change_password: true // Force password change on first login
+        must_change_password: true
       });
 
     if (profileError) {
       console.error('Error creating profile:', profileError);
-      // Try to clean up the created user if we just created them
-      if (!existingUser) {
+      
+      // If we just created the user, clean up
+      if (isNewUser) {
+        console.log(`Cleaning up newly created auth user ${userId} due to profile creation failure`);
         await supabaseAdmin.auth.admin.deleteUser(userId);
       }
-      return new Response(JSON.stringify({ error: 'Failed to create profile. User may already belong to another shop.' }), {
+      
+      // Check if it's a duplicate error
+      if (profileError.code === '23505') {
+        return new Response(JSON.stringify({ error: 'This user already has a profile in the system' }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      return new Response(JSON.stringify({ error: 'Failed to create staff profile' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Assign roles
+    console.log(`Profile created for user ${userId}`);
+
+    // STEP 4: Assign roles
     for (const roleId of role_ids) {
       const { error: roleError } = await supabaseAdmin
         .from('user_roles')
@@ -233,17 +298,17 @@ serve(async (req) => {
 
       if (roleError) {
         console.error('Error assigning role:', roleError);
-        // Continue anyway - role assignment is not critical
+        // Continue anyway - role assignment is not critical for the initial creation
       }
     }
 
-    console.log(`Successfully created staff user ${email} for restaurant ${restaurant.id}`);
+    console.log(`Successfully created staff user ${normalizedEmail} (${userId}) for restaurant ${restaurant.id}`);
 
     return new Response(JSON.stringify({
       success: true,
       user_id: userId,
       message: `Staff member ${full_name} created successfully`,
-      temp_password: existingUser ? null : tempPassword // Only return temp password for new users
+      temp_password: isNewUser ? tempPassword : null // Only return temp password for new users
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
