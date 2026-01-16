@@ -32,9 +32,7 @@ const getPageInfo = (pathname: string) => {
     case "/admin/settings":
       return { title: "Settings", description: "Shop profile and configuration" };
     case "/admin/roles":
-      return { title: "Staff Management", description: "Manage staff accounts and roles" };
-    case "/admin/permissions":
-      return { title: "Roles & Permissions", description: "Configure access control" };
+      return { title: "Staff Management", description: "Staff, roles & permissions" };
     case "/admin/qr-generator":
       return { title: "QR Generator", description: "Create QR codes for tables" };
     default:
@@ -170,14 +168,8 @@ export default function AdminMain() {
             <RolesPermissions />
           </PermissionGuard>
         } />
-        <Route path="permissions" element={
-          <PermissionGuard 
-            permissions={[PERMISSIONS.USERS_MANAGE]} 
-            fallback={<AccessDenied message="You don't have permission to manage permissions." />}
-          >
-            <RolesPermissions />
-          </PermissionGuard>
-        } />
+        {/* Redirect old permissions route to unified staff management */}
+        <Route path="permissions" element={<Navigate to="/admin/roles" replace />} />
         
         {/* Redirect root admin to dashboard */}
         <Route path="/" element={<Navigate to="/admin" replace />} />

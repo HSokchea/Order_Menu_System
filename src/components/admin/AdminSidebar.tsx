@@ -91,14 +91,7 @@ const navigationItems: NavigationItem[] = [
     title: "Staff Management",
     url: "/admin/roles",
     icon: Users,
-    description: "Manage staff accounts",
-    permissions: [PERMISSIONS.USERS_MANAGE],
-  },
-  {
-    title: "Roles & Permissions",
-    url: "/admin/permissions",
-    icon: Shield,
-    description: "Configure access control",
+    description: "Staff, roles & permissions",
     permissions: [PERMISSIONS.USERS_MANAGE],
   },
   {
