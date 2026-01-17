@@ -248,39 +248,96 @@ serve(async (req) => {
       console.log(`Created new auth user: ${userId}`);
     }
 
-    // STEP 3: Create the profile
-    const { error: profileError } = await supabaseAdmin
+    // STEP 3: Create or update the profile
+    // NOTE: The database trigger `handle_new_user` may have already created a profile
+    // when the auth user was created. We use upsert to handle this case.
+    
+    // First, check if the trigger already created the profile
+    const { data: existingProfileById } = await supabaseAdmin
       .from('profiles')
-      .insert({
-        user_id: userId,
-        restaurant_id: restaurant.id,
-        full_name: full_name.trim(),
-        email: normalizedEmail,
-        status: status || 'active',
-        must_change_password: true
-      });
+      .select('id, user_id, restaurant_id')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    if (profileError) {
-      console.error('Error creating profile:', profileError);
+    if (existingProfileById) {
+      console.log(`Profile already exists for user ${userId} (created by trigger), updating...`);
       
-      // If we just created the user, clean up
-      if (isNewUser) {
-        console.log(`Cleaning up newly created auth user ${userId} due to profile creation failure`);
-        await supabaseAdmin.auth.admin.deleteUser(userId);
-      }
-      
-      // Check if it's a duplicate error
-      if (profileError.code === '23505') {
-        return new Response(JSON.stringify({ error: 'This user already has a profile in the system' }), {
-          status: 409,
+      // Update the existing profile with correct data
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          restaurant_id: restaurant.id,
+          full_name: full_name.trim(),
+          email: normalizedEmail,
+          status: status || 'active',
+          must_change_password: true
+        })
+        .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('Error updating profile:', updateError);
+        
+        // If we just created the user, clean up
+        if (isNewUser) {
+          console.log(`Cleaning up newly created auth user ${userId} due to profile update failure`);
+          await supabaseAdmin.auth.admin.deleteUser(userId);
+        }
+        
+        return new Response(JSON.stringify({ error: 'Failed to update staff profile' }), {
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      
-      return new Response(JSON.stringify({ error: 'Failed to create staff profile' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    } else {
+      // Profile doesn't exist, create it
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          user_id: userId,
+          restaurant_id: restaurant.id,
+          full_name: full_name.trim(),
+          email: normalizedEmail,
+          status: status || 'active',
+          must_change_password: true
+        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        
+        // If we just created the user, clean up
+        if (isNewUser) {
+          console.log(`Cleaning up newly created auth user ${userId} due to profile creation failure`);
+          await supabaseAdmin.auth.admin.deleteUser(userId);
+        }
+        
+        // Check if it's a duplicate error (race condition with trigger)
+        if (profileError.code === '23505') {
+          // Try to update instead
+          console.log('Duplicate profile detected, attempting update...');
+          const { error: retryUpdateError } = await supabaseAdmin
+            .from('profiles')
+            .update({
+              restaurant_id: restaurant.id,
+              full_name: full_name.trim(),
+              email: normalizedEmail,
+              status: status || 'active',
+              must_change_password: true
+            })
+            .eq('user_id', userId);
+
+          if (retryUpdateError) {
+            return new Response(JSON.stringify({ error: 'Failed to create staff profile' }), {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        } else {
+          return new Response(JSON.stringify({ error: 'Failed to create staff profile' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
     }
 
     console.log(`Profile created for user ${userId}`);
