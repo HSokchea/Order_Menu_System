@@ -1002,6 +1002,10 @@ export type Database = {
         }[]
       }
       get_user_restaurant_id: { Args: { _user_id: string }; Returns: string }
+      get_user_restaurant_id_safe: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       user_has_permission: {
         Args: {
           p_context?: Json
