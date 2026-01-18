@@ -107,23 +107,31 @@ export const useStaffManagement = () => {
   // Create staff mutation
   const createStaffMutation = useMutation({
     mutationFn: async (input: CreateStaffInput) => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = (await supabase.auth.getSession()).data.session;
       if (!session) throw new Error('Not authenticated');
 
-      const response = await supabase.functions.invoke('create-staff-user', {
-        body: input
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-staff-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify(input),
+        }
+      );
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to create staff');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create staff');
       }
 
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Failed to create staff');
-      }
-
-      return response.data;
+      return data;
     },
+    
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });
       queryClient.invalidateQueries({ queryKey: ['staff-users'] });
@@ -139,19 +147,26 @@ export const useStaffManagement = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const response = await supabase.functions.invoke('update-staff-user', {
-        body: input
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-staff-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify(input),
+        }
+      );
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to update staff');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update staff');
       }
 
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Failed to update staff');
-      }
-
-      return response.data;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });
@@ -168,19 +183,26 @@ export const useStaffManagement = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const response = await supabase.functions.invoke('delete-staff-user', {
-        body: { user_id: userId }
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-staff-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ user_id: userId }),
+        }
+      );
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to delete staff');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete staff');
       }
 
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Failed to delete staff');
-      }
-
-      return response.data;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });

@@ -144,6 +144,7 @@ export function StaffManagement() {
         resetForm();
       }
     } catch (err: any) {
+      console.log("Error adding staff member:", err);
       toast.error(err.message || 'Failed to add staff member');
     }
   };
