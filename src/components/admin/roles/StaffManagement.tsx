@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -44,12 +45,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { 
-  UserPlus, 
-  MoreHorizontal, 
-  Pencil, 
-  Trash2, 
-  UserX, 
+import {
+  UserPlus,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  UserX,
   UserCheck,
   Loader2,
   Shield,
@@ -71,7 +72,7 @@ export function StaffManagement() {
   } = useStaffManagement();
 
   const { roles: allRoles } = usePermissions();
-  
+
   // Filter out owner role - staff cannot be assigned owner role
   const roles = allRoles.filter(role => role.role_type !== 'owner');
 
@@ -149,19 +150,19 @@ export function StaffManagement() {
 
   const handleEditStaff = async () => {
     if (!selectedStaff) return;
-    
+
     const errors: Record<string, string> = {};
-    
+
     if (!formData.full_name.trim()) {
       errors.full_name = 'Full name is required';
     } else if (formData.full_name.trim().length < 2) {
       errors.full_name = 'Name must be at least 2 characters';
     }
-    
+
     if (formData.role_ids.length === 0) {
       errors.role_ids = 'At least one role must be selected';
     }
-    
+
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
@@ -236,14 +237,14 @@ export function StaffManagement() {
   // Check if edit staff form has changes
   const hasEditStaffChanges = (): boolean => {
     if (!selectedStaff) return false;
-    
+
     const originalRoleIds = [...selectedStaff.role_ids].sort();
     const currentRoleIds = [...formData.role_ids].sort();
-    
-    const rolesChanged = 
+
+    const rolesChanged =
       originalRoleIds.length !== currentRoleIds.length ||
       originalRoleIds.some((id, idx) => id !== currentRoleIds[idx]);
-    
+
     return (
       formData.full_name.trim() !== (selectedStaff.full_name || '').trim() ||
       formData.status !== selectedStaff.status ||
@@ -281,7 +282,7 @@ export function StaffManagement() {
             Add and manage staff members. Assign roles to control permissions.
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => { resetForm(); setIsAddDialogOpen(true); }}
           disabled={roles.length === 0}
         >
@@ -339,10 +340,10 @@ export function StaffManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={staff.status === 'active' ? 'default' : 'secondary'}
-                      className={staff.status === 'active' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                      className={staff.status === 'active'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                       }
                     >
@@ -376,7 +377,7 @@ export function StaffManagement() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => openDeleteDialog(staff)}
                             className="text-destructive focus:text-destructive"
                           >
@@ -403,12 +404,17 @@ export function StaffManagement() {
 
       {/* Add Staff Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Staff Member</DialogTitle>
-            <DialogDescription>
-              Create a new staff account for your restaurant
-            </DialogDescription>
+        <DialogContent className="max-w-md" hideCloseButton>
+          <DialogHeader className="flex flex-row items-center justify-between gap-2">
+            <div className="flex flex-col gap-2">
+              <DialogTitle>Add Staff Member</DialogTitle>
+              <DialogDescription>
+                Create a new staff account for your restaurant
+              </DialogDescription>
+            </div>
+            <Button variant="custom" size="custom" className='pb-8' aria-label="Close dialog" onClick={() => setIsAddDialogOpen(false)}>
+              <X className="h-5 w-5" />
+            </Button>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -420,7 +426,7 @@ export function StaffManagement() {
                   setFormData(prev => ({ ...prev, full_name: e.target.value }));
                   setFormErrors(prev => ({ ...prev, full_name: '' }));
                 }}
-                placeholder="John Doe"
+                placeholder="Enter staff full name"
               />
               {formErrors.full_name && (
                 <p className="text-sm text-destructive">{formErrors.full_name}</p>
@@ -437,7 +443,7 @@ export function StaffManagement() {
                   setFormData(prev => ({ ...prev, email: e.target.value }));
                   setFormErrors(prev => ({ ...prev, email: '' }));
                 }}
-                placeholder="staff@example.com"
+                placeholder="Enter staff email address"
               />
               {formErrors.email && (
                 <p className="text-sm text-destructive">{formErrors.email}</p>
@@ -477,7 +483,7 @@ export function StaffManagement() {
               <Label>Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value: 'active' | 'inactive') => 
+                onValueChange={(value: 'active' | 'inactive') =>
                   setFormData(prev => ({ ...prev, status: value }))
                 }
               >
@@ -492,10 +498,10 @@ export function StaffManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+            <Button size="sm" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddStaff} disabled={isCreating}>
+            <Button size="sm" onClick={handleAddStaff} disabled={isCreating}>
               {isCreating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add Staff
             </Button>
@@ -533,12 +539,17 @@ export function StaffManagement() {
 
       {/* Edit Staff Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Staff Member</DialogTitle>
-            <DialogDescription>
-              Update staff member details and roles
-            </DialogDescription>
+        <DialogContent className="max-w-md" hideCloseButton>
+          <DialogHeader className="flex flex-row items-center justify-between gap-2">
+            <div className="flex flex-col gap-2">
+              <DialogTitle>Edit Staff Member</DialogTitle>
+              <DialogDescription>
+                Update staff member details and roles
+              </DialogDescription>
+            </div>
+            <Button variant="custom" size="custom" className='pb-8' aria-label="Close dialog" onClick={() => setIsEditDialogOpen(false)}>
+              <X className="h-5 w-5" />
+            </Button>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -590,7 +601,7 @@ export function StaffManagement() {
               <Label>Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value: 'active' | 'inactive') => 
+                onValueChange={(value: 'active' | 'inactive') =>
                   setFormData(prev => ({ ...prev, status: value }))
                 }
               >
@@ -605,10 +616,10 @@ export function StaffManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button size="sm" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditStaff} disabled={isUpdating || !hasEditStaffChanges()}>
+            <Button size="sm" onClick={handleEditStaff} disabled={isUpdating || !hasEditStaffChanges()}>
               {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save Changes
             </Button>
