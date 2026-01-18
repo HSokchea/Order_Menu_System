@@ -154,6 +154,8 @@ export function StaffManagement() {
     
     if (!formData.full_name.trim()) {
       errors.full_name = 'Full name is required';
+    } else if (formData.full_name.trim().length < 2) {
+      errors.full_name = 'Name must be at least 2 characters';
     }
     
     if (formData.role_ids.length === 0) {
@@ -313,7 +315,7 @@ export function StaffManagement() {
             <TableBody>
               {staffMembers.map((staff) => (
                 <TableRow key={staff.id}>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium py-4">
                     <div className="flex items-center gap-2">
                       {staff.full_name || 'Unnamed'}
                       {staff.is_owner && (

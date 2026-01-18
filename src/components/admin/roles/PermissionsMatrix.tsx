@@ -243,14 +243,14 @@ export function PermissionsMatrix() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[500px]">
+            <ScrollArea className="h-[500px] hidden:scrollbar">
               <div className="space-y-6">
                 {Object.entries(groupedPermissions).map(([resource, perms]) => (
                   <div key={resource} className="space-y-3">
-                    <h4 className="font-medium text-sm capitalize border-b pb-1">
+                    <h4 className="font-medium text-sm capitalize">
                       {resource}
                     </h4>
-                    <div className="grid gap-2">
+                    <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-2">
                       {perms.map(permission => {
                         const isChecked = hasPermission(permission.id);
                         const isInherited = isInheritedPermission(permission.id);
