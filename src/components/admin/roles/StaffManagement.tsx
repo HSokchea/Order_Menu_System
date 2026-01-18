@@ -231,6 +231,24 @@ export function StaffManagement() {
     setFormErrors(prev => ({ ...prev, role_ids: '' }));
   };
 
+  // Check if edit staff form has changes
+  const hasEditStaffChanges = (): boolean => {
+    if (!selectedStaff) return false;
+    
+    const originalRoleIds = [...selectedStaff.role_ids].sort();
+    const currentRoleIds = [...formData.role_ids].sort();
+    
+    const rolesChanged = 
+      originalRoleIds.length !== currentRoleIds.length ||
+      originalRoleIds.some((id, idx) => id !== currentRoleIds[idx]);
+    
+    return (
+      formData.full_name.trim() !== (selectedStaff.full_name || '').trim() ||
+      formData.status !== selectedStaff.status ||
+      rolesChanged
+    );
+  };
+
   const copyTempPassword = () => {
     if (tempPassword) {
       navigator.clipboard.writeText(tempPassword);
@@ -588,7 +606,7 @@ export function StaffManagement() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditStaff} disabled={isUpdating}>
+            <Button onClick={handleEditStaff} disabled={isUpdating || !hasEditStaffChanges()}>
               {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save Changes
             </Button>
