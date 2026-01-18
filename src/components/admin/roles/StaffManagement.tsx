@@ -149,8 +149,19 @@ export function StaffManagement() {
 
   const handleEditStaff = async () => {
     if (!selectedStaff) return;
+    
+    const errors: Record<string, string> = {};
+    
     if (!formData.full_name.trim()) {
-      setFormErrors({ full_name: 'Full name is required' });
+      errors.full_name = 'Full name is required';
+    }
+    
+    if (formData.role_ids.length === 0) {
+      errors.role_ids = 'At least one role must be selected';
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
@@ -550,6 +561,9 @@ export function StaffManagement() {
                   </div>
                 ))}
               </div>
+              {formErrors.role_ids && (
+                <p className="text-sm text-destructive">{formErrors.role_ids}</p>
+              )}
             </div>
 
             <div className="space-y-2">
