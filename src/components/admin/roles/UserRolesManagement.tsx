@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { User, Shield, ChevronDown, ChevronUp, Loader2, AlertTriangle, X } from "lucide-react";
+import { User, Shield, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantProfile } from "@/hooks/useRestaurantProfile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -78,12 +78,12 @@ export function UserRolesManagement() {
     queryKey: ['staff-users', restaurant?.id],
     queryFn: async () => {
       if (!restaurant) return [];
-
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, full_name, email')
         .eq('restaurant_id', restaurant.id);
-
+      
       if (error) throw error;
 
       return data.map(profile => ({
@@ -154,15 +154,15 @@ export function UserRolesManagement() {
   // Check if role assignments have changed from original
   const hasRoleChanges = (): boolean => {
     if (!selectedUser) return false;
-
+    
     const originalRoleIds = getUserCurrentRoleIds(selectedUser.id);
-
+    
     if (originalRoleIds.size !== pendingRoleChanges.size) return true;
-
+    
     for (const roleId of originalRoleIds) {
       if (!pendingRoleChanges.has(roleId)) return true;
     }
-
+    
     return false;
   };
 
@@ -172,7 +172,7 @@ export function UserRolesManagement() {
     setIsSaving(true);
     try {
       const currentRoleIds = getUserCurrentRoleIds(selectedUser.id);
-
+      
       // Roles to add
       const toAdd = [...pendingRoleChanges].filter(id => !currentRoleIds.has(id));
       // Roles to remove  
@@ -198,7 +198,7 @@ export function UserRolesManagement() {
       toast.success("Roles updated successfully");
       setIsRoleDialogOpen(false);
       setSelectedUser(null);
-
+      
       // Invalidate queries to refresh
       queryClient.invalidateQueries({ queryKey: ['staff-users'] });
     } catch (err: any) {
@@ -231,7 +231,7 @@ export function UserRolesManagement() {
         <div className="text-sm">
           <p className="font-medium">Role-Based Access Control (RBAC)</p>
           <p className="text-muted-foreground">
-            Permissions are granted through roles only. To change a user's permissions,
+            Permissions are granted through roles only. To change a user's permissions, 
             update their assigned roles or modify role permissions in the Roles/Permissions tabs.
           </p>
         </div>
@@ -300,8 +300,8 @@ export function UserRolesManagement() {
                       </Badge>
                     ) : userRolesList.length > 0 ? (
                       userRolesList.map(role => (
-                        <Badge
-                          key={role.id}
+                        <Badge 
+                          key={role.id} 
                           variant="secondary"
                         >
                           {role.name}
@@ -333,12 +333,13 @@ export function UserRolesManagement() {
                             className="flex items-center justify-between py-1 px-2 rounded text-sm hover:bg-muted"
                           >
                             <span>{permission.name}</span>
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${type === 'inherited'
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${
+                                type === 'inherited'
                                   ? 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                                   : ''
-                                }`}
+                              }`}
                             >
                               via {source}
                             </Badge>
@@ -371,21 +372,15 @@ export function UserRolesManagement() {
 
       {/* Edit Roles Dialog */}
       <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
-        <DialogContent className="max-w-md" hideCloseButton>
-          <DialogHeader className="flex flex-row items-center justify-between gap-2">
-            <div className="flex flex-col gap-2">
-              <DialogTitle>Edit User Roles</DialogTitle>
-              <DialogDescription>
-                Select roles for {selectedUser?.full_name || selectedUser?.email}
-              </DialogDescription>
-            </div>
-
-            <Button variant="custom" size="custom" className='pb-8' aria-label="Close dialog" onClick={() => setIsRoleDialogOpen(false)}>
-              <X className="h-5 w-5" />
-            </Button>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User Roles</DialogTitle>
+            <DialogDescription>
+              Select roles for {selectedUser?.full_name || selectedUser?.email}
+            </DialogDescription>
           </DialogHeader>
           {selectedUser && (
-            <div className="">
+            <div className="py-4">
               <p className="text-sm text-muted-foreground mb-4">
                 Permissions are determined by the roles assigned below.
                 Users must have at least one role.
@@ -395,14 +390,14 @@ export function UserRolesManagement() {
                   assignableRoles.map(role => (
                     <div
                       key={role.id}
-                      className="flex items-center gap-3 p-3 border rounded-md hover:bg-muted/50"
+                      className="flex items-start gap-3 p-3 border rounded-md hover:bg-muted/50"
                     >
                       <Checkbox
                         id={`role-${role.id}`}
                         checked={pendingRoleChanges.has(role.id)}
                         onCheckedChange={() => handleRoleToggle(role.id)}
                       />
-                      <label
+                      <label 
                         htmlFor={`role-${role.id}`}
                         className="flex-1 cursor-pointer"
                       >
@@ -426,7 +421,7 @@ export function UserRolesManagement() {
                   </p>
                 )}
               </div>
-
+              
               {pendingRoleChanges.size === 0 && (
                 <p className="text-sm text-amber-600 dark:text-amber-400 mt-3 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
@@ -436,12 +431,11 @@ export function UserRolesManagement() {
             </div>
           )}
           <DialogFooter>
-            <Button size="sm" variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
-              size="sm"
-              onClick={handleSaveRoles}
+              onClick={handleSaveRoles} 
               disabled={isSaving || pendingRoleChanges.size === 0 || !hasRoleChanges()}
             >
               {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

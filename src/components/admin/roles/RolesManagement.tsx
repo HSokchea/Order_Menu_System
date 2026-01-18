@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, GitBranch, Lock, X } from "lucide-react";
+import { Plus, Pencil, Trash2, GitBranch, Lock, ChevronRight } from "lucide-react";
 import { RoleInheritanceTree } from "./RoleInheritanceTree";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
@@ -38,11 +38,11 @@ const ROLE_TYPES = [
 ];
 
 export function RolesManagement() {
-  const {
-    roles,
+  const { 
+    roles, 
     roleInheritance,
-    createRole,
-    updateRole,
+    createRole, 
+    updateRole, 
     deleteRole,
     addRoleInheritance,
     removeRoleInheritance,
@@ -54,23 +54,20 @@ export function RolesManagement() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [inheritanceDialogRole, setInheritanceDialogRole] = useState<Role | null>(null);
   const [deleteConfirmRole, setDeleteConfirmRole] = useState<Role | null>(null);
-
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     role_type: 'custom'
   });
 
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
   const resetForm = () => {
     setFormData({ name: '', description: '', role_type: 'custom' });
-    setFormErrors({});
   };
 
   const handleCreate = async () => {
     if (!formData.name.trim()) {
-      setFormErrors(prev => ({ ...prev, name: "Role name is required" }));
+      toast.error("Role name is required");
       return;
     }
 
@@ -151,8 +148,8 @@ export function RolesManagement() {
       .filter(ri => ri.parent_role_id === parentRoleId)
       .map(ri => ri.child_role_id);
 
-    return roles.filter(r =>
-      r.id !== parentRoleId &&
+    return roles.filter(r => 
+      r.id !== parentRoleId && 
       !currentChildren.includes(r.id) &&
       !wouldCreateCycle(parentRoleId, r.id)
     );
@@ -177,18 +174,12 @@ export function RolesManagement() {
               Create Role
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md" hideCloseButton>
-            <DialogHeader className="flex flex-row items-center justify-between gap-2">
-              <div className="flex flex-col gap-2">
-                <DialogTitle>Create New Role</DialogTitle>
-                <DialogDescription>
-                  Create a new role to group permissions together
-                </DialogDescription>
-              </div>
-
-              <Button variant="custom" size="custom" className='pb-8' aria-label="Close dialog" onClick={() => setIsCreateOpen(false)}>
-                <X className="h-5 w-5" />
-              </Button>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Role</DialogTitle>
+              <DialogDescription>
+                Create a new role to group permissions together
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -197,11 +188,8 @@ export function RolesManagement() {
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter role name"
+                  placeholder="e.g., Floor Manager"
                 />
-                {formErrors.name && (
-                  <p className="text-sm text-destructive">{formErrors.name}</p>
-                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Role Type</Label>
@@ -233,10 +221,10 @@ export function RolesManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button size="sm" variant="outline" onClick={() => setIsCreateOpen(false)}>
+              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleCreate}>Create Role</Button>
+              <Button onClick={handleCreate}>Create Role</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -264,7 +252,7 @@ export function RolesManagement() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {roles.map((role) => {
           const inheritedRoles = getInheritedRoles(role.id);
-
+          
           return (
             <Card key={role.id}>
               <CardHeader className="pb-3">
@@ -391,8 +379,8 @@ export function RolesManagement() {
       </Dialog>
 
       {/* Inheritance Management Dialog */}
-      <Dialog
-        open={!!inheritanceDialogRole}
+      <Dialog 
+        open={!!inheritanceDialogRole} 
         onOpenChange={(open) => !open && setInheritanceDialogRole(null)}
       >
         <DialogContent className="max-w-lg">
@@ -412,8 +400,8 @@ export function RolesManagement() {
                 {getInheritedRoles(inheritanceDialogRole.id).length > 0 ? (
                   <div className="space-y-2">
                     {getInheritedRoles(inheritanceDialogRole.id).map(role => (
-                      <div
-                        key={role.id}
+                      <div 
+                        key={role.id} 
                         className="flex items-center justify-between p-2 bg-muted rounded-md"
                       >
                         <span className="text-sm">{role.name}</span>
@@ -441,8 +429,8 @@ export function RolesManagement() {
                 {getAvailableRolesForInheritance(inheritanceDialogRole.id).length > 0 ? (
                   <div className="space-y-2">
                     {getAvailableRolesForInheritance(inheritanceDialogRole.id).map(role => (
-                      <div
-                        key={role.id}
+                      <div 
+                        key={role.id} 
                         className="flex items-center justify-between p-2 border rounded-md"
                       >
                         <div>
