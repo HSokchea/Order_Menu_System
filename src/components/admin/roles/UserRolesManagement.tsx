@@ -151,6 +151,21 @@ export function UserRolesManagement() {
     });
   };
 
+  // Check if role assignments have changed from original
+  const hasRoleChanges = (): boolean => {
+    if (!selectedUser) return false;
+    
+    const originalRoleIds = getUserCurrentRoleIds(selectedUser.id);
+    
+    if (originalRoleIds.size !== pendingRoleChanges.size) return true;
+    
+    for (const roleId of originalRoleIds) {
+      if (!pendingRoleChanges.has(roleId)) return true;
+    }
+    
+    return false;
+  };
+
   const handleSaveRoles = async () => {
     if (!selectedUser) return;
 
@@ -421,7 +436,7 @@ export function UserRolesManagement() {
             </Button>
             <Button 
               onClick={handleSaveRoles} 
-              disabled={isSaving || pendingRoleChanges.size === 0}
+              disabled={isSaving || pendingRoleChanges.size === 0 || !hasRoleChanges()}
             >
               {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save Roles
