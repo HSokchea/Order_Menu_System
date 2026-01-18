@@ -148,17 +148,10 @@ serve(async (req) => {
 
     if (existingProfile) {
       console.log(`Profile already exists for email ${normalizedEmail}: user_id=${existingProfile.user_id}, restaurant_id=${existingProfile.restaurant_id}`);
-      if (existingProfile.restaurant_id === restaurant.id) {
-        return new Response(JSON.stringify({ error: 'This email is already registered as staff in your restaurant' }), {
-          status: 409,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else {
-        return new Response(JSON.stringify({ error: 'This user already belongs to another shop' }), {
-          status: 409,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      return new Response(JSON.stringify({ error: `Account already exists for email ${normalizedEmail}` }), {
+        status: 409,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // STEP 2: Check if auth user exists (using admin.getUserById via email lookup is not available,
@@ -223,17 +216,10 @@ serve(async (req) => {
 
         if (profileByUserId) {
           console.log(`Profile found by user_id ${userId}: restaurant_id=${profileByUserId.restaurant_id}`);
-          if (profileByUserId.restaurant_id === restaurant.id) {
-            return new Response(JSON.stringify({ error: 'This user is already staff in your restaurant' }), {
-              status: 409,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          } else {
-            return new Response(JSON.stringify({ error: 'This user already belongs to another shop' }), {
-              status: 409,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
+          return new Response(JSON.stringify({ error: `Account already exists for email ${normalizedEmail}` }), {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
       } else {
         console.error('Error creating user:', createUserError);

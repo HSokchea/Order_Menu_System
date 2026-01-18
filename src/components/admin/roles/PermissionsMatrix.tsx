@@ -334,7 +334,7 @@ export function PermissionsMatrix() {
       )}
 
       {!selectedRole && (
-        <Card>
+        <Card className="border-none bg-transparent shadow-none">
           <CardContent className="py-8 text-center">
             <p className="text-muted-foreground">
               Select a role above to manage its permissions
