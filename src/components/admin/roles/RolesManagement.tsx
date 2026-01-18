@@ -80,7 +80,12 @@ export function RolesManagement() {
       setIsCreateOpen(false);
       resetForm();
     } catch (err: any) {
-      toast.error(err.message || "Failed to create role");
+      const message = err.message || "Failed to create role";
+      if (message.includes("roles_restaurant_id_name_key") || message.includes("duplicate key")) {
+        toast.error("This role name already exists.");
+      } else {
+        toast.error(message);
+      }
     }
   };
 
@@ -96,7 +101,12 @@ export function RolesManagement() {
       setEditingRole(null);
       resetForm();
     } catch (err: any) {
-      toast.error(err.message || "Failed to update role");
+      const message = err.message || "Failed to update role";
+      if (message.includes("roles_restaurant_id_name_key") || message.includes("duplicate key")) {
+        toast.error("This role name already exists.");
+      } else {
+        toast.error(message);
+      }
     }
   };
 
