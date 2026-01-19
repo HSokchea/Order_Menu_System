@@ -84,6 +84,33 @@ export interface RoleTreeNode {
   depth: number;
 }
 
+// Helper to call edge functions
+async function callEdgeFunction<T>(functionName: string, body: any): Promise<T> {
+  const session = (await supabase.auth.getSession()).data.session;
+  if (!session) throw new Error('Not authenticated');
+
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(body),
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || `Failed to call ${functionName}`);
+  }
+
+  return data;
+}
+
 export const usePermissions = () => {
   const { user } = useAuth();
   const { restaurant } = useRestaurantProfile();
@@ -103,7 +130,7 @@ export const usePermissions = () => {
     try {
       setLoading(true);
       
-      // Fetch all data in parallel
+      // Fetch all data in parallel (READ-ONLY via RLS)
       const [
         permissionsRes,
         rolesRes,
@@ -149,182 +176,133 @@ export const usePermissions = () => {
     fetchData();
   }, [fetchData]);
 
-  // Role CRUD operations
+  // ==========================================
+  // ROLE OPERATIONS (via Edge Function)
+  // ==========================================
+  
   const createRole = async (name: string, description: string | null, roleType: string = 'custom') => {
-    if (!restaurant) throw new Error('No restaurant');
-    
-    const { data, error } = await supabase
-      .from('roles')
-      .insert({
-        restaurant_id: restaurant.id,
-        name,
-        description,
-        role_type: roleType as any
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
+    await callEdgeFunction('manage-role', {
+      action: 'create',
+      name,
+      description,
+      role_type: roleType,
+    });
     await fetchData();
-    return data;
   };
 
   const updateRole = async (id: string, updates: { name?: string; description?: string | null }) => {
-    const { error } = await supabase
-      .from('roles')
-      .update(updates)
-      .eq('id', id);
-
-    if (error) throw error;
+    await callEdgeFunction('manage-role', {
+      action: 'update',
+      role_id: id,
+      ...updates,
+    });
     await fetchData();
   };
 
   const deleteRole = async (id: string) => {
-    const { error } = await supabase
-      .from('roles')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
+    await callEdgeFunction('manage-role', {
+      action: 'delete',
+      role_id: id,
+    });
     await fetchData();
   };
 
-  // Role permission operations
-  const assignPermissionToRole = async (roleId: string, permissionId: string) => {
-    const { error } = await supabase
-      .from('role_permissions')
-      .insert({ role_id: roleId, permission_id: permissionId });
+  // ==========================================
+  // ROLE PERMISSION OPERATIONS (via Edge Function)
+  // ==========================================
 
-    if (error) throw error;
+  const assignPermissionToRole = async (roleId: string, permissionId: string) => {
+    await callEdgeFunction('manage-role-permissions', {
+      action: 'assign',
+      role_id: roleId,
+      permission_id: permissionId,
+    });
     await fetchData();
   };
 
   const removePermissionFromRole = async (roleId: string, permissionId: string) => {
-    const { error } = await supabase
-      .from('role_permissions')
-      .delete()
-      .eq('role_id', roleId)
-      .eq('permission_id', permissionId);
-
-    if (error) throw error;
+    await callEdgeFunction('manage-role-permissions', {
+      action: 'remove',
+      role_id: roleId,
+      permission_id: permissionId,
+    });
     await fetchData();
   };
 
-  // Role inheritance operations
-  const addRoleInheritance = async (parentRoleId: string, childRoleId: string) => {
-    const { error } = await supabase
-      .from('role_inheritance')
-      .insert({ parent_role_id: parentRoleId, child_role_id: childRoleId });
+  // ==========================================
+  // ROLE INHERITANCE OPERATIONS (via Edge Function)
+  // ==========================================
 
-    if (error) throw error;
+  const addRoleInheritance = async (parentRoleId: string, childRoleId: string) => {
+    await callEdgeFunction('manage-role-inheritance', {
+      action: 'add',
+      parent_role_id: parentRoleId,
+      child_role_id: childRoleId,
+    });
     await fetchData();
   };
 
   const removeRoleInheritance = async (parentRoleId: string, childRoleId: string) => {
-    const { error } = await supabase
-      .from('role_inheritance')
-      .delete()
-      .eq('parent_role_id', parentRoleId)
-      .eq('child_role_id', childRoleId);
-
-    if (error) throw error;
+    await callEdgeFunction('manage-role-inheritance', {
+      action: 'remove',
+      parent_role_id: parentRoleId,
+      child_role_id: childRoleId,
+    });
     await fetchData();
   };
 
-  // User role operations
+  // ==========================================
+  // USER ROLE OPERATIONS (via Edge Function)
+  // ==========================================
+
   const assignRoleToUser = async (userId: string, roleId: string) => {
-    if (!restaurant || !user) throw new Error('No restaurant or user');
-
-    const { error } = await supabase
-      .from('user_roles')
-      .insert({
-        user_id: userId,
-        role_id: roleId,
-        restaurant_id: restaurant.id,
-        assigned_by: user.id
-      });
-
-    if (error) throw error;
+    await callEdgeFunction('manage-user-roles', {
+      action: 'assign',
+      user_id: userId,
+      role_id: roleId,
+    });
     await fetchData();
   };
 
   const removeRoleFromUser = async (userId: string, roleId: string) => {
-    const { error } = await supabase
-      .from('user_roles')
-      .delete()
-      .eq('user_id', userId)
-      .eq('role_id', roleId);
-
-    if (error) throw error;
+    await callEdgeFunction('manage-user-roles', {
+      action: 'remove',
+      user_id: userId,
+      role_id: roleId,
+    });
     await fetchData();
   };
 
-  /**
-   * Direct user permission operations
-   * 
-   * NOTE: These are DEPRECATED in the clean RBAC model.
-   * Permissions should flow: Permission → Role → User
-   * Direct user permissions bypass this flow and should be used sparingly.
-   * 
-   * The UI no longer exposes these functions to enforce RBAC model:
-   * User → Roles → Permissions (no direct user→permission mapping)
-   * 
-   * @deprecated Use role-based permissions instead
-   */
-  const assignPermissionToUser = async (userId: string, permissionId: string) => {
-    console.warn('[RBAC] Direct user permission assignment is deprecated. Use roles instead.');
-    if (!restaurant || !user) throw new Error('No restaurant or user');
-
-    const { error } = await supabase
-      .from('user_permissions')
-      .insert({
-        user_id: userId,
-        permission_id: permissionId,
-        restaurant_id: restaurant.id,
-        assigned_by: user.id
-      });
-
-    if (error) throw error;
+  const bulkAssignRolesToUser = async (userId: string, roleIds: string[]) => {
+    await callEdgeFunction('manage-user-roles', {
+      action: 'bulk_assign',
+      user_id: userId,
+      role_ids: roleIds,
+    });
     await fetchData();
   };
 
-  /**
-   * @deprecated Use role-based permissions instead
-   */
-  const removePermissionFromUser = async (userId: string, permissionId: string) => {
-    console.warn('[RBAC] Direct user permission removal is deprecated. Use roles instead.');
-    if (!restaurant) throw new Error('No restaurant');
+  // ==========================================
+  // PERMISSION CONDITION OPERATIONS (via Edge Function)
+  // ==========================================
 
-    const { error } = await supabase
-      .from('user_permissions')
-      .delete()
-      .eq('user_id', userId)
-      .eq('permission_id', permissionId)
-      .eq('restaurant_id', restaurant.id);
-
-    if (error) throw error;
-    await fetchData();
-  };
-
-  // Permission condition operations
   const setPermissionCondition = async (
     ownerType: 'role' | 'user',
     ownerId: string,
     permissionId: string,
     condition: { field: string; operator: string; value: any }
   ) => {
-    const { error } = await supabase
-      .from('permission_conditions')
-      .upsert({
-        owner_type: ownerType,
-        owner_id: ownerId,
-        permission_id: permissionId,
-        condition_json: condition
-      }, {
-        onConflict: 'owner_type,owner_id,permission_id'
-      });
-
-    if (error) throw error;
+    if (ownerType !== 'role') {
+      console.warn('[RBAC] Direct user permission conditions are deprecated');
+      return;
+    }
+    
+    await callEdgeFunction('manage-role-permissions', {
+      action: 'set_condition',
+      role_id: ownerId,
+      permission_id: permissionId,
+      condition,
+    });
     await fetchData();
   };
 
@@ -333,16 +311,42 @@ export const usePermissions = () => {
     ownerId: string,
     permissionId: string
   ) => {
-    const { error } = await supabase
-      .from('permission_conditions')
-      .delete()
-      .eq('owner_type', ownerType)
-      .eq('owner_id', ownerId)
-      .eq('permission_id', permissionId);
+    if (ownerType !== 'role') {
+      console.warn('[RBAC] Direct user permission conditions are deprecated');
+      return;
+    }
 
-    if (error) throw error;
+    await callEdgeFunction('manage-role-permissions', {
+      action: 'remove_condition',
+      role_id: ownerId,
+      permission_id: permissionId,
+    });
     await fetchData();
   };
+
+  // ==========================================
+  // DEPRECATED: Direct User Permission Operations
+  // ==========================================
+  
+  /**
+   * @deprecated Use role-based permissions instead. Direct user→permission is not RBAC.
+   */
+  const assignPermissionToUser = async (_userId: string, _permissionId: string) => {
+    console.error('[RBAC] Direct user permission assignment is DEPRECATED. Use roles instead.');
+    throw new Error('Direct user permission assignment is not allowed. Assign permissions via roles.');
+  };
+
+  /**
+   * @deprecated Use role-based permissions instead. Direct user→permission is not RBAC.
+   */
+  const removePermissionFromUser = async (_userId: string, _permissionId: string) => {
+    console.error('[RBAC] Direct user permission removal is DEPRECATED. Use roles instead.');
+    throw new Error('Direct user permission removal is not allowed. Manage permissions via roles.');
+  };
+
+  // ==========================================
+  // COMPUTED HELPERS (client-side only)
+  // ==========================================
 
   // Get inherited permissions for a role
   const getRoleEffectivePermissions = (roleId: string): { permissionId: string; isInherited: boolean; sourceRoleId: string }[] => {
@@ -409,7 +413,7 @@ export const usePermissions = () => {
     return result;
   };
 
-  // Check if adding inheritance would create a cycle
+  // Check if adding inheritance would create a cycle (client-side check)
   const wouldCreateCycle = (parentRoleId: string, childRoleId: string): boolean => {
     if (parentRoleId === childRoleId) return true;
     
@@ -429,6 +433,7 @@ export const usePermissions = () => {
   };
 
   return {
+    // State
     permissions,
     roles,
     rolePermissions,
@@ -439,27 +444,35 @@ export const usePermissions = () => {
     loading,
     error,
     refetch: fetchData,
-    // Role operations
+    
+    // Role operations (Edge Function)
     createRole,
     updateRole,
     deleteRole,
-    // Role permission operations
+    
+    // Role permission operations (Edge Function)
     assignPermissionToRole,
     removePermissionFromRole,
-    // Role inheritance operations
+    
+    // Role inheritance operations (Edge Function)
     addRoleInheritance,
     removeRoleInheritance,
     wouldCreateCycle,
-    // User role operations
+    
+    // User role operations (Edge Function)
     assignRoleToUser,
     removeRoleFromUser,
-    // User permission operations
-    assignPermissionToUser,
-    removePermissionFromUser,
-    // Condition operations
+    bulkAssignRolesToUser,
+    
+    // Condition operations (Edge Function)
     setPermissionCondition,
     removePermissionCondition,
-    // Computed
+    
+    // DEPRECATED - kept for backward compatibility, but will throw
+    assignPermissionToUser,
+    removePermissionFromUser,
+    
+    // Computed helpers (client-side)
     getRoleEffectivePermissions,
     getRoleInheritanceTree,
   };

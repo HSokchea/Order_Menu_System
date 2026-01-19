@@ -53,8 +53,7 @@ export function UserRolesManagement() {
     permissions,
     roles,
     userRoles,
-    assignRoleToUser,
-    removeRoleFromUser,
+    bulkAssignRolesToUser,
     getRoleEffectivePermissions
   } = usePermissions();
 
@@ -169,31 +168,16 @@ export function UserRolesManagement() {
   const handleSaveRoles = async () => {
     if (!selectedUser) return;
 
+    // Prevent removing all roles
+    if (pendingRoleChanges.size === 0) {
+      toast.error("Users must have at least one role assigned");
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const currentRoleIds = getUserCurrentRoleIds(selectedUser.id);
-
-      // Roles to add
-      const toAdd = [...pendingRoleChanges].filter(id => !currentRoleIds.has(id));
-      // Roles to remove  
-      const toRemove = [...currentRoleIds].filter(id => !pendingRoleChanges.has(id));
-
-      // Prevent removing all roles
-      if (pendingRoleChanges.size === 0) {
-        toast.error("Users must have at least one role assigned");
-        setIsSaving(false);
-        return;
-      }
-
-      // Process removals first
-      for (const roleId of toRemove) {
-        await removeRoleFromUser(selectedUser.id, roleId);
-      }
-
-      // Then additions
-      for (const roleId of toAdd) {
-        await assignRoleToUser(selectedUser.id, roleId);
-      }
+      // Use bulk assign - Edge Function handles the diff
+      await bulkAssignRolesToUser(selectedUser.id, [...pendingRoleChanges]);
 
       toast.success("Roles updated successfully");
       setIsRoleDialogOpen(false);
@@ -201,6 +185,7 @@ export function UserRolesManagement() {
 
       // Invalidate queries to refresh
       queryClient.invalidateQueries({ queryKey: ['staff-users'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-members'] });
     } catch (err: any) {
       toast.error(err.message || "Failed to update roles");
     } finally {
