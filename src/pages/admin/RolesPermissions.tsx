@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RolesManagement } from "@/components/admin/roles/RolesManagement";
-import { PermissionsMatrix } from "@/components/admin/roles/PermissionsMatrix";
+import { RolePermissionsMatrix } from "@/components/admin/roles/RolePermissionsMatrix";
+import { PermissionsRegistry } from "@/components/admin/roles/PermissionsRegistry";
 import { UserRolesManagement } from "@/components/admin/roles/UserRolesManagement";
 import { StaffManagement } from "@/components/admin/roles/StaffManagement";
 import { usePermissions } from "@/hooks/usePermissions";
-import { Loader2, Shield, Users, Key, UserCog } from "lucide-react";
+import { Loader2, Shield, Users, Key, UserCog, ListChecks } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 
 /**
  * RolesPermissions - Staff Management & RBAC Page
@@ -27,14 +30,19 @@ import { Loader2, Shield, Users, Key, UserCog } from "lucide-react";
  *    ❌ NO user listing
  *    ❌ NO assigning users to roles (use User Access tab)
  * 
- * 3️⃣ Permissions Tab - Role→Permission Mapping
+ * 3️⃣ Permissions Tab - Permission Registry (Batch Save)
+ *    - Create/edit/delete permission definitions
+ *    - Batch save changes with "Save Changes" button
+ *    ❌ NO assigning permissions to roles (use Role Permissions tab)
+ *    ❌ NO assigning permissions to users
+ * 
+ * 4️⃣ Role Permissions Tab - Role→Permission Mapping
  *    - View system permissions
  *    - Assign permissions TO ROLES
- *    - Add conditions to role permissions
- *    ❌ NO assigning permissions to users directly
  *    ❌ NO creating/editing permission definitions
+ *    ❌ NO assigning permissions to users directly
  * 
- * 4️⃣ User Access Tab - View + Controlled Role Assignment
+ * 5️⃣ User Access Tab - View + Controlled Role Assignment
  *    - View users with their roles
  *    - View effective permissions (read-only)
  *    - Edit role assignments via modal
@@ -44,6 +52,28 @@ import { Loader2, Shield, Users, Key, UserCog } from "lucide-react";
 export default function RolesPermissions() {
   const { loading, error } = usePermissions();
   const [activeTab, setActiveTab] = useState("staff");
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Browser-level guard for page navigation/close
+  useUnsavedChangesGuard(hasUnsavedChanges);
+
+  // Handle tab change with unsaved changes guard
+  const handleTabChange = (newTab: string) => {
+    if (hasUnsavedChanges && activeTab === "permissions") {
+      setPendingTab(newTab);
+    } else {
+      setActiveTab(newTab);
+    }
+  };
+
+  const confirmTabChange = () => {
+    if (pendingTab) {
+      setActiveTab(pendingTab);
+      setPendingTab(null);
+      setHasUnsavedChanges(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -63,8 +93,8 @@ export default function RolesPermissions() {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="grid w-full grid-cols-5 max-w-3xl">
           <TabsTrigger value="staff" className="flex items-center gap-2">
             <UserCog className="h-4 w-4" />
             <span className="hidden sm:inline">Staff</span>
@@ -76,6 +106,10 @@ export default function RolesPermissions() {
           <TabsTrigger value="permissions" className="flex items-center gap-2">
             <Key className="h-4 w-4" />
             <span className="hidden sm:inline">Permissions</span>
+          </TabsTrigger>
+          <TabsTrigger value="role-permissions" className="flex items-center gap-2">
+            <ListChecks className="h-4 w-4" />
+            <span className="hidden sm:inline">Role Perms</span>
           </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -92,13 +126,28 @@ export default function RolesPermissions() {
         </TabsContent>
 
         <TabsContent value="permissions" className="mt-6">
-          <PermissionsMatrix />
+          <PermissionsRegistry onUnsavedChanges={setHasUnsavedChanges} />
+        </TabsContent>
+
+        <TabsContent value="role-permissions" className="mt-6">
+          <RolePermissionsMatrix />
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
           <UserRolesManagement />
         </TabsContent>
       </Tabs>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!pendingTab}
+        onOpenChange={(open) => !open && setPendingTab(null)}
+        title="Unsaved Changes"
+        description="You have unsaved changes in the Permissions tab. Are you sure you want to leave? Your changes will be lost."
+        confirmLabel="Leave Without Saving"
+        onConfirm={confirmTabChange}
+        variant="destructive"
+      />
     </div>
   );
 }
