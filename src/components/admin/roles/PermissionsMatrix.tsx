@@ -15,7 +15,7 @@ import { Lock, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 /**
- * RolePermissionsMatrix - Role Permissions Tab
+ * PermissionsMatrix - Permissions Tab
  * 
  * PURPOSE: Manage role → permission mappings
  * 
@@ -24,13 +24,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
  * - Select a role and assign/remove permissions to that role
  * 
  * FORBIDDEN:
- * - Creating/editing/deleting permission definitions (use Permissions Registry)
+ * - Creating/editing/deleting permission definitions (system-managed)
  * - Assigning permissions directly to users (use roles)
  * - Editing role definitions (use Roles tab)
  * 
  * NOTE: Permission conditions are disabled in v1. Binary permission checks only.
  */
-export function RolePermissionsMatrix() {
+export function PermissionsMatrix() {
   const { 
     permissions, 
     roles,
