@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
-import { usePermissions, Permission, Role } from "@/hooks/usePermissions";
+import { usePermissions, Permission } from "@/hooks/usePermissions";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,35 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Lock, Settings2, X, Info } from "lucide-react";
+import { Lock, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-const CONDITION_OPERATORS = [
-  { value: '=', label: 'Equals' },
-  { value: '!=', label: 'Not equals' },
-  { value: 'in', label: 'In list' },
-  { value: 'not_in', label: 'Not in list' },
-];
-
-interface ConditionBuilderState {
-  roleId: string;
-  permissionId: string;
-  permissionKey: string;
-  field: string;
-  operator: string;
-  value: string;
-}
 
 /**
  * PermissionsMatrix - Permissions Tab
@@ -49,28 +22,24 @@ interface ConditionBuilderState {
  * ALLOWED:
  * - View system permission definitions
  * - Select a role and assign/remove permissions to that role
- * - Add conditions to permissions
  * 
  * FORBIDDEN:
  * - Creating/editing/deleting permission definitions (system-managed)
  * - Assigning permissions directly to users (use roles)
  * - Editing role definitions (use Roles tab)
+ * 
+ * NOTE: Permission conditions are disabled in v1. Binary permission checks only.
  */
 export function PermissionsMatrix() {
   const { 
     permissions, 
     roles,
-    rolePermissions,
-    conditions,
     assignPermissionToRole,
     removePermissionFromRole,
-    setPermissionCondition,
-    removePermissionCondition,
     getRoleEffectivePermissions
   } = usePermissions();
 
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
-  const [conditionBuilder, setConditionBuilder] = useState<ConditionBuilderState | null>(null);
 
   // Filter out owner role for permission assignment
   // Owner has all permissions implicitly
@@ -107,14 +76,6 @@ export function PermissionsMatrix() {
     return ep?.isInherited || false;
   };
 
-  const getConditionForPermission = (roleId: string, permissionId: string) => {
-    return conditions.find(c => 
-      c.owner_type === 'role' && 
-      c.owner_id === roleId && 
-      c.permission_id === permissionId
-    );
-  };
-
   const handleTogglePermission = async (permissionId: string) => {
     if (!selectedRole) return;
     
@@ -134,44 +95,6 @@ export function PermissionsMatrix() {
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to update permission");
-    }
-  };
-
-  const handleSaveCondition = async () => {
-    if (!conditionBuilder) return;
-
-    try {
-      let parsedValue: any = conditionBuilder.value;
-      
-      // Parse as array for 'in' and 'not_in' operators
-      if (conditionBuilder.operator === 'in' || conditionBuilder.operator === 'not_in') {
-        parsedValue = conditionBuilder.value.split(',').map(v => v.trim());
-      }
-
-      await setPermissionCondition(
-        'role',
-        conditionBuilder.roleId,
-        conditionBuilder.permissionId,
-        {
-          field: conditionBuilder.field,
-          operator: conditionBuilder.operator,
-          value: parsedValue
-        }
-      );
-      
-      toast.success("Condition saved");
-      setConditionBuilder(null);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save condition");
-    }
-  };
-
-  const handleRemoveCondition = async (roleId: string, permissionId: string) => {
-    try {
-      await removePermissionCondition('role', roleId, permissionId);
-      toast.success("Condition removed");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to remove condition");
     }
   };
 
@@ -254,7 +177,6 @@ export function PermissionsMatrix() {
                       {perms.map(permission => {
                         const isChecked = hasPermission(permission.id);
                         const isInherited = isInheritedPermission(permission.id);
-                        const condition = getConditionForPermission(selectedRole, permission.id);
                         
                         return (
                           <div
@@ -277,50 +199,12 @@ export function PermissionsMatrix() {
                                   {isInherited && (
                                     <Lock className="h-3 w-3 text-muted-foreground" />
                                   )}
-                                  {condition && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      Conditional
-                                    </Badge>
-                                  )}
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                   {permission.key}
                                 </p>
                               </div>
                             </div>
-                            
-                            {isChecked && !isInherited && (
-                              <div className="flex items-center gap-2">
-                                {condition && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 text-destructive hover:text-destructive"
-                                    onClick={() => handleRemoveCondition(selectedRole, permission.id)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7"
-                                  onClick={() => setConditionBuilder({
-                                    roleId: selectedRole,
-                                    permissionId: permission.id,
-                                    permissionKey: permission.key,
-                                    field: condition?.condition_json?.field || '',
-                                    operator: condition?.condition_json?.operator || '=',
-                                    value: Array.isArray(condition?.condition_json?.value) 
-                                      ? condition.condition_json.value.join(', ')
-                                      : condition?.condition_json?.value || ''
-                                  })}
-                                >
-                                  <Settings2 className="h-3 w-3 mr-1" />
-                                  {condition ? 'Edit' : 'Add'} Condition
-                                </Button>
-                              </div>
-                            )}
                           </div>
                         );
                       })}
@@ -342,99 +226,6 @@ export function PermissionsMatrix() {
           </CardContent>
         </Card>
       )}
-
-      {/* Condition Builder Dialog */}
-      <Dialog 
-        open={!!conditionBuilder} 
-        onOpenChange={(open) => !open && setConditionBuilder(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Permission Condition</DialogTitle>
-            <DialogDescription>
-              Add a condition to restrict when this permission applies
-            </DialogDescription>
-          </DialogHeader>
-          {conditionBuilder && (
-            <div className="space-y-4 py-4">
-              <div className="p-2 bg-muted rounded-md">
-                <p className="text-sm font-mono">{conditionBuilder.permissionKey}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="field">Field</Label>
-                <Input
-                  id="field"
-                  value={conditionBuilder.field}
-                  onChange={(e) => setConditionBuilder({
-                    ...conditionBuilder,
-                    field: e.target.value
-                  })}
-                  placeholder="e.g., order.status"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Use dot notation for nested fields (e.g., order.status)
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="operator">Operator</Label>
-                <Select
-                  value={conditionBuilder.operator}
-                  onValueChange={(value) => setConditionBuilder({
-                    ...conditionBuilder,
-                    operator: value
-                  })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONDITION_OPERATORS.map(op => (
-                      <SelectItem key={op.value} value={op.value}>
-                        {op.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="value">Value</Label>
-                <Input
-                  id="value"
-                  value={conditionBuilder.value}
-                  onChange={(e) => setConditionBuilder({
-                    ...conditionBuilder,
-                    value: e.target.value
-                  })}
-                  placeholder={
-                    conditionBuilder.operator === 'in' || conditionBuilder.operator === 'not_in'
-                      ? "value1, value2, value3"
-                      : "value"
-                  }
-                />
-                {(conditionBuilder.operator === 'in' || conditionBuilder.operator === 'not_in') && (
-                  <p className="text-xs text-muted-foreground">
-                    Separate multiple values with commas
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConditionBuilder(null)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveCondition}
-              disabled={!conditionBuilder?.field || !conditionBuilder?.value}
-            >
-              Save Condition
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

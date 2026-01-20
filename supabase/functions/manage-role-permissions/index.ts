@@ -17,24 +17,8 @@ interface RemovePermissionInput {
   permission_id: string;
 }
 
-interface SetConditionInput {
-  action: 'set_condition';
-  role_id: string;
-  permission_id: string;
-  condition: {
-    field: string;
-    operator: string;
-    value: any;
-  };
-}
-
-interface RemoveConditionInput {
-  action: 'remove_condition';
-  role_id: string;
-  permission_id: string;
-}
-
-type PermissionInput = AssignPermissionInput | RemovePermissionInput | SetConditionInput | RemoveConditionInput;
+// Note: Condition actions are disabled for v1 - binary permissions only
+type PermissionInput = AssignPermissionInput | RemovePermissionInput;
 
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
@@ -105,6 +89,15 @@ Deno.serve(async (req: Request) => {
 
     const input: PermissionInput = await req.json();
     console.log(`[manage-role-permissions] Action: ${input.action}`, input);
+
+    // Check for disabled condition actions (v1)
+    if ((input as any).action === 'set_condition' || (input as any).action === 'remove_condition') {
+      console.warn("[manage-role-permissions] Condition actions are disabled in v1");
+      return new Response(
+        JSON.stringify({ error: "Permission conditions are disabled in v1. Binary permissions only." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Verify role belongs to this restaurant
     const { data: role, error: roleError } = await adminClient
@@ -202,89 +195,7 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Also remove any conditions for this role-permission
-      await adminClient
-        .from("permission_conditions")
-        .delete()
-        .eq("owner_type", "role")
-        .eq("owner_id", role_id)
-        .eq("permission_id", permission_id);
-
       console.log(`[manage-role-permissions] Removed permission ${permission_id} from role ${role_id}`);
-      return new Response(
-        JSON.stringify({ success: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-
-    } else if (input.action === 'set_condition') {
-      const { role_id, permission_id, condition } = input;
-
-      if (!condition?.field || !condition?.operator) {
-        return new Response(
-          JSON.stringify({ error: "Condition must have field and operator" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Verify the role has this permission
-      const { data: rolePermission } = await adminClient
-        .from("role_permissions")
-        .select("id")
-        .eq("role_id", role_id)
-        .eq("permission_id", permission_id)
-        .single();
-
-      if (!rolePermission) {
-        return new Response(
-          JSON.stringify({ error: "Role does not have this permission assigned" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const { error: upsertError } = await adminClient
-        .from("permission_conditions")
-        .upsert({
-          owner_type: 'role',
-          owner_id: role_id,
-          permission_id: permission_id,
-          condition_json: condition,
-        }, {
-          onConflict: 'owner_type,owner_id,permission_id'
-        });
-
-      if (upsertError) {
-        console.error("[manage-role-permissions] Upsert condition error:", upsertError);
-        return new Response(
-          JSON.stringify({ error: upsertError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      console.log(`[manage-role-permissions] Set condition for role ${role_id}, permission ${permission_id}`);
-      return new Response(
-        JSON.stringify({ success: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-
-    } else if (input.action === 'remove_condition') {
-      const { role_id, permission_id } = input;
-
-      const { error: deleteError } = await adminClient
-        .from("permission_conditions")
-        .delete()
-        .eq("owner_type", 'role')
-        .eq("owner_id", role_id)
-        .eq("permission_id", permission_id);
-
-      if (deleteError) {
-        console.error("[manage-role-permissions] Delete condition error:", deleteError);
-        return new Response(
-          JSON.stringify({ error: deleteError.message }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      console.log(`[manage-role-permissions] Removed condition for role ${role_id}, permission ${permission_id}`);
       return new Response(
         JSON.stringify({ success: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -292,7 +203,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ error: "Invalid action" }),
+      JSON.stringify({ error: "Invalid action. Supported actions: assign, remove" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
