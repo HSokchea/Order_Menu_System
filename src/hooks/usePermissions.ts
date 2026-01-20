@@ -54,6 +54,10 @@ export interface UserPermission {
   created_at: string;
 }
 
+/**
+ * @deprecated Permission conditions are disabled in v1. 
+ * Kept for future compatibility but not used.
+ */
 export interface PermissionCondition {
   id: string;
   owner_type: 'role' | 'user';
@@ -72,7 +76,7 @@ export interface EffectivePermission {
   permission_name: string;
   source_type: 'role' | 'inherited' | 'direct';
   source_name: string;
-  condition_json: any;
+  // condition_json removed for v1 - binary permissions only
 }
 
 export interface RoleTreeNode {
@@ -120,7 +124,6 @@ export const usePermissions = () => {
   const [roleInheritance, setRoleInheritance] = useState<RoleInheritance[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
-  const [conditions, setConditions] = useState<PermissionCondition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,22 +134,21 @@ export const usePermissions = () => {
       setLoading(true);
       
       // Fetch all data in parallel (READ-ONLY via RLS)
+      // Note: permission_conditions table is NOT fetched for v1
       const [
         permissionsRes,
         rolesRes,
         rolePermsRes,
         inheritanceRes,
         userRolesRes,
-        userPermsRes,
-        conditionsRes
+        userPermsRes
       ] = await Promise.all([
         supabase.from('permissions').select('*').order('resource, action'),
         supabase.from('roles').select('*').eq('restaurant_id', restaurant.id),
         supabase.from('role_permissions').select('*'),
         supabase.from('role_inheritance').select('*'),
         supabase.from('user_roles').select('*').eq('restaurant_id', restaurant.id),
-        supabase.from('user_permissions').select('*').eq('restaurant_id', restaurant.id),
-        supabase.from('permission_conditions').select('*')
+        supabase.from('user_permissions').select('*').eq('restaurant_id', restaurant.id)
       ]);
 
       if (permissionsRes.error) throw permissionsRes.error;
@@ -155,7 +157,6 @@ export const usePermissions = () => {
       if (inheritanceRes.error) throw inheritanceRes.error;
       if (userRolesRes.error) throw userRolesRes.error;
       if (userPermsRes.error) throw userPermsRes.error;
-      if (conditionsRes.error) throw conditionsRes.error;
 
       setPermissions(permissionsRes.data as Permission[]);
       setRoles(rolesRes.data as Role[]);
@@ -163,7 +164,6 @@ export const usePermissions = () => {
       setRoleInheritance(inheritanceRes.data as RoleInheritance[]);
       setUserRoles(userRolesRes.data as UserRole[]);
       setUserPermissions(userPermsRes.data as UserPermission[]);
-      setConditions(conditionsRes.data as unknown as PermissionCondition[]);
     } catch (err: any) {
       console.error('Error fetching permissions data:', err);
       setError(err.message);
@@ -283,45 +283,34 @@ export const usePermissions = () => {
   };
 
   // ==========================================
-  // PERMISSION CONDITION OPERATIONS (via Edge Function)
+  // PERMISSION CONDITION OPERATIONS - DISABLED FOR V1
   // ==========================================
 
+  /**
+   * @deprecated Permission conditions are disabled in v1. 
+   * This function is a no-op and will log a warning.
+   */
   const setPermissionCondition = async (
-    ownerType: 'role' | 'user',
-    ownerId: string,
-    permissionId: string,
-    condition: { field: string; operator: string; value: any }
+    _ownerType: 'role' | 'user',
+    _ownerId: string,
+    _permissionId: string,
+    _condition: { field: string; operator: string; value: any }
   ) => {
-    if (ownerType !== 'role') {
-      console.warn('[RBAC] Direct user permission conditions are deprecated');
-      return;
-    }
-    
-    await callEdgeFunction('manage-role-permissions', {
-      action: 'set_condition',
-      role_id: ownerId,
-      permission_id: permissionId,
-      condition,
-    });
-    await fetchData();
+    console.warn('[RBAC v1] Permission conditions are disabled. Binary permissions only.');
+    return;
   };
 
+  /**
+   * @deprecated Permission conditions are disabled in v1. 
+   * This function is a no-op and will log a warning.
+   */
   const removePermissionCondition = async (
-    ownerType: 'role' | 'user',
-    ownerId: string,
-    permissionId: string
+    _ownerType: 'role' | 'user',
+    _ownerId: string,
+    _permissionId: string
   ) => {
-    if (ownerType !== 'role') {
-      console.warn('[RBAC] Direct user permission conditions are deprecated');
-      return;
-    }
-
-    await callEdgeFunction('manage-role-permissions', {
-      action: 'remove_condition',
-      role_id: ownerId,
-      permission_id: permissionId,
-    });
-    await fetchData();
+    console.warn('[RBAC v1] Permission conditions are disabled. Binary permissions only.');
+    return;
   };
 
   // ==========================================
@@ -440,7 +429,7 @@ export const usePermissions = () => {
     roleInheritance,
     userRoles,
     userPermissions,
-    conditions,
+    // conditions removed for v1 - not used
     loading,
     error,
     refetch: fetchData,
@@ -464,7 +453,7 @@ export const usePermissions = () => {
     removeRoleFromUser,
     bulkAssignRolesToUser,
     
-    // Condition operations (Edge Function)
+    // DEPRECATED: Condition operations (v1 - disabled, no-op)
     setPermissionCondition,
     removePermissionCondition,
     
