@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, GitBranch, Lock, X } from "lucide-react";
 import { RoleInheritanceTree } from "./RoleInheritanceTree";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { set } from "date-fns";
 
 const ROLE_TYPES = [
   { value: 'admin', label: 'Admin' },
@@ -158,6 +159,12 @@ export function RolesManagement() {
     );
   };
 
+  const isEditDirty = editingRole &&
+    (
+      formData.name.trim() !== editingRole.name ||
+      (formData.description?.trim() || '') !== (editingRole.description?.trim() || '')
+    );
+
   const inheritanceTree = getRoleInheritanceTree();
 
   return (
@@ -172,7 +179,7 @@ export function RolesManagement() {
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button size="sm" onClick={resetForm}>
               <Plus className="h-4 w-4 mr-2" />
               Create Role
             </Button>
@@ -185,7 +192,6 @@ export function RolesManagement() {
                   Create a new role to group permissions together
                 </DialogDescription>
               </div>
-
               <Button variant="custom" size="custom" className='pb-8' aria-label="Close dialog" onClick={() => setIsCreateOpen(false)}>
                 <X className="h-5 w-5" />
               </Button>
@@ -355,12 +361,17 @@ export function RolesManagement() {
 
       {/* Edit Role Dialog */}
       <Dialog open={!!editingRole} onOpenChange={(open) => !open && setEditingRole(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Role</DialogTitle>
-            <DialogDescription>
-              Update role details
-            </DialogDescription>
+        <DialogContent className="max-w-md" hideCloseButton>
+          <DialogHeader className="flex flex-row items-center justify-between gap-2">
+            <div className="flex flex-col gap-2">
+              <DialogTitle>Edit Role</DialogTitle>
+              <DialogDescription>
+                Update role details
+              </DialogDescription>
+            </div>
+            <Button variant="custom" size="custom" className='pb-8' aria-label="Close dialog" onClick={() => setEditingRole(null)}>
+              <X className="h-5 w-5" />
+            </Button>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -374,6 +385,7 @@ export function RolesManagement() {
             <div className="space-y-2">
               <Label htmlFor="edit-description">Description</Label>
               <Textarea
+                placeholder="Describe what this role is for..."
                 id="edit-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -382,10 +394,15 @@ export function RolesManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingRole(null)}>
+            <Button size="sm" variant="outline" onClick={() => setEditingRole(null)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdate}>Save Changes</Button>
+            <Button
+              size="sm"
+              onClick={handleUpdate}
+              disabled={!isEditDirty}
+            >Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

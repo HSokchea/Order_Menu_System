@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { Lock, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
 /**
  * PermissionsMatrix - Permissions Tab
@@ -31,8 +32,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
  * NOTE: Permission conditions are disabled in v1. Binary permission checks only.
  */
 export function PermissionsMatrix() {
-  const { 
-    permissions, 
+  const {
+    permissions,
     roles,
     assignPermissionToRole,
     removePermissionFromRole,
@@ -60,7 +61,7 @@ export function PermissionsMatrix() {
   }, [permissions]);
 
   const currentRole = roles.find(r => r.id === selectedRole);
-  
+
   // Get effective permissions for current role (including inherited)
   const effectivePermissions = useMemo(() => {
     if (!selectedRole) return [];
@@ -78,7 +79,7 @@ export function PermissionsMatrix() {
 
   const handleTogglePermission = async (permissionId: string) => {
     if (!selectedRole) return;
-    
+
     // Can't toggle inherited permissions
     if (isInheritedPermission(permissionId)) {
       toast.error("Cannot modify inherited permissions. Edit the parent role instead.");
@@ -113,7 +114,7 @@ export function PermissionsMatrix() {
         <div className="text-sm">
           <p className="font-medium">Permission → Role → User</p>
           <p className="text-muted-foreground">
-            Select a role below to manage its permissions. These permissions will apply 
+            Select a role below to manage its permissions. These permissions will apply
             to all users with that role. Owner role has all permissions by default.
           </p>
         </div>
@@ -156,15 +157,21 @@ export function PermissionsMatrix() {
       {/* Permissions Grid */}
       {selectedRole && currentRole && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              Permissions for: {currentRole.name}
-            </CardTitle>
-            <CardDescription className="flex items-center gap-1">
-              <Lock className="h-3 w-3" />
-              Locked permissions are inherited from parent roles
-            </CardDescription>
-          </CardHeader>
+          <div className="flex items-center justify-between pb-3 pr-6">
+            <CardHeader>
+              <CardTitle className="text-base">
+                Permissions for: {currentRole.name}
+              </CardTitle>
+              <CardDescription className="flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                Locked permissions are inherited from parent roles
+              </CardDescription>
+
+            </CardHeader>
+            <Button size="sm">
+              Save Changes
+            </Button>
+          </div>
           <CardContent>
             <ScrollArea className="h-[500px] hidden:scrollbar">
               <div className="space-y-6">
@@ -177,13 +184,12 @@ export function PermissionsMatrix() {
                       {perms.map(permission => {
                         const isChecked = hasPermission(permission.id);
                         const isInherited = isInheritedPermission(permission.id);
-                        
+
                         return (
                           <div
                             key={permission.id}
-                            className={`flex items-center justify-between p-2 rounded-md border ${
-                              isInherited ? 'bg-muted/50' : ''
-                            }`}
+                            className={`flex items-center justify-between p-2 rounded-md border ${isInherited ? 'bg-muted/50' : ''
+                              }`}
                           >
                             <div className="flex items-center gap-3">
                               <Checkbox
