@@ -9,7 +9,6 @@ import {
   Settings,
   Shield,
   CreditCard,
-  ChefHat,
   LucideIcon
 } from "lucide-react";
 
@@ -65,13 +64,6 @@ const navigationItems: NavigationItem[] = [
     icon: ClipboardList,
     description: "Monitor live orders",
     permissions: [PERMISSIONS.ORDERS_VIEW],
-  },
-  {
-    title: "Kitchen",
-    url: "/admin/kitchen",
-    icon: ChefHat,
-    description: "Kitchen order screen",
-    permissions: [PERMISSIONS.ORDERS_UPDATE_STATUS],
   },
   {
     title: "Table Sessions",

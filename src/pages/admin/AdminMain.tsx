@@ -12,7 +12,7 @@ import QRGenerator from "./QRGenerator";
 import TableSessions from "./TableSessions";
 import Settings from "./Settings";
 import RolesPermissions from "./RolesPermissions";
-import { KitchenDashboard } from "@/components/admin/dashboards/KitchenDashboard";
+
 
 const getPageInfo = (pathname: string) => {
   switch (pathname) {
@@ -25,8 +25,6 @@ const getPageInfo = (pathname: string) => {
       return { title: "Menu Items", description: "Add and manage your menu items" };
     case "/admin/order-dashboard":
       return { title: "Order Dashboard", description: "Monitor live orders" };
-    case "/admin/kitchen":
-      return { title: "Kitchen", description: "Kitchen order management" };
     case "/admin/table-sessions":
       return { title: "Table Sessions", description: "Manage dining sessions and billing" };
     case "/admin/settings":
@@ -119,15 +117,6 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* Kitchen - requires order status update permission */}
-        <Route path="kitchen" element={
-          <PermissionGuard 
-            permissions={[PERMISSIONS.ORDERS_UPDATE_STATUS]} 
-            fallback={<AccessDenied message="You don't have permission to access the kitchen screen." />}
-          >
-            <KitchenDashboard />
-          </PermissionGuard>
-        } />
         
         {/* Table Sessions - requires billing or table permissions */}
         <Route path="table-sessions" element={
