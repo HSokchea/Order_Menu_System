@@ -16,22 +16,79 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
+  const clearFieldError = (field: string) => {
+    setFormErrors(prev => ({ ...prev, [field]: '' }));
+  };
+
+  const validateSignInForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!password) {
+      errors.password = 'Password is required';
+    } else if (password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateSignUpForm = () => {
+    const errors: Record<string, string> = {};
+    
+    const trimmedFullName = fullName.trim();
+    if (!trimmedFullName) {
+      errors.fullName = 'Full name is required';
+    } else if (trimmedFullName.length < 2) {
+      errors.fullName = 'Full name must be at least 2 characters';
+    } else if (trimmedFullName.length > 100) {
+      errors.fullName = 'Full name must be less than 100 characters';
+    }
+    
+    if (!restaurantName.trim()) {
+      errors.restaurantName = 'Shop name is required';
+    }
+    
+    if (!email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!password) {
+      errors.password = 'Password is required';
+    } else if (password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateSignInForm()) {
+      return;
+    }
+    
     setLoading(true);
 
     const { error } = await signIn(email, password);
 
     if (error) {
       // Generic error message to avoid revealing user existence
-      toast({
-        title: "Sign In Failed",
-        description: "Invalid email or password. Please try again.",
-        variant: "destructive",
-      });
+      setFormErrors({ general: 'Invalid email or password. Please try again.' });
       setLoading(false);
       return;
     }
@@ -88,24 +145,11 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate full name
+    if (!validateSignUpForm()) {
+      return;
+    }
+    
     const trimmedFullName = fullName.trim();
-    if (trimmedFullName.length < 2) {
-      toast({
-        title: "Validation Error",
-        description: "Full name must be at least 2 characters.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (trimmedFullName.length > 100) {
-      toast({
-        title: "Validation Error",
-        description: "Full name must be less than 100 characters.",
-        variant: "destructive",
-      });
-      return;
-    }
     
     setLoading(true);
 
@@ -117,11 +161,7 @@ const Auth = () => {
       .maybeSingle();
 
     if (existingProfile) {
-      toast({
-        title: "Account Already Exists",
-        description: "This account already belongs to a shop. Please sign in instead.",
-        variant: "destructive",
-      });
+      setFormErrors({ email: 'This account already belongs to a shop. Please sign in instead.' });
       setLoading(false);
       return;
     }
@@ -132,17 +172,9 @@ const Auth = () => {
       // Handle specific error for user already registered
       const errorMessage = error.message.toLowerCase();
       if (errorMessage.includes('already registered') || errorMessage.includes('already been registered')) {
-        toast({
-          title: "Account Already Exists",
-          description: "This email is already registered. Please sign in instead.",
-          variant: "destructive",
-        });
+        setFormErrors({ email: 'This email is already registered. Please sign in instead.' });
       } else {
-        toast({
-          title: "Sign Up Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        setFormErrors({ general: error.message });
       }
       setLoading(false);
       return;
@@ -151,11 +183,7 @@ const Auth = () => {
     // Check if email confirmation is required
     if (data?.user?.identities?.length === 0) {
       // User already exists but hasn't confirmed email
-      toast({
-        title: "Account Already Exists",
-        description: "This email is already registered. Please check your email or sign in.",
-        variant: "destructive",
-      });
+      setFormErrors({ email: 'This email is already registered. Please check your email or sign in.' });
     } else {
       toast({
         title: "Account Created",
@@ -177,7 +205,7 @@ const Auth = () => {
           <CardDescription>Sign in to manage your shop</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs defaultValue="signin" className="w-full" onValueChange={() => setFormErrors({})}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -185,6 +213,9 @@ const Auth = () => {
 
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
+                {formErrors.general && (
+                  <p className="text-sm text-destructive">{formErrors.general}</p>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -192,9 +223,15 @@ const Auth = () => {
                     placeholder="Enter your email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearFieldError('email');
+                      clearFieldError('general');
+                    }}
                   />
+                  {formErrors.email && (
+                    <p className="text-sm text-destructive">{formErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
@@ -205,8 +242,11 @@ const Auth = () => {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        clearFieldError('password');
+                        clearFieldError('general');
+                      }}
                     />
                     <Button
                       type="button"
@@ -218,6 +258,9 @@ const Auth = () => {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                  {formErrors.password && (
+                    <p className="text-sm text-destructive">{formErrors.password}</p>
+                  )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing In..." : "Sign In"}
@@ -227,17 +270,24 @@ const Auth = () => {
 
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
+                {formErrors.general && (
+                  <p className="text-sm text-destructive">{formErrors.general}</p>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="full-name">Full Name</Label>
                   <Input
                     id="full-name"
                     placeholder="Enter your full name"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    minLength={2}
-                    maxLength={100}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      clearFieldError('fullName');
+                      clearFieldError('general');
+                    }}
                   />
+                  {formErrors.fullName && (
+                    <p className="text-sm text-destructive">{formErrors.fullName}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="shop-name">Shop Name</Label>
@@ -245,9 +295,15 @@ const Auth = () => {
                     id="shop-name"
                     placeholder="Enter your shop name"
                     value={restaurantName}
-                    onChange={(e) => setRestaurantName(e.target.value)}
-                    required
+                    onChange={(e) => {
+                      setRestaurantName(e.target.value);
+                      clearFieldError('restaurantName');
+                      clearFieldError('general');
+                    }}
                   />
+                  {formErrors.restaurantName && (
+                    <p className="text-sm text-destructive">{formErrors.restaurantName}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
@@ -256,30 +312,44 @@ const Auth = () => {
                     placeholder="Enter your email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearFieldError('email');
+                      clearFieldError('general');
+                    }}
                   />
+                  {formErrors.email && (
+                    <p className="text-sm text-destructive">{formErrors.email}</p>
+                  )}
                 </div>
-                <div className="relative space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    className='pr-10'
-                    placeholder="Enter your password"
-                    id="signup-password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-2 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+                  <div className="relative">
+                    <Input
+                      className='pr-10'
+                      placeholder="Enter your password"
+                      id="signup-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        clearFieldError('password');
+                        clearFieldError('general');
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {formErrors.password && (
+                    <p className="text-sm text-destructive">{formErrors.password}</p>
+                  )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating Account..." : "Create Account"}
