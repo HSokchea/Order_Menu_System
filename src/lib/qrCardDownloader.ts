@@ -33,7 +33,9 @@ export async function downloadQRCard(
       logging: false,
     });
 
-    const fileName = `${restaurantName.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-table-${tableNumber}`;
+    const fileName = tableNumber 
+      ? `${restaurantName.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-table-${tableNumber}`
+      : `${restaurantName.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-menu-qr`;
 
     if (format === 'png') {
       return downloadAsPNG(canvas, fileName);

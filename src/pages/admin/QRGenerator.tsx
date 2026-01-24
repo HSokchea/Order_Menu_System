@@ -1,24 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Download, Plus, Copy, Edit, Trash2, Eye } from 'lucide-react';
-import QRCodeThumbnail from '@/components/QRCodeThumbnail';
-import { QRCardPreviewDialog } from '@/components/admin/QRCardPreviewDialog';
-import { ConfirmDialog } from "@/components/ConfirmDialog";
-
-interface TableData {
-  id: string;
-  table_number: string;
-  restaurant_id: string;
-}
+import { Download, Copy, ExternalLink, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
+import { QRTableCard } from '@/components/admin/QRTableCard';
+import { downloadQRCard, type PaperSize } from '@/lib/qrCardDownloader';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { FileImage, FileText } from 'lucide-react';
 
 interface RestaurantData {
   id: string;
@@ -28,18 +26,16 @@ interface RestaurantData {
 
 const QRGenerator = () => {
   const { user } = useAuth();
-  const [tables, setTables] = useState<TableData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newTableNumber, setNewTableNumber] = useState('');
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
-  const [selectedTable, setSelectedTable] = useState<TableData | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [editingTable, setEditingTable] = useState<TableData | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editTableNumber, setEditTableNumber] = useState('');
-  const [deletingTable, setDeletingTable] = useState<TableData | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Two refs: one for preview, one for printing
+  const previewCardRef = useRef<HTMLDivElement>(null);
+  const printCardRef = useRef<HTMLDivElement>(null);
+
+  const menuUrl = restaurant ? `${window.location.origin}/menu/${restaurant.id}` : '';
 
   const fetchData = async () => {
     if (!user) return;
@@ -50,17 +46,9 @@ const QRGenerator = () => {
       .eq('owner_id', user.id)
       .single();
 
-    if (!restaurantData) return;
-
-    setRestaurant(restaurantData);
-
-    const { data: tablesData } = await supabase
-      .from('tables')
-      .select('*')
-      .eq('restaurant_id', restaurantData.id)
-      .order('table_number');
-
-    setTables(tablesData || []);
+    if (restaurantData) {
+      setRestaurant(restaurantData);
+    }
     setLoading(false);
   };
 
@@ -68,149 +56,68 @@ const QRGenerator = () => {
     fetchData();
   }, [user]);
 
-  // Real-time subscription for tables
+  // Generate QR code when restaurant is loaded
   useEffect(() => {
-    if (!restaurant?.id) return;
-
-    const channel = supabase
-      .channel('tables-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tables',
-          filter: `restaurant_id=eq.${restaurant.id}`
-        },
-        () => {
-          fetchData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    if (restaurant?.id) {
+      generateQRCode();
+    }
   }, [restaurant?.id]);
 
-  const openPreviewDialog = (table: TableData) => {
-    setSelectedTable(table);
-    setIsPreviewOpen(true);
+  const generateQRCode = async () => {
+    if (!restaurant) return;
+
+    try {
+      const url = `${window.location.origin}/menu/${restaurant.id}`;
+      const dataUrl = await QRCode.toDataURL(url, {
+        width: 400,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+        errorCorrectionLevel: 'H',
+      });
+      setQrCodeDataUrl(dataUrl);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast.error('Failed to generate QR code');
+    }
   };
 
-  const copyMenuUrl = async (tableId: string) => {
-    const menuUrl = `${window.location.origin}/menu/${tableId}`;
+  const copyMenuUrl = async () => {
     try {
       await navigator.clipboard.writeText(menuUrl);
-      toast.success("Menu URL has been copied to clipboard");
+      toast.success('Menu URL copied to clipboard');
     } catch (error) {
-      toast.error("Failed to copy URL. Please copy manually.");
+      toast.error('Failed to copy URL');
     }
   };
 
-  const addTable = async () => {
-    if (!newTableNumber || !restaurant) return;
-
-    const tableNumber = parseInt(newTableNumber);
-    if (isNaN(tableNumber)) {
-      toast.error("Please enter a valid number");
-      return;
-    }
-
-    // Check if table number already exists
-    const existingTable = tables.find(table => table.table_number === tableNumber.toString());
-    if (existingTable) {
-      toast.error(`Table ${tableNumber} already exists. Please choose a different number.`);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('tables')
-      .insert({
-        table_number: tableNumber.toString(),
-        restaurant_id: restaurant.id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    // Update qr_code_url with the menu URL
-    const menuUrl = `${window.location.origin}/menu/${data.id}`;
-    await supabase
-      .from('tables')
-      .update({ qr_code_url: menuUrl })
-      .eq('id', data.id);
-
-    toast.success("Table added successfully");
-    setNewTableNumber('');
+  const openMenuUrl = () => {
+    window.open(menuUrl, '_blank');
   };
 
-  const openEditDialog = (table: TableData) => {
-    setEditingTable(table);
-    setEditTableNumber(table.table_number);
-    setIsEditDialogOpen(true);
-  };
+  const handleDownload = async (format: 'png' | 'pdf', paperSize?: PaperSize) => {
+    if (!printCardRef.current || !restaurant) return;
 
-  const updateTable = async () => {
-    if (!editingTable || !editTableNumber) return;
+    setIsDownloading(true);
+    try {
+      const result = await downloadQRCard(printCardRef.current, {
+        format,
+        paperSize,
+        tableNumber: 'Shop',
+        restaurantName: restaurant.name,
+      });
 
-    const tableNumber = parseInt(editTableNumber);
-    if (isNaN(tableNumber)) {
-      toast.error("Please enter a valid number");
-      return;
-    }
-
-    // Check if table number already exists (excluding current table)
-    const existingTable = tables.find(table => 
-      table.table_number === tableNumber.toString() && table.id !== editingTable.id
-    );
-    if (existingTable) {
-      toast.error(`Table ${tableNumber} already exists. Please choose a different number.`);
-      return;
-    }
-
-    const { error } = await supabase
-      .from('tables')
-      .update({
-        table_number: tableNumber.toString(),
-      })
-      .eq('id', editingTable.id);
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Table updated successfully");
-      setIsEditDialogOpen(false);
-      setEditingTable(null);
-      setEditTableNumber('');
-      fetchData();
-    }
-  };
-
-  const openDeleteDialog = (table: TableData) => {
-    setDeletingTable(table);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const deleteTable = async () => {
-    if (!deletingTable) return;
-
-    const { error } = await supabase
-      .from('tables')
-      .delete()
-      .eq('id', deletingTable.id);
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`Table ${deletingTable.table_number} deleted successfully`);
-      setIsDeleteDialogOpen(false);
-      setDeletingTable(null);
-      fetchData();
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error('Failed to download QR card');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -218,247 +125,131 @@ const QRGenerator = () => {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
+  if (!restaurant) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="text-muted-foreground">No restaurant found. Please complete onboarding first.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <TooltipProvider>
     <div className="space-y-6">
-      {/* Sticky Header with controls */}
+      {/* Header */}
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
-              <h2 className="text-xl font-semibold">QR Code Generator</h2>
+              <h2 className="text-xl font-semibold">Shop QR Code</h2>
               <p className="text-sm text-muted-foreground">
-                Showing {tables.length} {tables.length === 1 ? 'table' : 'tables'}
+                One static QR code for your shop - customers scan to access your menu
               </p>
             </div>
-
-            {/* Add Table Button */}
-            <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Table
-            </Button>
           </div>
         </div>
       </div>
 
-      {/* Tables Table */}
-      {tables.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground text-center">
-              No tables added yet. Add your first table above.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-24">QR Code</TableHead>
-                <TableHead>Table</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tables.map((table) => (
-                <TableRow key={table.id} className="hover:bg-muted/30">
-                  <TableCell>
-                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                      <QRCodeThumbnail
-                        tableId={table.id}
-                        onClick={() => openPreviewDialog(table)}
-                        className="w-8 h-8"
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">Table {table.table_number}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Click QR code to preview & download card
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openPreviewDialog(table)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Download QR Card</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyMenuUrl(table.id)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Copy menu URL</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditDialog(table)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Edit table</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openDeleteDialog(table)}
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete table</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      {/* QR Card Display */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <QrCode className="h-5 w-5" />
+            {restaurant.name} Menu QR
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* QR Card Preview */}
+          <div className="flex flex-col items-center">
+            <div className="overflow-hidden rounded-2xl shadow-lg border">
+              <QRTableCard
+                ref={previewCardRef}
+                restaurantName={restaurant.name}
+                tableNumber=""
+                qrCodeDataUrl={qrCodeDataUrl}
+                logoUrl={restaurant.logo_url}
+                isPrintMode={false}
+              />
+            </div>
 
-      {/* QR Card Preview Dialog */}
-      {selectedTable && restaurant && (
-        <QRCardPreviewDialog
-          isOpen={isPreviewOpen}
-          onClose={() => {
-            setIsPreviewOpen(false);
-            setSelectedTable(null);
-          }}
-          tableId={selectedTable.id}
-          tableNumber={selectedTable.table_number}
-          restaurantName={restaurant.name}
-          logoUrl={restaurant.logo_url}
-        />
-      )}
-
-      {/* Add Table Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Table</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="new-table-number">Table Number</Label>
-              <Input
-                id="new-table-number"
-                type="number"
-                value={newTableNumber}
-                onChange={(e) => setNewTableNumber(e.target.value)}
-                placeholder="Enter table number"
-                autoFocus
+            {/* Hidden Card for Print/Download */}
+            <div className="absolute opacity-0 pointer-events-none" style={{ left: '-9999px' }}>
+              <QRTableCard
+                ref={printCardRef}
+                restaurantName={restaurant.name}
+                tableNumber=""
+                qrCodeDataUrl={qrCodeDataUrl}
+                logoUrl={restaurant.logo_url}
+                isPrintMode={true}
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAddDialogOpen(false);
-                setNewTableNumber('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={async () => {
-              await addTable();
-              setIsAddDialogOpen(false);
-            }}>
-              Add Table
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Edit Table Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Table</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-table-number">Table Number</Label>
-              <Input
-                id="edit-table-number"
-                type="number"
-                value={editTableNumber}
-                onChange={(e) => setEditTableNumber(e.target.value)}
-                placeholder="Enter table number"
-              />
-            </div>
+          {/* Menu URL */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <p className="text-sm font-medium mb-2">Menu URL</p>
+            <code className="text-xs bg-background px-2 py-1 rounded border block overflow-x-auto">
+              {menuUrl}
+            </code>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsEditDialogOpen(false);
-                setEditingTable(null);
-                setEditTableNumber('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={updateTable}>
-              Update Table
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Delete Table Confirmation Dialog */}
-      <ConfirmDialog
-        open={!!deletingTable && isDeleteDialogOpen}
-        onOpenChange={(open) => {
-          setIsDeleteDialogOpen(open);
-          if (!open) setDeletingTable(null);
-        }}
-        title={`Delete Table${deletingTable ? ` ${deletingTable.table_number}` : ''}?`}
-        description="Are you sure you want to delete this table? This action cannot be undone."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        variant="destructive"
-        onConfirm={deleteTable}
-        onCancel={() => {
-          setIsDeleteDialogOpen(false);
-          setDeletingTable(null);
-        }}
-      />
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Button variant="outline" onClick={copyMenuUrl}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy URL
+            </Button>
+
+            <Button variant="outline" onClick={openMenuUrl}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Preview Menu
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={isDownloading || !qrCodeDataUrl}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download QR Card
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Download Format</DropdownMenuLabel>
+                <DropdownMenuItem
+                  disabled={isDownloading || !qrCodeDataUrl}
+                  onClick={() => handleDownload('png')}
+                >
+                  <FileImage className="h-4 w-4 mr-2" />
+                  PNG Image
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>PDF (Print-Ready)</DropdownMenuLabel>
+                <DropdownMenuItem
+                  disabled={isDownloading || !qrCodeDataUrl}
+                  onClick={() => handleDownload('pdf', 'A6')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  A6 (Table Stand)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isDownloading || !qrCodeDataUrl}
+                  onClick={() => handleDownload('pdf', 'A5')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  A5 (Flat Card)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            This QR code is permanent and reusable. Print it once and place it in your shop.
+          </p>
+        </CardContent>
+      </Card>
     </div>
-    </TooltipProvider>
   );
 };
 

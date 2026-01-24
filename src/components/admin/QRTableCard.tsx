@@ -83,7 +83,7 @@ export const QRTableCard = forwardRef<HTMLDivElement, QRTableCardProps>(
             {qrCodeDataUrl ? (
               <img
                 src={qrCodeDataUrl}
-                alt={`QR Code for Table ${tableNumber}`}
+                alt={tableNumber ? `QR Code for Table ${tableNumber}` : `Menu QR Code`}
                 className="w-48 h-48"
                 style={{ display: 'block' }}
               />
@@ -94,10 +94,12 @@ export const QRTableCard = forwardRef<HTMLDivElement, QRTableCardProps>(
             )}
           </div>
 
-          {/* Table number text - BELOW QR */}
-          <div className="text-center" style={{ marginTop: `${QR_TEXT_SPACING}px` }}>
-            <p className="text-gray-600 text-base font-medium">Table {tableNumber}</p>
-          </div>
+          {/* Table number text - BELOW QR (only show if tableNumber is provided) */}
+          {tableNumber && (
+            <div className="text-center" style={{ marginTop: `${QR_TEXT_SPACING}px` }}>
+              <p className="text-gray-600 text-base font-medium">Table {tableNumber}</p>
+            </div>
+          )}
         </div>
 
         {/* Bottom section - Footer */}

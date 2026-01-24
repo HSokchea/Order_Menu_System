@@ -349,7 +349,7 @@ const WebMenu = () => {
                   asChild
                   className="relative h-9 w-9 p-0"
                 >
-                  <Link to={`/web/${shopId}/cart`}>
+                  <Link to={`/menu/${shopId}/cart`}>
                     <ShoppingCart className="h-4 w-4" />
                     {getTotalItems() > 0 && (
                       <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
