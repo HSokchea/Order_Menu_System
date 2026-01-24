@@ -1,0 +1,254 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useDeviceId } from './useDeviceId';
+
+export interface OrderItem {
+  id: string;
+  menu_item_id: string;
+  name: string;
+  quantity: number;
+  price_usd: number;
+  options?: Array<{
+    groupName: string;
+    label: string;
+    price: number;
+  }>;
+  notes?: string;
+}
+
+export interface TemporaryOrder {
+  id: string;
+  shop_id: string;
+  device_id: string;
+  status: string;
+  total_usd: number;
+  customer_notes: string | null;
+  items: OrderItem[];
+  created_at: string;
+  updated_at: string;
+}
+
+interface UseDeviceOrderResult {
+  order: TemporaryOrder | null;
+  isLoading: boolean;
+  isExistingOrder: boolean;
+  error: string | null;
+  deviceId: string | null;
+  addItem: (item: OrderItem) => Promise<void>;
+  removeItem: (menuItemId: string) => Promise<void>;
+  updateItemQuantity: (menuItemId: string, quantity: number) => Promise<void>;
+  clearOrder: () => Promise<void>;
+  updateNotes: (notes: string) => Promise<void>;
+  completePayment: () => Promise<{ success: boolean; historyId?: string; error?: string }>;
+  refreshOrder: () => Promise<void>;
+}
+
+/**
+ * Hook to manage device-based temporary orders
+ * Handles order creation, updates, and payment completion
+ */
+export const useDeviceOrder = (shopId?: string): UseDeviceOrderResult => {
+  const { deviceId, isLoaded: deviceIdLoaded } = useDeviceId();
+  const [order, setOrder] = useState<TemporaryOrder | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isExistingOrder, setIsExistingOrder] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch or create order for this device/shop/today
+  const fetchOrCreateOrder = useCallback(async () => {
+    if (!shopId || !deviceId) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: rpcError } = await supabase.rpc('get_or_create_device_order', {
+        p_shop_id: shopId,
+        p_device_id: deviceId,
+      });
+
+      if (rpcError) {
+        console.error('Error fetching device order:', rpcError);
+        setError(rpcError.message);
+        return;
+      }
+
+      if (data) {
+        const response = data as { exists: boolean; order: any };
+        setIsExistingOrder(response.exists);
+        
+        // Parse items from JSONB
+        const orderData = response.order;
+        const items = Array.isArray(orderData.items) ? orderData.items : [];
+        
+        setOrder({
+          ...orderData,
+          items,
+        });
+      }
+    } catch (err: any) {
+      console.error('Unexpected error:', err);
+      setError(err.message || 'Failed to load order');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [shopId, deviceId]);
+
+  // Load order when device ID is ready
+  useEffect(() => {
+    if (deviceIdLoaded && shopId && deviceId) {
+      fetchOrCreateOrder();
+    }
+  }, [deviceIdLoaded, shopId, deviceId, fetchOrCreateOrder]);
+
+  // Calculate total from items
+  const calculateTotal = useCallback((items: OrderItem[]): number => {
+    return items.reduce((sum, item) => {
+      const optionsTotal = item.options?.reduce((optSum, opt) => optSum + opt.price, 0) || 0;
+      return sum + (item.price_usd + optionsTotal) * item.quantity;
+    }, 0);
+  }, []);
+
+  // Update order in database
+  const updateOrder = useCallback(async (items: OrderItem[], notes?: string) => {
+    if (!order || !deviceId) return;
+
+    const total = calculateTotal(items);
+    
+    const { data, error: updateError } = await supabase.rpc('update_device_order', {
+      p_order_id: order.id,
+      p_device_id: deviceId,
+      p_items: items as any,
+      p_total_usd: total,
+      p_customer_notes: notes ?? order.customer_notes,
+    });
+
+    if (updateError) {
+      console.error('Error updating order:', updateError);
+      throw new Error(updateError.message);
+    }
+
+    const response = data as { success: boolean; order?: any; error?: string };
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to update order');
+    }
+
+    // Update local state
+    setOrder(prev => prev ? {
+      ...prev,
+      items,
+      total_usd: total,
+      customer_notes: notes ?? prev.customer_notes,
+    } : null);
+  }, [order, deviceId, calculateTotal]);
+
+  // Add item to order
+  const addItem = useCallback(async (item: OrderItem) => {
+    if (!order) return;
+
+    const existingItems = [...order.items];
+    const existingIndex = existingItems.findIndex(i => 
+      i.menu_item_id === item.menu_item_id && 
+      JSON.stringify(i.options) === JSON.stringify(item.options)
+    );
+
+    if (existingIndex >= 0) {
+      existingItems[existingIndex].quantity += item.quantity;
+    } else {
+      existingItems.push(item);
+    }
+
+    await updateOrder(existingItems);
+  }, [order, updateOrder]);
+
+  // Remove item from order
+  const removeItem = useCallback(async (menuItemId: string) => {
+    if (!order) return;
+
+    const updatedItems = order.items.filter(i => i.menu_item_id !== menuItemId);
+    await updateOrder(updatedItems);
+  }, [order, updateOrder]);
+
+  // Update item quantity
+  const updateItemQuantity = useCallback(async (menuItemId: string, quantity: number) => {
+    if (!order) return;
+
+    if (quantity <= 0) {
+      await removeItem(menuItemId);
+      return;
+    }
+
+    const updatedItems = order.items.map(i => 
+      i.menu_item_id === menuItemId ? { ...i, quantity } : i
+    );
+    await updateOrder(updatedItems);
+  }, [order, updateOrder, removeItem]);
+
+  // Clear all items
+  const clearOrder = useCallback(async () => {
+    if (!order) return;
+    await updateOrder([]);
+  }, [order, updateOrder]);
+
+  // Update customer notes
+  const updateNotes = useCallback(async (notes: string) => {
+    if (!order) return;
+    await updateOrder(order.items, notes);
+  }, [order, updateOrder]);
+
+  // Complete payment
+  const completePayment = useCallback(async () => {
+    if (!order || !deviceId) {
+      return { success: false, error: 'No active order' };
+    }
+
+    try {
+      const { data, error: paymentError } = await supabase.rpc('complete_device_order_payment', {
+        p_order_id: order.id,
+        p_device_id: deviceId,
+      });
+
+      if (paymentError) {
+        return { success: false, error: paymentError.message };
+      }
+
+      const response = data as { success: boolean; history_id?: string; error?: string };
+      
+      if (response.success) {
+        // Clear local order state
+        setOrder(null);
+        setIsExistingOrder(false);
+        // Refetch to create new empty order
+        await fetchOrCreateOrder();
+      }
+
+      return {
+        success: response.success,
+        historyId: response.history_id,
+        error: response.error,
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }, [order, deviceId, fetchOrCreateOrder]);
+
+  // Refresh order from database
+  const refreshOrder = useCallback(async () => {
+    await fetchOrCreateOrder();
+  }, [fetchOrCreateOrder]);
+
+  return {
+    order,
+    isLoading: isLoading || !deviceIdLoaded,
+    isExistingOrder,
+    error,
+    deviceId,
+    addItem,
+    removeItem,
+    updateItemQuantity,
+    clearOrder,
+    updateNotes,
+    completePayment,
+    refreshOrder,
+  };
+};

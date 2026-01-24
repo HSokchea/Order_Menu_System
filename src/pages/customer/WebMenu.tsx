@@ -4,11 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, Link } from 'react-router-dom';
-import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2, ImageIcon, Receipt } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Search, X, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCart, SelectedOption } from '@/hooks/useCart';
-import { useActiveOrders } from '@/hooks/useActiveOrders';
+import { useDeviceOrder, OrderItem } from '@/hooks/useDeviceOrder';
 import ItemDetailSheet, { ItemOptions, SizeOption } from '@/components/customer/ItemDetailSheet';
+import { SelectedOption } from '@/hooks/useCart';
 
 interface MenuItem {
   id: string;
@@ -29,11 +29,17 @@ interface Category {
   menu_items: MenuItem[];
 }
 
-const MenuView = () => {
-  const { tableId } = useParams();
+interface ShopInfo {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  currency: string;
+}
+
+const WebMenu = () => {
+  const { shopId } = useParams();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [restaurant, setRestaurant] = useState<any>(null);
-  const [table, setTable] = useState<any>(null);
+  const [shop, setShop] = useState<ShopInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
@@ -43,91 +49,58 @@ const MenuView = () => {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isItemSheetOpen, setIsItemSheetOpen] = useState(false);
 
-  // Use shared cart hook
+  // Use device-based order hook
   const {
-    cart,
-    isLoaded: cartLoaded,
-    addToCart,
-    addToCartWithOptions,
-    removeFromCart,
-    clearCart,
-    getTotalAmount,
-    getTotalItems,
-    getItemCount,
-  } = useCart(tableId);
-
-  // Get active orders count for badge
-  const { activeOrders } = useActiveOrders(tableId || '');
+    order,
+    isLoading: orderLoading,
+    isExistingOrder,
+    error: orderError,
+    addItem,
+    removeItem,
+    updateItemQuantity,
+    clearOrder,
+  } = useDeviceOrder(shopId);
 
   const fetchMenuData = async () => {
-    if (!tableId) {
+    if (!shopId) {
       setLoading(false);
       return;
     }
 
     try {
-      // Fetch table info using secure RPC (prevents bulk enumeration)
-      const isUuid = (val: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+      // Fetch shop info using secure RPC
+      const { data: shopResult, error: shopError } = await supabase
+        .rpc('get_public_shop', { p_shop_id: shopId });
 
-      let tableData: any = null;
-      let tableError: any = null;
+      const shopData = shopResult?.[0] || null;
 
-      if (isUuid(tableId)) {
-        // Use secure RPC function instead of direct table access
-        const { data, error } = await supabase
-          .rpc('get_public_table', { p_table_id: tableId });
-        // RPC returns an array, get first result
-        tableData = data?.[0] || null;
-        tableError = error;
-      }
-
-      if (!tableData) {
-        console.error('Table fetch error:', tableError);
+      if (shopError || !shopData) {
+        console.error('Shop fetch error:', shopError);
         setLoading(false);
-        toast.error(tableError?.message || "The QR code may be invalid or the table was removed.");
+        toast.error("Shop not found. The QR code may be invalid.");
         return;
       }
 
-      setTable(tableData);
+      setShop(shopData);
 
-      // Fetch restaurant info using secure RPC (SECURITY DEFINER bypasses RLS)
-      const { data: restaurantResult, error: restaurantError } = await supabase
-        .rpc('get_public_restaurant', { p_restaurant_id: tableData.restaurant_id });
-      
-      const restaurantData = restaurantResult?.[0] || null;
-
-      if (restaurantError || !restaurantData) {
-        console.error('Restaurant fetch error:', restaurantError);
-        setLoading(false);
-        toast.error("Unable to load restaurant information");
-        return;
-      }
-
-      setRestaurant(restaurantData);
-
-      // Fetch menu categories using secure RPC (prevents bulk enumeration)
+      // Fetch menu categories using secure RPC
       const { data: categoriesData, error: categoriesError } = await supabase
-        .rpc('get_public_menu_categories', { p_restaurant_id: restaurantData.id });
+        .rpc('get_public_menu_categories', { p_restaurant_id: shopData.id });
 
       if (categoriesError) {
         console.error('Categories fetch error:', categoriesError);
-        toast.error("Unable to load menu items. Please try again.");
+        toast.error("Unable to load menu categories.");
         setLoading(false);
         return;
       }
 
-      // Fetch menu items for this restaurant (RLS ensures only available items are returned) - newest first
-      // Include options field for customizations
+      // Fetch menu items using secure RPC
       const { data: menuItemsData, error: menuItemsError } = await supabase
-        .from('menu_items')
-        .select('id, name, description, price_usd, is_available, category_id, image_url, options, size_enabled, sizes, created_at')
-        .eq('restaurant_id', restaurantData.id)
-        .eq('is_available', true)
-        .order('created_at', { ascending: false });
+        .rpc('get_shop_menu_items', { p_shop_id: shopData.id });
 
       if (menuItemsError) {
         console.error('Menu items fetch error:', menuItemsError);
-        toast.error("Unable to load menu items. Please try again.");
+        toast.error("Unable to load menu items.");
         setLoading(false);
         return;
       }
@@ -158,51 +131,22 @@ const MenuView = () => {
 
   useEffect(() => {
     fetchMenuData();
-  }, [tableId, toast]);
+  }, [shopId]);
 
-  // Subscribe to realtime updates for menu items and categories
+  // Show notification if resuming existing order
   useEffect(() => {
-    if (!restaurant?.id) return;
+    if (isExistingOrder && order && order.items.length > 0) {
+      toast.info(`Resuming your order with ${order.items.length} item(s)`);
+    }
+  }, [isExistingOrder]);
 
-    const menuItemsChannel = supabase
-      .channel('menu-items-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'menu_items',
-          filter: `restaurant_id=eq.${restaurant.id}`
-        },
-        (payload) => {
-          console.log('Menu item change:', payload.eventType);
-          fetchMenuData();
-        }
-      )
-      .subscribe();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
 
-    const categoriesChannel = supabase
-      .channel('menu-categories-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'menu_categories',
-          filter: `restaurant_id=eq.${restaurant.id}`
-        },
-        (payload) => {
-          console.log('Category change:', payload.eventType);
-          fetchMenuData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(menuItemsChannel);
-      supabase.removeChannel(categoriesChannel);
-    };
-  }, [restaurant?.id]);
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    setIsScrolled(scrollRef.current.scrollLeft > 0);
+  };
 
   const handleSearchExpand = () => {
     setIsSearchExpanded(true);
@@ -211,14 +155,6 @@ const MenuView = () => {
   const handleSearchClose = () => {
     setIsSearchExpanded(false);
     setSearchQuery('');
-  };
-
-  const scrollRef = useRef(null);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    setIsScrolled(scrollRef.current.scrollLeft > 0);
   };
 
   // Auto focus when search expands
@@ -243,20 +179,21 @@ const MenuView = () => {
     })
   })).filter(category => category.menu_items.length > 0);
 
-  // Set default activeCategory to first filtered category with items
-  useEffect(() => {
-    if (filteredCategories.length > 0) {
-      setActiveCategory((prev) => {
-        // If current activeCategory is not in filteredCategories, reset to first
-        if (!filteredCategories.some(cat => cat.id === prev)) {
-          return filteredCategories[0].id;
-        }
-        return prev;
-      });
-    }
-  }, [filteredCategories.length]);
+  // Get item count from order
+  const getItemCount = (menuItemId: string): number => {
+    if (!order) return 0;
+    return order.items
+      .filter(item => item.menu_item_id === menuItemId)
+      .reduce((sum, item) => sum + item.quantity, 0);
+  };
 
-  // Handle item click - open detail sheet if has options or sizes, otherwise quick add
+  // Get total items in order
+  const getTotalItems = (): number => {
+    if (!order) return 0;
+    return order.items.reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  // Handle item click - open detail sheet if has options or sizes
   const handleItemClick = (item: MenuItem) => {
     const hasOptions = item.options?.options && item.options.options.length > 0;
     const hasSizes = item.size_enabled && item.sizes && item.sizes.length > 0;
@@ -265,52 +202,94 @@ const MenuView = () => {
       setSelectedItem(item);
       setIsItemSheetOpen(true);
     } else {
-      // No options or sizes, just add to cart
-      addToCart(item);
-      toast.success(`${item.name} added to your cart`);
+      handleQuickAdd(item);
     }
   };
 
-  // Handle add button click (+ button on card)
-  const handleQuickAdd = (e: React.MouseEvent, item: MenuItem) => {
+  // Handle quick add
+  const handleQuickAdd = async (item: MenuItem) => {
+    const orderItem: OrderItem = {
+      id: crypto.randomUUID(),
+      menu_item_id: item.id,
+      name: item.name,
+      quantity: 1,
+      price_usd: item.price_usd,
+    };
+
+    try {
+      await addItem(orderItem);
+      toast.success(`${item.name} added to your order`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add item');
+    }
+  };
+
+  // Handle quick remove
+  const handleQuickRemove = async (e: React.MouseEvent, menuItemId: string) => {
     e.stopPropagation();
-    const hasOptions = item.options?.options && item.options.options.length > 0;
-    const hasSizes = item.size_enabled && item.sizes && item.sizes.length > 0;
-    
-    if (hasOptions || hasSizes) {
-      setSelectedItem(item);
-      setIsItemSheetOpen(true);
-    } else {
-      addToCart(item);
+    const item = order?.items.find(i => i.menu_item_id === menuItemId);
+    if (!item) return;
+
+    try {
+      if (item.quantity > 1) {
+        await updateItemQuantity(menuItemId, item.quantity - 1);
+      } else {
+        await removeItem(menuItemId);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove item');
     }
   };
 
-  // Handle minus button click
-  const handleQuickRemove = (e: React.MouseEvent, itemId: string) => {
-    e.stopPropagation();
-    // Find any cart item with this menu item ID and remove one
-    const cartItem = cart.find(ci => ci.id === itemId);
-    if (cartItem) {
-      removeFromCart(cartItem.cartItemId);
+  // Handle add to cart with options from detail sheet
+  const handleAddToCartWithOptions = async (item: MenuItem, quantity: number, selectedOptions?: SelectedOption[]) => {
+    // Determine base price
+    let basePrice = item.price_usd;
+    if (item.size_enabled && selectedOptions) {
+      const sizeOption = selectedOptions.find(o => o.groupName === 'Size');
+      if (sizeOption) {
+        basePrice = sizeOption.price;
+      }
+    }
+
+    const orderItem: OrderItem = {
+      id: crypto.randomUUID(),
+      menu_item_id: item.id,
+      name: item.name,
+      quantity,
+      price_usd: basePrice,
+      options: selectedOptions?.filter(o => o.groupName !== 'Size'),
+    };
+
+    try {
+      await addItem(orderItem);
+      toast.success(`${quantity}x ${item.name} added to your order`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add item');
     }
   };
 
-  // Handle add to cart from detail sheet
-  const handleAddToCartWithOptions = (item: MenuItem, quantity: number, selectedOptions?: SelectedOption[]) => {
-    addToCartWithOptions(item, quantity, selectedOptions);
-    toast.success(`${quantity}x ${item.name} added to your cart`);
-  };
-
-  if (loading) {
+  if (loading || orderLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading menu...</div>;
   }
 
-  if (!table || !restaurant) {
+  if (!shop) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Table Not Found</h1>
+          <h1 className="text-2xl font-bold mb-2">Shop Not Found</h1>
           <p className="text-muted-foreground">The QR code may be invalid or expired.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (orderError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Error</h1>
+          <p className="text-muted-foreground">{orderError}</p>
         </div>
       </div>
     );
@@ -322,21 +301,19 @@ const MenuView = () => {
       <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
           {!isSearchExpanded ? (
-            // Normal view - Restaurant name and search/cart
             <div className="flex items-center justify-between gap-4">
-              <div className="flex-shrink-0">
-                <h4 className="text-2xl font-bold text-primary">{restaurant.name}</h4>
+              <div className="flex-shrink-0 flex items-center gap-3">
+                {shop.logo_url && (
+                  <img src={shop.logo_url} alt={shop.name} className="h-10 w-10 rounded-full object-cover" />
+                )}
+                <h4 className="text-2xl font-bold text-primary">{shop.name}</h4>
               </div>
 
-              {/* Desktop Search Field - Centered */}
+              {/* Desktop Search Field */}
               <div className="hidden md:flex flex-1 justify-center">
                 <div className="relative max-w-lg w-full">
-                  <Search
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                    onClick={() => document.getElementById('search-input')?.focus()}
-                  />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="search-input"
                     placeholder="Search menu items..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -345,7 +322,7 @@ const MenuView = () => {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
                     >
                       ×
                     </button>
@@ -353,7 +330,7 @@ const MenuView = () => {
                 </div>
               </div>
 
-              {/* Mobile and Desktop Icons - Right Aligned */}
+              {/* Icons */}
               <div className="flex items-center gap-2 ml-auto md:ml-0">
                 {/* Mobile Search Icon */}
                 <Button
@@ -365,46 +342,16 @@ const MenuView = () => {
                   <Search className="h-4 w-4" />
                 </Button>
 
-                {/* Session Bill Icon */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="relative h-9 w-9 p-0"
-                >
-                  <Link to={`/session-bill/${tableId}`}>
-                    <Receipt className="h-4 w-4" />
-                  </Link>
-                </Button>
-
-                {/* My Orders Icon */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="relative h-9 w-9 p-0"
-                >
-                  <Link to={`/my-orders/${tableId}`}>
-                    <Package2 className="h-4 w-4" />
-                    {activeOrders.length > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {activeOrders.length}
-                      </span>
-                    )}
-                  </Link>
-                </Button>
-
                 {/* Cart Icon */}
                 <Button
                   variant="outline"
                   size="sm"
                   asChild
                   className="relative h-9 w-9 p-0"
-                  disabled={cart.length === 0}
                 >
-                  <Link to={`/cart/${tableId}`}>
+                  <Link to={`/web/${shopId}/cart`}>
                     <ShoppingCart className="h-4 w-4" />
-                    {cart.length > 0 && (
+                    {getTotalItems() > 0 && (
                       <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
                         {getTotalItems()}
                       </span>
@@ -414,15 +361,11 @@ const MenuView = () => {
               </div>
             </div>
           ) : (
-            // Mobile Search expanded view
+            /* Mobile Search expanded view */
             <div className="flex items-center gap-3 animate-fade-in md:hidden">
               <div className="flex-1 relative">
-                <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => document.getElementById('search-input')?.focus()}
-                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="search-input"
                   placeholder="Search menu items..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -441,20 +384,18 @@ const MenuView = () => {
           )}
         </div>
       </header>
+
+      {/* Category Pills */}
       <div className="sticky top-[61px] z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md">
-        <div
-          className={`container mx-auto pr-0 py-3 transition-all ${isScrolled ? "pl-0" : "pl-4"
-            }`}
-        >
+        <div className={`container mx-auto pr-0 py-3 transition-all ${isScrolled ? "pl-0" : "pl-4"}`}>
           <div
             ref={scrollRef}
             onScroll={handleScroll}
             className="flex gap-2 overflow-x-auto scrollbar-hide"
           >
-            {(
-              searchQuery
-                ? categories.filter(cat => cat.menu_items && cat.menu_items.length > 0)
-                : filteredCategories
+            {(searchQuery
+              ? categories.filter(cat => cat.menu_items.length > 0)
+              : filteredCategories
             ).map((category) => (
               <Button
                 key={category.id}
@@ -470,7 +411,6 @@ const MenuView = () => {
         </div>
       </div>
 
-
       {/* Main Content */}
       <main className="container mx-auto px-2 py-2 pb-24">
         <div className="space-y-8">
@@ -483,7 +423,7 @@ const MenuView = () => {
                   const itemCount = getItemCount(item.id);
                   const hasOptions = item.options?.options && item.options.options.length > 0;
                   
-                  // Get display price: for size-based items, use default size price
+                  // Get display price
                   const displayPrice = (() => {
                     if (item.size_enabled && item.sizes && item.sizes.length > 0) {
                       const defaultSize = item.sizes.find(s => s.default);
@@ -530,7 +470,10 @@ const MenuView = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={(e) => handleQuickAdd(e, item)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuickAdd(item);
+                                }}
                                 disabled={!item.is_available}
                                 className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
                               >
@@ -539,7 +482,10 @@ const MenuView = () => {
                             </div>
                           ) : (
                             <Button
-                              onClick={(e) => handleQuickAdd(e, item)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleItemClick(item);
+                              }}
                               disabled={!item.is_available}
                               variant='outline'
                               size="sm"
@@ -577,38 +523,29 @@ const MenuView = () => {
       </main>
 
       {/* Fixed Cart Button */}
-      {cart.length > 0 && (
+      {order && order.items.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4 z-40">
           <div className="flex gap-3 items-end relative md:justify-center left-0 right-0">
             <Button
               variant="custom"
-              className="
-                h-10 bg-white text-white rounded-full shadow-lg flex items-center justify-center
-                w-10
-              "
+              className="h-10 bg-white text-white rounded-full shadow-lg flex items-center justify-center w-10"
               onClick={() => {
-                clearCart();
+                clearOrder();
+                toast.success('Order cleared');
               }}
             >
               <X className="h-5 w-5 text-muted-foreground" />
             </Button>
 
-            {/* View Cart Button */}
             <Button
               variant="custom"
-              className="
-                h-10 bg-primary text-white text-sm font-semibold rounded-full shadow-lg
-                flex-1 md:w-1/2 md:flex-none
-              "
+              className="h-10 bg-primary text-white text-sm font-semibold rounded-full shadow-lg flex-1 md:w-1/2 md:flex-none"
               size="sm"
               asChild
             >
-              <Link
-                to={`/cart/${tableId}`}
-                className="flex items-center justify-center"
-              >
+              <Link to={`/web/${shopId}/cart`} className="flex items-center justify-center">
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                View Cart ({getTotalItems()}) – ${getTotalAmount().toFixed(2)}
+                View Cart ({getTotalItems()}) – ${order.total_usd.toFixed(2)}
               </Link>
             </Button>
           </div>
@@ -626,4 +563,4 @@ const MenuView = () => {
   );
 };
 
-export default MenuView;
+export default WebMenu;
