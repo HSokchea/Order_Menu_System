@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ChefHat, Eye, EyeOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -17,66 +18,122 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
-  const clearFieldError = (field: string) => {
-    setFormErrors(prev => ({ ...prev, [field]: '' }));
+  const markFieldTouched = (field: string) => {
+    setTouchedFields(prev => ({ ...prev, [field]: true }));
   };
 
-  const validateSignInForm = () => {
-    const errors: Record<string, string> = {};
-    
-    if (!email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errors.email = 'Please enter a valid email address';
-    }
-    
-    if (!password) {
-      errors.password = 'Password is required';
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const shouldShowError = (field: string) => {
+    return (touchedFields[field] || submitAttempted) && !!formErrors[field];
   };
 
-  const validateSignUpForm = () => {
-    const errors: Record<string, string> = {};
-    
-    const trimmedFullName = fullName.trim();
-    if (!trimmedFullName) {
-      errors.fullName = 'Full name is required';
-    } else if (trimmedFullName.length < 2) {
-      errors.fullName = 'Full name must be at least 2 characters';
-    } else if (trimmedFullName.length > 100) {
-      errors.fullName = 'Full name must be less than 100 characters';
+  const validateEmail = (value: string): string => {
+    if (!value.trim()) {
+      return 'Please enter a valid email address';
     }
-    
-    if (!restaurantName.trim()) {
-      errors.restaurantName = 'Shop name is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+      return 'Please enter a valid email address';
     }
-    
-    if (!email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errors.email = 'Please enter a valid email address';
+    return '';
+  };
+
+  const validatePassword = (value: string): string => {
+    if (!value) {
+      return 'Password is required';
     }
-    
-    if (!password) {
-      errors.password = 'Password is required';
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
     }
+    return '';
+  };
+
+  const validateFullName = (value: string): string => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return 'Full name is required';
+    }
+    if (trimmed.length < 2) {
+      return 'Full name must be at least 2 characters';
+    }
+    if (trimmed.length > 100) {
+      return 'Full name must be less than 100 characters';
+    }
+    return '';
+  };
+
+  const validateRestaurantName = (value: string): string => {
+    if (!value.trim()) {
+      return 'Shop name is required';
+    }
+    return '';
+  };
+
+  const validateField = (field: string, value: string) => {
+    let error = '';
+    switch (field) {
+      case 'email':
+        error = validateEmail(value);
+        break;
+      case 'password':
+        error = validatePassword(value);
+        break;
+      case 'fullName':
+        error = validateFullName(value);
+        break;
+      case 'restaurantName':
+        error = validateRestaurantName(value);
+        break;
+    }
+    setFormErrors(prev => ({ ...prev, [field]: error }));
+    return error;
+  };
+
+  const handleBlur = (field: string, value: string) => {
+    markFieldTouched(field);
+    validateField(field, value);
+  };
+
+  const validateSignInForm = (): boolean => {
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
     
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    setFormErrors({
+      email: emailError,
+      password: passwordError,
+    });
+    
+    return !emailError && !passwordError;
+  };
+
+  const validateSignUpForm = (): boolean => {
+    const fullNameError = validateFullName(fullName);
+    const restaurantNameError = validateRestaurantName(restaurantName);
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+    
+    setFormErrors({
+      fullName: fullNameError,
+      restaurantName: restaurantNameError,
+      email: emailError,
+      password: passwordError,
+    });
+    
+    return !fullNameError && !restaurantNameError && !emailError && !passwordError;
+  };
+
+  const resetFormState = () => {
+    setFormErrors({});
+    setTouchedFields({});
+    setSubmitAttempted(false);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitAttempted(true);
     
     if (!validateSignInForm()) {
       return;
@@ -87,23 +144,19 @@ const Auth = () => {
     const { error } = await signIn(email, password);
 
     if (error) {
-      // Generic error message to avoid revealing user existence
-      setFormErrors({ general: 'Invalid email or password. Please try again.' });
+      setFormErrors(prev => ({ ...prev, general: 'Invalid email or password. Please try again.' }));
       setLoading(false);
       return;
     }
 
-    // After successful auth, check if user is active and has restaurant
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      // Check profile status and restaurant association
       const { data: profile } = await supabase
         .from('profiles')
         .select('status, restaurant_id')
         .eq('user_id', user.id)
         .single();
 
-      // If profile exists and is inactive, sign them out
       if (profile && profile.status === 'inactive') {
         await supabase.auth.signOut();
         toast({
@@ -115,10 +168,7 @@ const Auth = () => {
         return;
       }
 
-      // If profile exists but has no restaurant_id, this is an orphan account
-      // This shouldn't happen with proper flows, but handle gracefully
       if (profile && !profile.restaurant_id) {
-        // Check if user is a restaurant owner
         const { data: restaurant } = await supabase
           .from('restaurants')
           .select('id')
@@ -126,7 +176,6 @@ const Auth = () => {
           .maybeSingle();
 
         if (!restaurant) {
-          // User has no restaurant association - should complete signup
           await supabase.auth.signOut();
           toast({
             title: "Setup Incomplete",
@@ -144,6 +193,7 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitAttempted(true);
     
     if (!validateSignUpForm()) {
       return;
@@ -153,7 +203,6 @@ const Auth = () => {
     
     setLoading(true);
 
-    // ONE-USER-ONE-SHOP: Check if user already exists with a profile (by email)
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id, restaurant_id')
@@ -161,7 +210,7 @@ const Auth = () => {
       .maybeSingle();
 
     if (existingProfile) {
-      setFormErrors({ email: 'This account already belongs to a shop. Please sign in instead.' });
+      setFormErrors(prev => ({ ...prev, email: 'This account already belongs to a shop. Please sign in instead.' }));
       setLoading(false);
       return;
     }
@@ -169,21 +218,18 @@ const Auth = () => {
     const { data, error } = await signUp(email, password, restaurantName, trimmedFullName);
 
     if (error) {
-      // Handle specific error for user already registered
       const errorMessage = error.message.toLowerCase();
       if (errorMessage.includes('already registered') || errorMessage.includes('already been registered')) {
-        setFormErrors({ email: 'This email is already registered. Please sign in instead.' });
+        setFormErrors(prev => ({ ...prev, email: 'This email is already registered. Please sign in instead.' }));
       } else {
-        setFormErrors({ general: error.message });
+        setFormErrors(prev => ({ ...prev, general: error.message }));
       }
       setLoading(false);
       return;
     }
 
-    // Check if email confirmation is required
     if (data?.user?.identities?.length === 0) {
-      // User already exists but hasn't confirmed email
-      setFormErrors({ email: 'This email is already registered. Please check your email or sign in.' });
+      setFormErrors(prev => ({ ...prev, email: 'This email is already registered. Please check your email or sign in.' }));
     } else {
       toast({
         title: "Account Created",
@@ -205,48 +251,49 @@ const Auth = () => {
           <CardDescription>Sign in to manage your shop</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full" onValueChange={() => setFormErrors({})}>
+          <Tabs defaultValue="signin" className="w-full" onValueChange={resetFormState}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
+              <form onSubmit={handleSignIn} noValidate className="space-y-4">
                 {formErrors.general && (
-                  <p className="text-sm text-destructive">{formErrors.general}</p>
+                  <p className="text-sm text-destructive" role="alert">{formErrors.general}</p>
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
-                    placeholder="Enter your email"
+                    placeholder="you@restaurant.com"
                     type="email"
                     value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      clearFieldError('email');
-                      clearFieldError('general');
-                    }}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => handleBlur('email', email)}
+                    className={cn(shouldShowError('email') && 'border-destructive focus-visible:ring-destructive')}
+                    aria-invalid={shouldShowError('email')}
+                    aria-describedby={shouldShowError('email') ? 'email-error' : undefined}
                   />
-                  {formErrors.email && (
-                    <p className="text-sm text-destructive">{formErrors.email}</p>
+                  {shouldShowError('email') && (
+                    <p id="email-error" className="text-sm text-destructive" role="alert">
+                      {formErrors.email}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
                     <Input
-                      className='pr-10'
-                      placeholder="Enter your password"
                       id="password"
+                      placeholder="Enter your password"
                       type={showPassword ? "text" : "password"}
                       value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        clearFieldError('password');
-                        clearFieldError('general');
-                      }}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onBlur={() => handleBlur('password', password)}
+                      className={cn('pr-10', shouldShowError('password') && 'border-destructive focus-visible:ring-destructive')}
+                      aria-invalid={shouldShowError('password')}
+                      aria-describedby={shouldShowError('password') ? 'password-error' : undefined}
                     />
                     <Button
                       type="button"
@@ -254,12 +301,15 @@ const Auth = () => {
                       size="icon"
                       className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
-                  {formErrors.password && (
-                    <p className="text-sm text-destructive">{formErrors.password}</p>
+                  {shouldShowError('password') && (
+                    <p id="password-error" className="text-sm text-destructive" role="alert">
+                      {formErrors.password}
+                    </p>
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -269,9 +319,9 @@ const Auth = () => {
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
+              <form onSubmit={handleSignUp} noValidate className="space-y-4">
                 {formErrors.general && (
-                  <p className="text-sm text-destructive">{formErrors.general}</p>
+                  <p className="text-sm text-destructive" role="alert">{formErrors.general}</p>
                 )}
                 <div className="space-y-2">
                   <Label htmlFor="full-name">Full Name</Label>
@@ -279,14 +329,16 @@ const Auth = () => {
                     id="full-name"
                     placeholder="Enter your full name"
                     value={fullName}
-                    onChange={(e) => {
-                      setFullName(e.target.value);
-                      clearFieldError('fullName');
-                      clearFieldError('general');
-                    }}
+                    onChange={(e) => setFullName(e.target.value)}
+                    onBlur={() => handleBlur('fullName', fullName)}
+                    className={cn(shouldShowError('fullName') && 'border-destructive focus-visible:ring-destructive')}
+                    aria-invalid={shouldShowError('fullName')}
+                    aria-describedby={shouldShowError('fullName') ? 'fullname-error' : undefined}
                   />
-                  {formErrors.fullName && (
-                    <p className="text-sm text-destructive">{formErrors.fullName}</p>
+                  {shouldShowError('fullName') && (
+                    <p id="fullname-error" className="text-sm text-destructive" role="alert">
+                      {formErrors.fullName}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -295,47 +347,50 @@ const Auth = () => {
                     id="shop-name"
                     placeholder="Enter your shop name"
                     value={restaurantName}
-                    onChange={(e) => {
-                      setRestaurantName(e.target.value);
-                      clearFieldError('restaurantName');
-                      clearFieldError('general');
-                    }}
+                    onChange={(e) => setRestaurantName(e.target.value)}
+                    onBlur={() => handleBlur('restaurantName', restaurantName)}
+                    className={cn(shouldShowError('restaurantName') && 'border-destructive focus-visible:ring-destructive')}
+                    aria-invalid={shouldShowError('restaurantName')}
+                    aria-describedby={shouldShowError('restaurantName') ? 'shopname-error' : undefined}
                   />
-                  {formErrors.restaurantName && (
-                    <p className="text-sm text-destructive">{formErrors.restaurantName}</p>
+                  {shouldShowError('restaurantName') && (
+                    <p id="shopname-error" className="text-sm text-destructive" role="alert">
+                      {formErrors.restaurantName}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
                     id="signup-email"
-                    placeholder="Enter your email"
+                    placeholder="you@restaurant.com"
                     type="email"
                     value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      clearFieldError('email');
-                      clearFieldError('general');
-                    }}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => handleBlur('email', email)}
+                    className={cn(shouldShowError('email') && 'border-destructive focus-visible:ring-destructive')}
+                    aria-invalid={shouldShowError('email')}
+                    aria-describedby={shouldShowError('email') ? 'signup-email-error' : undefined}
                   />
-                  {formErrors.email && (
-                    <p className="text-sm text-destructive">{formErrors.email}</p>
+                  {shouldShowError('email') && (
+                    <p id="signup-email-error" className="text-sm text-destructive" role="alert">
+                      {formErrors.email}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
                   <div className="relative">
                     <Input
-                      className='pr-10'
-                      placeholder="Enter your password"
                       id="signup-password"
+                      placeholder="Enter your password"
                       type={showPassword ? "text" : "password"}
                       value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        clearFieldError('password');
-                        clearFieldError('general');
-                      }}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onBlur={() => handleBlur('password', password)}
+                      className={cn('pr-10', shouldShowError('password') && 'border-destructive focus-visible:ring-destructive')}
+                      aria-invalid={shouldShowError('password')}
+                      aria-describedby={shouldShowError('password') ? 'signup-password-error' : undefined}
                     />
                     <Button
                       type="button"
@@ -343,12 +398,15 @@ const Auth = () => {
                       size="icon"
                       className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
-                  {formErrors.password && (
-                    <p className="text-sm text-destructive">{formErrors.password}</p>
+                  {shouldShowError('password') && (
+                    <p id="signup-password-error" className="text-sm text-destructive" role="alert">
+                      {formErrors.password}
+                    </p>
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
