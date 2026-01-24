@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ChangePassword from '@/pages/ChangePassword';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
 interface AuthGuardProps {
@@ -42,7 +42,6 @@ export const AuthGuard = ({
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   
   // Track if we've already shown the inactive toast to prevent infinite loops
@@ -66,11 +65,7 @@ export const AuthGuard = ({
       // Show toast only once
       if (!hasShownInactiveToast.current) {
         hasShownInactiveToast.current = true;
-        toast({
-          title: "Account Inactive",
-          description: "Your account has been deactivated. Please contact your manager.",
-          variant: "destructive",
-        });
+        toast.error("Your account has been deactivated. Please contact your manager.");
       }
       
       // Sign out and redirect
@@ -89,11 +84,7 @@ export const AuthGuard = ({
     // Check if owner is required for this route
     // This is a special ownership check, not a role-name check
     if (requireOwner && !isOwner) {
-      toast({
-        title: "Access Denied",
-        description: "Only restaurant owners can access this page.",
-        variant: "destructive",
-      });
+      toast.error("Only restaurant owners can access this page.");
       navigate(getDefaultDashboard(), { replace: true });
       return;
     }
@@ -106,11 +97,7 @@ export const AuthGuard = ({
         : hasAnyPermission(requiredPermissions);
       
       if (!hasAccess) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access this page.",
-          variant: "destructive",
-        });
+        toast.error("You don't have permission to access this page.");
         navigate(getDefaultDashboard(), { replace: true });
         return;
       }

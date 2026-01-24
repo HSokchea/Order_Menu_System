@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useCart } from '@/hooks/useCart';
 
 interface UnavailableItem {
@@ -26,7 +26,6 @@ interface OrderResponse {
 const CartSummary = () => {
   const { tableId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [notes, setNotes] = useState('');
   const [table, setTable] = useState<any>(null);
   const [restaurant, setRestaurant] = useState<any>(null);
@@ -143,11 +142,7 @@ const CartSummary = () => {
         markItemsWithValidationErrors(unavailableItems);
 
         const errorMessages = unavailableItems.map(item => `${item.name}: ${item.reason}`);
-        toast({
-          title: "Order Cannot Be Placed",
-          description: `Some items are no longer available:\n${errorMessages.join('\n')}`,
-          variant: "destructive",
-        });
+        toast.error(`Some items are no longer available:\n${errorMessages.join('\n')}`);
         return;
       }
 
@@ -159,18 +154,11 @@ const CartSummary = () => {
 
       clearCart();
 
-      toast({
-        title: "Order Placed Successfully!",
-        description: "Your order has been sent to the kitchen.",
-      });
+      toast.success("Your order has been sent to the kitchen.");
 
       navigate(`/order-success/${orderResponse.order_id}?token=${orderResponse.order_token}`);
     } catch (error: any) {
-      toast({
-        title: "Order Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }

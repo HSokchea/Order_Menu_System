@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Clock, CheckCircle, CreditCard, Eye, Users, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { SessionReceipt, ReceiptSession } from '@/components/receipt/SessionReceipt';
@@ -64,7 +64,6 @@ interface TableSession {
 
 const TableSessions = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [sessions, setSessions] = useState<TableSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('open');
@@ -228,11 +227,7 @@ const TableSessions = () => {
 
   const handleCompletePayment = async (sessionId: string) => {
     if (!cashierName.trim()) {
-      toast({
-        title: 'Cashier Required',
-        description: 'Please enter the cashier name before completing payment.',
-        variant: 'destructive',
-      });
+      toast.error('Please enter the cashier name before completing payment.');
       return;
     }
 
@@ -251,21 +246,14 @@ const TableSessions = () => {
         throw new Error(result.error || 'Failed to complete payment');
       }
 
-      toast({
-        title: 'Payment Completed',
-        description: `Invoice ${result.invoice_number} generated. Total: $${result.total_amount.toFixed(2)}`,
-      });
+      toast.success(`Invoice ${result.invoice_number} generated. Total: $${result.total_amount.toFixed(2)}`);
 
       setIsModalOpen(false);
       setIsPaymentModalOpen(false);
       setCashierName('');
       fetchSessions();
     } catch (err: any) {
-      toast({
-        title: 'Error',
-        description: err.message,
-        variant: 'destructive',
-      });
+      toast.error(err.message);
     } finally {
       setProcessingPayment(false);
     }

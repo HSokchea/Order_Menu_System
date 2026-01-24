@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, Link } from 'react-router-dom';
 import { Trash2, ShoppingCart, Plus, Minus, Search, X, Package2, ImageIcon, Receipt } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useCart, SelectedOption } from '@/hooks/useCart';
 import { useActiveOrders } from '@/hooks/useActiveOrders';
 import ItemDetailSheet, { ItemOptions, SizeOption } from '@/components/customer/ItemDetailSheet';
@@ -31,7 +31,6 @@ interface Category {
 
 const MenuView = () => {
   const { tableId } = useParams();
-  const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [restaurant, setRestaurant] = useState<any>(null);
   const [table, setTable] = useState<any>(null);
@@ -85,11 +84,7 @@ const MenuView = () => {
       if (!tableData) {
         console.error('Table fetch error:', tableError);
         setLoading(false);
-        toast({
-          title: "Table Not Found",
-          description: tableError?.message || "The QR code may be invalid or the table was removed.",
-          variant: "destructive",
-        });
+        toast.error(tableError?.message || "The QR code may be invalid or the table was removed.");
         return;
       }
 
@@ -104,11 +99,7 @@ const MenuView = () => {
       if (restaurantError || !restaurantData) {
         console.error('Restaurant fetch error:', restaurantError);
         setLoading(false);
-        toast({
-          title: "Restaurant Not Found",
-          description: "Unable to load restaurant information",
-          variant: "destructive",
-        });
+        toast.error("Unable to load restaurant information");
         return;
       }
 
@@ -120,11 +111,7 @@ const MenuView = () => {
 
       if (categoriesError) {
         console.error('Categories fetch error:', categoriesError);
-        toast({
-          title: "Error Loading Menu",
-          description: "Unable to load menu items. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Unable to load menu items. Please try again.");
         setLoading(false);
         return;
       }
@@ -140,11 +127,7 @@ const MenuView = () => {
 
       if (menuItemsError) {
         console.error('Menu items fetch error:', menuItemsError);
-        toast({
-          title: "Error Loading Menu",
-          description: "Unable to load menu items. Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Unable to load menu items. Please try again.");
         setLoading(false);
         return;
       }
@@ -169,11 +152,7 @@ const MenuView = () => {
     } catch (error) {
       console.error('Unexpected error:', error);
       setLoading(false);
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -288,10 +267,7 @@ const MenuView = () => {
     } else {
       // No options or sizes, just add to cart
       addToCart(item);
-      toast({
-        title: "Added to cart",
-        description: `${item.name} added to your cart`,
-      });
+      toast.success(`${item.name} added to your cart`);
     }
   };
 
@@ -322,10 +298,7 @@ const MenuView = () => {
   // Handle add to cart from detail sheet
   const handleAddToCartWithOptions = (item: MenuItem, quantity: number, selectedOptions?: SelectedOption[]) => {
     addToCartWithOptions(item, quantity, selectedOptions);
-    toast({
-      title: "Added to cart",
-      description: `${quantity}x ${item.name} added to your cart`,
-    });
+    toast.success(`${quantity}x ${item.name} added to your cart`);
   };
 
   if (loading) {

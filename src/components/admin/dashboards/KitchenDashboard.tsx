@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Clock, ChefHat, CheckCircle, Bell, RefreshCw } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
@@ -27,7 +27,6 @@ interface Order {
 
 export const KitchenDashboard = () => {
   const { restaurant } = useUserProfile();
-  const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -94,16 +93,9 @@ export const KitchenDashboard = () => {
       .eq('id', orderId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: `Order marked as ${status}`,
-      });
+      toast.success(`Order marked as ${status}`);
       fetchOrders();
     }
   };

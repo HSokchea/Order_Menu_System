@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Plus, Edit, Trash2, GripVertical, Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -45,7 +45,6 @@ const CategoryManager = ({
   onSearchChange,
   onEditCategory
 }: CategoryManagerProps) => {
-  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState('');
@@ -86,11 +85,7 @@ const CategoryManager = ({
 
   const handleSaveCategory = async () => {
     if (!categoryName.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter a category name",
-        variant: "destructive",
-      });
+      toast.error("Please enter a category name");
       return;
     }
 
@@ -116,16 +111,9 @@ const CategoryManager = ({
     }
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: `Category ${editingCategory ? 'updated' : 'added'} successfully`,
-      });
+      toast.success(`Category ${editingCategory ? 'updated' : 'added'} successfully`);
       setDialogOpen(false);
       resetForm();
       // Realtime subscription will handle the update automatically
@@ -152,11 +140,7 @@ const CategoryManager = ({
       .eq('category_id', id);
 
     if (menuItems && menuItems.length > 0) {
-      toast({
-        title: "Cannot Delete",
-        description: "This category contains menu items. Please move or delete the items first.",
-        variant: "destructive",
-      });
+      toast.error("This category contains menu items. Please move or delete the items first.");
       return;
     }
 
@@ -166,16 +150,9 @@ const CategoryManager = ({
       .eq('id', id);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Category deleted successfully",
-      });
+      toast.success("Category deleted successfully");
       // Realtime subscription will handle the update automatically
     }
   };

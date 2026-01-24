@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Plus, Search, X } from 'lucide-react';
 
 interface CategoryControlsProps {
@@ -26,7 +26,6 @@ const CategoryControls = ({
   editingCategory,
   onEditComplete
 }: CategoryControlsProps) => {
-  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
@@ -54,11 +53,7 @@ const CategoryControls = ({
 
   const handleSaveCategory = async () => {
     if (!categoryName.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter a category name",
-        variant: "destructive",
-      });
+      toast.error("Please enter a category name");
       return;
     }
 
@@ -84,16 +79,9 @@ const CategoryControls = ({
     }
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: `Category ${editingCategory ? 'updated' : 'added'} successfully`,
-      });
+      toast.success(`Category ${editingCategory ? 'updated' : 'added'} successfully`);
       setDialogOpen(false);
       resetForm();
       // Realtime subscription will handle the update automatically
