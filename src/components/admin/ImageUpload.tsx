@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Upload, X, ImageIcon } from 'lucide-react';
 
 interface ImageUploadProps {
@@ -13,7 +13,6 @@ interface ImageUploadProps {
 }
 
 const ImageUpload = ({ currentImageUrl, onImageChange, restaurantId, disabled }: ImageUploadProps) => {
-  const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,16 +39,9 @@ const ImageUpload = ({ currentImageUrl, onImageChange, restaurantId, disabled }:
 
       onImageChange(data.publicUrl);
       
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
+      toast.success("Image uploaded successfully");
     } catch (error: any) {
-      toast({
-        title: "Upload failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } finally {
       setUploading(false);
     }

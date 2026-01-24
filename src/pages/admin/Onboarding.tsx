@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Store, Loader2, Upload, X, ImageIcon } from 'lucide-react';
@@ -39,7 +39,6 @@ const TIMEZONES = [
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   
   const [loading, setLoading] = useState(false);
@@ -135,16 +134,9 @@ const Onboarding = () => {
         .getPublicUrl(fileName);
 
       setLogoUrl(data.publicUrl);
-      toast({
-        title: "Success",
-        description: "Logo uploaded successfully",
-      });
+      toast.success("Logo uploaded successfully");
     } catch (error: any) {
-      toast({
-        title: "Upload failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } finally {
       setUploading(false);
     }
@@ -165,20 +157,12 @@ const Onboarding = () => {
     e.preventDefault();
     
     if (!restaurantId) {
-      toast({
-        title: "Error",
-        description: "Restaurant not found. Please try signing up again.",
-        variant: "destructive",
-      });
+      toast.error("Restaurant not found. Please try signing up again.");
       return;
     }
 
     if (!formData.name.trim()) {
-      toast({
-        title: "Required Field",
-        description: "Please enter your restaurant name.",
-        variant: "destructive",
-      });
+      toast.error("Please enter your restaurant name.");
       return;
     }
 
@@ -207,19 +191,12 @@ const Onboarding = () => {
 
     if (error) {
       console.error('Error updating restaurant:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save your information. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to save your information. Please try again.");
       setLoading(false);
       return;
     }
 
-    toast({
-      title: "Welcome!",
-      description: "Your restaurant profile has been set up successfully.",
-    });
+    toast.success("Your restaurant profile has been set up successfully.");
 
     navigate('/admin');
   };

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Printer, Download, CreditCard, MoreHorizontal} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -23,8 +23,6 @@ export const ReceiptActions = ({
   onCompletePayment,
   showPayButton = true,
 }: ReceiptActionsProps) => {
-  const { toast } = useToast();
-
   const handlePrint = () => {
     if (!receiptRef.current) return;
     
@@ -32,11 +30,7 @@ export const ReceiptActions = ({
     const printWindow = window.open('', '_blank');
     
     if (!printWindow) {
-      toast({
-        title: 'Error',
-        description: 'Could not open print window. Please allow popups.',
-        variant: 'destructive',
-      });
+      toast.error('Could not open print window. Please allow popups.');
       return;
     }
 
@@ -117,10 +111,7 @@ export const ReceiptActions = ({
     if (!receiptRef.current) return;
 
     try {
-      toast({
-        title: 'Generating PDF...',
-        description: 'Please wait',
-      });
+      toast.info('Generating PDF... Please wait');
 
       const canvas = await html2canvas(receiptRef.current, {
         scale: 2,
@@ -141,17 +132,10 @@ export const ReceiptActions = ({
       pdf.addImage(imgData, 'PNG', 0, 5, imgWidth, imgHeight);
       pdf.save(`receipt-${sessionId.slice(0, 8)}.pdf`);
 
-      toast({
-        title: 'PDF Downloaded',
-        description: 'Receipt saved successfully',
-      });
+      toast.success('Receipt saved successfully');
     } catch (error) {
       console.error('PDF export error:', error);
-      toast({
-        title: 'Export Failed',
-        description: 'Could not generate PDF',
-        variant: 'destructive',
-      });
+      toast.error('Could not generate PDF');
     }
   };
 

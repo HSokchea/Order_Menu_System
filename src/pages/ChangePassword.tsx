@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { KeyRound, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 
@@ -20,7 +20,6 @@ const ChangePassword = ({ restaurantName, onComplete }: ChangePasswordProps) => 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   // Password validation
   const hasMinLength = newPassword.length >= 8;
@@ -34,11 +33,7 @@ const ChangePassword = ({ restaurantName, onComplete }: ChangePasswordProps) => 
     e.preventDefault();
     
     if (!isValidPassword) {
-      toast({
-        title: "Invalid Password",
-        description: "Please ensure your password meets all requirements.",
-        variant: "destructive",
-      });
+      toast.error("Please ensure your password meets all requirements.");
       return;
     }
 
@@ -64,10 +59,7 @@ const ChangePassword = ({ restaurantName, onComplete }: ChangePasswordProps) => 
 
       if (profileError) throw profileError;
 
-      toast({
-        title: "Password Updated",
-        description: "Your password has been changed successfully.",
-      });
+      toast.success("Your password has been changed successfully.");
 
       if (onComplete) {
         onComplete();
@@ -76,11 +68,7 @@ const ChangePassword = ({ restaurantName, onComplete }: ChangePasswordProps) => 
       }
     } catch (error: any) {
       console.error('Password change error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update password",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to update password");
     } finally {
       setLoading(false);
     }

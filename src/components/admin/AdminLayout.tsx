@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -24,7 +24,6 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
   const { clearState, profile, user } = useUserProfile();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   
   // Get display name: prefer full_name, fallback to email
@@ -45,10 +44,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
       }
       
       // 4. Show success toast
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out.",
-      });
+      toast.success("You have been successfully signed out.");
       
       // 5. Navigate to login with replace to prevent back-button access
       navigate("/auth", { replace: true });

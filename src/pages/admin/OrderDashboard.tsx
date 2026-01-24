@@ -9,7 +9,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Clock, ChefHat, CheckCircle, Truck, Filter, Search, ChevronUp, ChevronDown, Eye, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
@@ -38,7 +38,6 @@ interface Order {
 
 const OrderDashboard = () => {
   const { user, restaurant } = useUserProfile();
-  const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -112,16 +111,9 @@ const OrderDashboard = () => {
       .eq('id', orderId);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Order status updated",
-      });
+      toast.success("Order status updated");
       fetchOrders();
     }
   };

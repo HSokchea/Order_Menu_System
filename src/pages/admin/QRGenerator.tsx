@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Download, Plus, Copy, Edit, Trash2, Eye } from 'lucide-react';
 import QRCodeThumbnail from '@/components/QRCodeThumbnail';
 import { QRCardPreviewDialog } from '@/components/admin/QRCardPreviewDialog';
@@ -28,7 +28,6 @@ interface RestaurantData {
 
 const QRGenerator = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [tables, setTables] = useState<TableData[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTableNumber, setNewTableNumber] = useState('');
@@ -103,16 +102,9 @@ const QRGenerator = () => {
     const menuUrl = `${window.location.origin}/menu/${tableId}`;
     try {
       await navigator.clipboard.writeText(menuUrl);
-      toast({
-        title: "URL Copied",
-        description: "Menu URL has been copied to clipboard",
-      });
+      toast.success("Menu URL has been copied to clipboard");
     } catch (error) {
-      toast({
-        title: "Copy Failed",
-        description: "Failed to copy URL. Please copy manually.",
-        variant: "destructive",
-      });
+      toast.error("Failed to copy URL. Please copy manually.");
     }
   };
 
@@ -121,22 +113,14 @@ const QRGenerator = () => {
 
     const tableNumber = parseInt(newTableNumber);
     if (isNaN(tableNumber)) {
-      toast({
-        title: "Invalid Table Number",
-        description: "Please enter a valid number",
-        variant: "destructive",
-      });
+      toast.error("Please enter a valid number");
       return;
     }
 
     // Check if table number already exists
     const existingTable = tables.find(table => table.table_number === tableNumber.toString());
     if (existingTable) {
-      toast({
-        title: "Duplicate Table Number",
-        description: `Table ${tableNumber} already exists. Please choose a different number.`,
-        variant: "destructive",
-      });
+      toast.error(`Table ${tableNumber} already exists. Please choose a different number.`);
       return;
     }
 
@@ -150,11 +134,7 @@ const QRGenerator = () => {
       .single();
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
       return;
     }
 
@@ -165,10 +145,7 @@ const QRGenerator = () => {
       .update({ qr_code_url: menuUrl })
       .eq('id', data.id);
 
-    toast({
-      title: "Success",
-      description: "Table added successfully",
-    });
+    toast.success("Table added successfully");
     setNewTableNumber('');
   };
 
@@ -183,11 +160,7 @@ const QRGenerator = () => {
 
     const tableNumber = parseInt(editTableNumber);
     if (isNaN(tableNumber)) {
-      toast({
-        title: "Invalid Table Number",
-        description: "Please enter a valid number",
-        variant: "destructive",
-      });
+      toast.error("Please enter a valid number");
       return;
     }
 
@@ -196,11 +169,7 @@ const QRGenerator = () => {
       table.table_number === tableNumber.toString() && table.id !== editingTable.id
     );
     if (existingTable) {
-      toast({
-        title: "Duplicate Table Number",
-        description: `Table ${tableNumber} already exists. Please choose a different number.`,
-        variant: "destructive",
-      });
+      toast.error(`Table ${tableNumber} already exists. Please choose a different number.`);
       return;
     }
 
@@ -212,16 +181,9 @@ const QRGenerator = () => {
       .eq('id', editingTable.id);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Table updated successfully",
-      });
+      toast.success("Table updated successfully");
       setIsEditDialogOpen(false);
       setEditingTable(null);
       setEditTableNumber('');
@@ -243,16 +205,9 @@ const QRGenerator = () => {
       .eq('id', deletingTable.id);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: `Table ${deletingTable.table_number} deleted successfully`,
-      });
+      toast.success(`Table ${deletingTable.table_number} deleted successfully`);
       setIsDeleteDialogOpen(false);
       setDeletingTable(null);
       fetchData();

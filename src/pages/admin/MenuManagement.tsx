@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Plus, Filter } from 'lucide-react';
 import CategoryManager from '@/components/admin/CategoryManager';
 import ImageUpload from '@/components/admin/ImageUpload';
@@ -41,7 +41,6 @@ interface MenuItem {
 
 const MenuManagement = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,11 +124,7 @@ const MenuManagement = () => {
 
   const handleSaveItem = async () => {
     if (!user || !itemName || !itemPrice || !itemCategory) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -159,16 +154,9 @@ const MenuManagement = () => {
     }
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: `Menu item ${editingItem ? 'updated' : 'added'} successfully`,
-      });
+      toast.success(`Menu item ${editingItem ? 'updated' : 'added'} successfully`);
       setDialogOpen(false);
       resetForm();
       fetchData();
@@ -193,16 +181,9 @@ const MenuManagement = () => {
       .eq('id', id);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Menu item deleted successfully",
-      });
+      toast.success("Menu item deleted successfully");
       fetchData();
     }
   };

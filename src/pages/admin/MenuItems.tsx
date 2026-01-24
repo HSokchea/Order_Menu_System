@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Plus, Filter, Search, Edit, Trash2, ImageIcon, ChevronUp, ChevronDown } from 'lucide-react';
 import ImageUpload from '@/components/admin/ImageUpload';
 import ItemOptionsEditor, { ItemOptions } from '@/components/admin/ItemOptionsEditor';
@@ -54,7 +54,6 @@ const getDisplayPrice = (item: MenuItem): number => {
 
 const MenuItems = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,11 +196,7 @@ const MenuItems = () => {
 
   const handleSaveItem = async () => {
     if (!user || !itemName || !itemCategory) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -209,50 +204,30 @@ const MenuItems = () => {
     if (itemSizeEnabled) {
       // Size-based pricing validation
       if (!itemSizes || itemSizes.length === 0) {
-        toast({
-          title: "Invalid Configuration",
-          description: "Size-based items must have at least one size",
-          variant: "destructive",
-        });
+        toast.error("Size-based items must have at least one size");
         return;
       }
       // Check all sizes have labels and valid prices
       for (const size of itemSizes) {
         if (!size.label.trim()) {
-          toast({
-            title: "Invalid Configuration",
-            description: "All sizes must have a label",
-            variant: "destructive",
-          });
+          toast.error("All sizes must have a label");
           return;
         }
         if (size.price < 0) {
-          toast({
-            title: "Invalid Configuration",
-            description: "Size prices must be 0 or greater",
-            variant: "destructive",
-          });
+          toast.error("Size prices must be 0 or greater");
           return;
         }
       }
       // Ensure exactly one default
       const defaultCount = itemSizes.filter(s => s.default).length;
       if (defaultCount !== 1) {
-        toast({
-          title: "Invalid Configuration",
-          description: "Exactly one size must be set as default",
-          variant: "destructive",
-        });
+        toast.error("Exactly one size must be set as default");
         return;
       }
     } else {
       // Fixed price validation
       if (!itemPrice || parseFloat(itemPrice) < 0) {
-        toast({
-          title: "Missing Information",
-          description: "Fixed price items must have a valid base price",
-          variant: "destructive",
-        });
+        toast.error("Fixed price items must have a valid base price");
         return;
       }
     }
@@ -261,28 +236,16 @@ const MenuItems = () => {
     if (itemOptions?.options) {
       for (const group of itemOptions.options) {
         if (!group.name.trim()) {
-          toast({
-            title: "Invalid Options",
-            description: "All option groups must have a name",
-            variant: "destructive",
-          });
+          toast.error("All option groups must have a name");
           return;
         }
         if (group.required && group.values.length === 0) {
-          toast({
-            title: "Invalid Options",
-            description: `Required option group "${group.name}" must have at least one value`,
-            variant: "destructive",
-          });
+          toast.error(`Required option group "${group.name}" must have at least one value`);
           return;
         }
         for (const value of group.values) {
           if (!value.label.trim()) {
-            toast({
-              title: "Invalid Options",
-              description: `All option values in "${group.name}" must have a label`,
-              variant: "destructive",
-            });
+            toast.error(`All option values in "${group.name}" must have a label`);
             return;
           }
         }
@@ -318,16 +281,9 @@ const MenuItems = () => {
     }
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: `Menu item ${editingItem ? 'updated' : 'added'} successfully`,
-      });
+      toast.success(`Menu item ${editingItem ? 'updated' : 'added'} successfully`);
       setDialogOpen(false);
       resetForm();
       fetchData();
@@ -355,16 +311,9 @@ const MenuItems = () => {
       .eq('id', id);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } else {
-      toast({
-        title: "Success",
-        description: "Menu item deleted successfully",
-      });
+      toast.success("Menu item deleted successfully");
       fetchData();
     }
   };

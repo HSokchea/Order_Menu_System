@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ChefHat, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,6 @@ const Auth = () => {
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const { signIn, signUp } = useAuth();
-  const { toast } = useToast();
 
   const markFieldTouched = (field: string) => {
     setTouchedFields(prev => ({ ...prev, [field]: true }));
@@ -159,11 +158,7 @@ const Auth = () => {
 
       if (profile && profile.status === 'inactive') {
         await supabase.auth.signOut();
-        toast({
-          title: "Account Inactive",
-          description: "Your account has been deactivated. Please contact your manager.",
-          variant: "destructive",
-        });
+        toast.error("Your account has been deactivated. Please contact your manager.");
         setLoading(false);
         return;
       }
@@ -177,11 +172,7 @@ const Auth = () => {
 
         if (!restaurant) {
           await supabase.auth.signOut();
-          toast({
-            title: "Setup Incomplete",
-            description: "Your account setup is incomplete. Please sign up again to create your shop.",
-            variant: "destructive",
-          });
+          toast.error("Your account setup is incomplete. Please sign up again to create your shop.");
           setLoading(false);
           return;
         }
@@ -231,10 +222,7 @@ const Auth = () => {
     if (data?.user?.identities?.length === 0) {
       setFormErrors(prev => ({ ...prev, email: 'This email is already registered. Please check your email or sign in.' }));
     } else {
-      toast({
-        title: "Account Created",
-        description: "Please check your email to verify your account.",
-      });
+      toast.success("Please check your email to verify your account.");
     }
 
     setLoading(false);
