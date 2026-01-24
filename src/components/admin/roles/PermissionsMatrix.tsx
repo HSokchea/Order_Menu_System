@@ -276,23 +276,27 @@ export function PermissionsMatrix() {
               </CardDescription>
             </CardHeader>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleDiscard}
-                disabled={!hasUnsavedChanges || isSaving}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Discard
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleSave}
-                disabled={!hasUnsavedChanges || isSaving}
-              >
-                <Save className="h-4 w-4 mr-1" />
-                {isSaving ? "Saving..." : `Save${hasUnsavedChanges ? ` (${pendingChanges.size})` : ""}`}
-              </Button>
+              {hasUnsavedChanges && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDiscard}
+                    disabled={!hasUnsavedChanges || isSaving}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Discard
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={!hasUnsavedChanges || isSaving}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {isSaving ? "Saving..." : `Save${hasUnsavedChanges ? ` (${pendingChanges.size})` : ""}`}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
           <CardContent>
