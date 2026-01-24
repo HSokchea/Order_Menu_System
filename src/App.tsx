@@ -4,17 +4,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminMain from "./pages/admin/AdminMain";
 import Onboarding from "./pages/admin/Onboarding";
 import ChangePassword from "./pages/ChangePassword";
-import MenuView from "./pages/customer/MenuView";
-import CartSummary from "./pages/customer/CartSummary";
-import OrderSuccess from "./pages/customer/OrderSuccess";
-import MyOrders from "./pages/customer/MyOrders";
-import SessionBill from "./pages/customer/SessionBill";
+import WebMenu from "./pages/customer/WebMenu";
+import WebCart from "./pages/customer/WebCart";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,12 +24,9 @@ const AppContent = () => {
 
   return (
     <Routes>
-      {/* Public customer routes */}
-      <Route path="/menu/:tableId" element={<MenuView />} />
-      <Route path="/cart/:tableId" element={<CartSummary />} />
-      <Route path="/my-orders/:tableId" element={<MyOrders />} />
-      <Route path="/session-bill/:tableId" element={<SessionBill />} />
-      <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+      {/* Device-based QR ordering routes */}
+      <Route path="/web/:shopId" element={<WebMenu />} />
+      <Route path="/web/:shopId/cart" element={<WebCart />} />
       
       {/* Auth routes */}
       {!user ? (

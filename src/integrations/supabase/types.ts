@@ -712,6 +712,117 @@ export type Database = {
           },
         ]
       }
+      tb_his_admin: {
+        Row: {
+          created_at: string
+          customer_notes: string | null
+          device_id: string
+          id: string
+          items: Json | null
+          original_order_id: string | null
+          paid_at: string | null
+          shop_id: string
+          status: string
+          total_usd: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_notes?: string | null
+          device_id: string
+          id?: string
+          items?: Json | null
+          original_order_id?: string | null
+          paid_at?: string | null
+          shop_id: string
+          status?: string
+          total_usd?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_notes?: string | null
+          device_id?: string
+          id?: string
+          items?: Json | null
+          original_order_id?: string | null
+          paid_at?: string | null
+          shop_id?: string
+          status?: string
+          total_usd?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_his_admin_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "public_restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_his_admin_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tb_order_temporary: {
+        Row: {
+          created_at: string
+          customer_notes: string | null
+          device_id: string
+          id: string
+          items: Json | null
+          order_date: string
+          shop_id: string
+          status: string
+          total_usd: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_notes?: string | null
+          device_id: string
+          id?: string
+          items?: Json | null
+          order_date?: string
+          shop_id: string
+          status?: string
+          total_usd?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_notes?: string | null
+          device_id?: string
+          id?: string
+          items?: Json | null
+          order_date?: string
+          shop_id?: string
+          status?: string
+          total_usd?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tb_order_temporary_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "public_restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tb_order_temporary_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           assigned_by: string | null
@@ -843,6 +954,10 @@ export type Database = {
         Args: { p_child_role_id: string; p_parent_role_id: string }
         Returns: boolean
       }
+      complete_device_order_payment: {
+        Args: { p_device_id: string; p_order_id: string }
+        Returns: Json
+      }
       complete_session_payment:
         | { Args: { p_session_id: string }; Returns: Json }
         | {
@@ -878,6 +993,10 @@ export type Database = {
         Returns: string[]
       }
       get_inherited_role_ids: { Args: { p_role_id: string }; Returns: string[] }
+      get_or_create_device_order: {
+        Args: { p_device_id: string; p_shop_id: string }
+        Returns: Json
+      }
       get_or_create_table_session: {
         Args: { p_restaurant_id: string; p_table_id: string }
         Returns: string
@@ -923,6 +1042,16 @@ export type Database = {
           id: string
           name: string
           updated_at: string
+        }[]
+      }
+      get_public_shop: {
+        Args: { p_shop_id: string }
+        Returns: {
+          created_at: string
+          currency: string
+          id: string
+          logo_url: string
+          name: string
         }[]
       }
       get_public_table: {
@@ -990,6 +1119,22 @@ export type Database = {
           total_amount: number
         }[]
       }
+      get_shop_menu_items: {
+        Args: { p_shop_id: string }
+        Returns: {
+          category_id: string
+          category_name: string
+          description: string
+          id: string
+          image_url: string
+          is_available: boolean
+          name: string
+          options: Json
+          price_usd: number
+          size_enabled: boolean
+          sizes: Json
+        }[]
+      }
       get_user_effective_permissions: {
         Args: { p_restaurant_id: string; p_user_id: string }
         Returns: {
@@ -1005,6 +1150,16 @@ export type Database = {
       get_user_restaurant_id_safe: {
         Args: { p_user_id: string }
         Returns: string
+      }
+      update_device_order: {
+        Args: {
+          p_customer_notes?: string
+          p_device_id: string
+          p_items: Json
+          p_order_id: string
+          p_total_usd: number
+        }
+        Returns: Json
       }
       user_has_permission: {
         Args: {
