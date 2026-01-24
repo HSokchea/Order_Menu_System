@@ -79,7 +79,7 @@ const WebCart = () => {
         // Wait a moment to show success state, then redirect
         setTimeout(() => {
           setShowPaymentDialog(false);
-          navigate(`/web/${shopId}`);
+          navigate(`/menu/${shopId}`);
         }, 2000);
       } else {
         toast.error(result.error || 'Payment failed');
@@ -105,7 +105,7 @@ const WebCart = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button variant="ghost" asChild className="mr-2">
-                <Link to={`/web/${shopId}`}>
+                <Link to={`/menu/${shopId}`}>
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
@@ -125,7 +125,7 @@ const WebCart = () => {
               <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
               <p className="text-muted-foreground mb-4">Add some items from the menu</p>
               <Button asChild>
-                <Link to={`/web/${shopId}`}>Browse Menu</Link>
+                <Link to={`/menu/${shopId}`}>Browse Menu</Link>
               </Button>
             </CardContent>
           </Card>

@@ -24,9 +24,9 @@ const AppContent = () => {
 
   return (
     <Routes>
-      {/* Device-based QR ordering routes */}
-      <Route path="/web/:shopId" element={<WebMenu />} />
-      <Route path="/web/:shopId/cart" element={<WebCart />} />
+      {/* Static shop QR menu routes (public) */}
+      <Route path="/menu/:shopId" element={<WebMenu />} />
+      <Route path="/menu/:shopId/cart" element={<WebCart />} />
       
       {/* Auth routes */}
       {!user ? (
