@@ -201,7 +201,7 @@ const Auth = () => {
           <div className="flex justify-center mb-4">
             <ChefHat className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">QR Menu System</CardTitle>
+          <CardTitle className="text-2xl">Scanvia</CardTitle>
           <CardDescription>Sign in to manage your shop</CardDescription>
         </CardHeader>
         <CardContent>
