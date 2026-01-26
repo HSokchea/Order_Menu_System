@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ImageIcon, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { SelectedOption } from '@/hooks/useCart';
 
@@ -47,9 +48,10 @@ interface ItemDetailContentProps {
   open: boolean;
   onAddToCart: (item: MenuItem, quantity: number, selectedOptions?: SelectedOption[]) => void;
   onClose: () => void;
+  variant?: 'mobile' | 'desktop';
 }
 
-const ItemDetailContent = ({ item, open, onAddToCart, onClose }: ItemDetailContentProps) => {
+const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile' }: ItemDetailContentProps) => {
   const [quantity, setQuantity] = useState(1);
   const [selections, setSelections] = useState<Record<string, string | string[]>>({});
   const [selectedSizeIndex, setSelectedSizeIndex] = useState<number>(0);
@@ -194,189 +196,251 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose }: ItemDetailConte
     onClose();
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      <div className="overflow-y-auto flex-1">
-        {/* Item Image */}
-        {item.image_url ? (
-          <div className="relative w-full aspect-video bg-muted">
-            <img
-              src={item.image_url}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : (
-          <div className="w-full aspect-video bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
-            <ImageIcon className="h-12 w-12 text-muted-foreground" />
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="p-4 pb-2 text-left">
-          <h2 className="text-xl font-semibold leading-none tracking-tight">{item.name}</h2>
-          {item.description && (
-            <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-          )}
-          <p className="text-lg font-bold text-primary mt-2">
-            ${basePrice.toFixed(2)}
-            {optionsTotal !== 0 && (
-              <span className={`text-sm font-normal ml-2 ${optionsTotal > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
-                {optionsTotal > 0 ? '+' : ''}{optionsTotal.toFixed(2)} options
-              </span>
-            )}
-          </p>
-        </div>
-
-        {/* Size Selection */}
-        {sizeEnabled && sizes.length > 0 && (
-          <div className="px-4 pb-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Label className="text-base font-semibold">Size</Label>
-              <Badge variant="secondary" className="text-xs">Required</Badge>
-            </div>
-            <div className="space-y-2">
-              {sizes.map((size, index) => {
-                const isSelected = selectedSizeIndex === index;
-                return (
-                  <div
-                    key={index}
-                    className={`flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors cursor-pointer ${isSelected ? 'border-primary ring-1 ring-primary' : ''}`}
-                    onClick={() => setSelectedSizeIndex(index)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary' : 'border-muted-foreground/50'}`}>
-                        {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
-                      </div>
-                      <span className="font-normal">{size.label}</span>
-                    </div>
-                    <span className="text-sm font-medium">${size.price.toFixed(2)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Option Groups */}
-        {options.length > 0 && (
-          <div className="px-4 pb-4 space-y-6">
-            {options.map((group, groupIndex) => (
-              <div key={groupIndex} className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Label className="text-base font-semibold">{group.name}</Label>
-                  {group.required && (
-                    <Badge variant="secondary" className="text-xs">Required</Badge>
-                  )}
-                  {group.type === 'multiple' && (
-                    <Badge variant="outline" className="text-xs">Select multiple</Badge>
-                  )}
-                </div>
-
-                {group.type === 'single' ? (
-                  <div className="space-y-2">
-                    {group.values.map((option, optionIndex) => {
-                      const isSelected = selections[group.name] === option.label;
-                      return (
-                        <div
-                          key={optionIndex}
-                          className={`flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors cursor-pointer ${isSelected ? 'border-primary ring-1 ring-primary' : ''}`}
-                          onClick={() => handleSingleSelect(group.name, option.label, group.required)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-primary' : 'border-muted-foreground/50'}`}>
-                              {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
-                            </div>
-                            <span className="font-normal">{option.label}</span>
-                          </div>
-                          {option.price !== 0 && (
-                            <span className={`text-sm ${option.price > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
-                              {option.price > 0 ? '+' : ''}{option.price.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {group.values.map((option, optionIndex) => {
-                      const isChecked = ((selections[group.name] as string[]) || []).includes(option.label);
-                      return (
-                        <div
-                          key={optionIndex}
-                          className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
-                          onClick={() => handleMultipleSelect(group.name, option.label, !isChecked)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Checkbox
-                              id={`${group.name}-${optionIndex}`}
-                              checked={isChecked}
-                              onCheckedChange={(checked) =>
-                                handleMultipleSelect(group.name, option.label, !!checked)
-                              }
-                            />
-                            <Label
-                              htmlFor={`${group.name}-${optionIndex}`}
-                              className="cursor-pointer font-normal"
-                            >
-                              {option.label}
-                            </Label>
-                          </div>
-                          {option.price !== 0 && (
-                            <span className={`text-sm ${option.price > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
-                              {option.price > 0 ? '+' : ''}{option.price.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+  // Shared components
+  const ImageSection = ({ className = '' }: { className?: string }) => (
+    item.image_url ? (
+      <div className={`relative bg-muted overflow-hidden ${className}`}>
+        <img
+          src={item.image_url}
+          alt={item.name}
+          className="w-full h-full object-cover"
+        />
       </div>
+    ) : (
+      <div className={`bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center ${className}`}>
+        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+      </div>
+    )
+  );
 
-      {/* Footer */}
-      <div className="border-t bg-background p-4 mt-auto space-y-4">
-        {/* Quantity Selector */}
-        <div className="flex items-center justify-between">
-          <span className="font-medium">Quantity</span>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              disabled={quantity <= 1}
-              className="h-10 w-10 rounded-full"
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <span className="text-lg font-semibold min-w-[2rem] text-center">
-              {quantity}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setQuantity(quantity + 1)}
-              className="h-10 w-10 rounded-full"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+  const PriceDisplay = () => (
+    <p className="text-xl font-bold text-primary">
+      ${basePrice.toFixed(2)}
+      {optionsTotal !== 0 && (
+        <span className={`text-sm font-normal ml-2 ${optionsTotal > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
+          {optionsTotal > 0 ? '+' : ''}{optionsTotal.toFixed(2)} options
+        </span>
+      )}
+    </p>
+  );
+
+  const SizeSelection = () => (
+    sizeEnabled && sizes.length > 0 ? (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Label className="text-sm font-semibold">Size</Label>
+          <Badge variant="secondary" className="text-xs">Required</Badge>
+        </div>
+        <div className="space-y-2">
+          {sizes.map((size, index) => {
+            const isSelected = selectedSizeIndex === index;
+            return (
+              <div
+                key={index}
+                className={`flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-all cursor-pointer ${isSelected ? 'border-primary ring-1 ring-primary shadow-sm' : 'hover:border-muted-foreground/30'}`}
+                onClick={() => setSelectedSizeIndex(index)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'border-primary' : 'border-muted-foreground/50'}`}>
+                    {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                  <span className="font-normal">{size.label}</span>
+                </div>
+                <span className="text-sm font-medium">${size.price.toFixed(2)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    ) : null
+  );
+
+  const OptionGroups = () => (
+    options.length > 0 ? (
+      <div className="space-y-5">
+        {options.map((group, groupIndex) => (
+          <div key={groupIndex} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-semibold">{group.name}</Label>
+              {group.required && (
+                <Badge variant="secondary" className="text-xs">Required</Badge>
+              )}
+              {group.type === 'multiple' && (
+                <Badge variant="outline" className="text-xs">Select multiple</Badge>
+              )}
+            </div>
+
+            {group.type === 'single' ? (
+              <div className="space-y-2">
+                {group.values.map((option, optionIndex) => {
+                  const isSelected = selections[group.name] === option.label;
+                  return (
+                    <div
+                      key={optionIndex}
+                      className={`flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-all cursor-pointer ${isSelected ? 'border-primary ring-1 ring-primary shadow-sm' : 'hover:border-muted-foreground/30'}`}
+                      onClick={() => handleSingleSelect(group.name, option.label, group.required)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'border-primary' : 'border-muted-foreground/50'}`}>
+                          {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
+                        </div>
+                        <span className="font-normal">{option.label}</span>
+                      </div>
+                      {option.price !== 0 && (
+                        <span className={`text-sm ${option.price > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
+                          {option.price > 0 ? '+' : ''}{option.price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {group.values.map((option, optionIndex) => {
+                  const isChecked = ((selections[group.name] as string[]) || []).includes(option.label);
+                  return (
+                    <div
+                      key={optionIndex}
+                      className={`flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-all cursor-pointer ${isChecked ? 'border-primary ring-1 ring-primary shadow-sm' : 'hover:border-muted-foreground/30'}`}
+                      onClick={() => handleMultipleSelect(group.name, option.label, !isChecked)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id={`${group.name}-${optionIndex}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) =>
+                            handleMultipleSelect(group.name, option.label, !!checked)
+                          }
+                        />
+                        <Label
+                          htmlFor={`${group.name}-${optionIndex}`}
+                          className="cursor-pointer font-normal"
+                        >
+                          {option.label}
+                        </Label>
+                      </div>
+                      {option.price !== 0 && (
+                        <span className={`text-sm ${option.price > 0 ? 'text-muted-foreground' : 'text-green-600'}`}>
+                          {option.price > 0 ? '+' : ''}{option.price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    ) : null
+  );
+
+  const QuantitySelector = () => (
+    <div className="flex items-center justify-between">
+      <span className="font-medium">Quantity</span>
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+          disabled={quantity <= 1}
+          className="h-10 w-10 rounded-full"
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <span className="text-lg font-semibold min-w-[2rem] text-center">
+          {quantity}
+        </span>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setQuantity(quantity + 1)}
+          className="h-10 w-10 rounded-full"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  const AddToCartButton = () => (
+    <Button
+      className="w-full h-12 text-base font-semibold"
+      onClick={handleAddToCart}
+      disabled={!isValid}
+    >
+      <ShoppingCart className="h-5 w-5 mr-2" />
+      Add to Cart – ${totalPrice.toFixed(2)}
+    </Button>
+  );
+
+  // Mobile Layout (vertical stack)
+  if (variant === 'mobile') {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="overflow-y-auto flex-1">
+          <ImageSection className="w-full aspect-video" />
+          
+          <div className="p-4 pb-2 text-left">
+            <h2 className="text-xl font-semibold leading-none tracking-tight">{item.name}</h2>
+            {item.description && (
+              <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+            )}
+            <div className="mt-2">
+              <PriceDisplay />
+            </div>
+          </div>
+
+          <div className="px-4 pb-4 space-y-4">
+            <SizeSelection />
+            <OptionGroups />
           </div>
         </div>
 
-        {/* Add to Cart Button */}
-        <Button
-          className="w-full h-12 text-base"
-          onClick={handleAddToCart}
-          disabled={!isValid}
-        >
-          <ShoppingCart className="h-5 w-5 mr-2" />
-          Add to Cart – ${totalPrice.toFixed(2)}
-        </Button>
+        <div className="border-t bg-background p-4 mt-auto space-y-4">
+          <QuantitySelector />
+          <AddToCartButton />
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout (two columns: image left, details right)
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex flex-1 min-h-0">
+        {/* Left Column - Image */}
+        <div className="w-2/5 shrink-0 bg-muted">
+          <ImageSection className="w-full h-full min-h-[300px]" />
+        </div>
+
+        {/* Right Column - Details */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <ScrollArea className="flex-1">
+            <div className="p-6 space-y-5">
+              {/* Description */}
+              {item.description && (
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+              )}
+              
+              {/* Price */}
+              <PriceDisplay />
+
+              {/* Size Selection */}
+              <SizeSelection />
+
+              {/* Option Groups */}
+              <OptionGroups />
+            </div>
+          </ScrollArea>
+
+          {/* Footer */}
+          <div className="border-t bg-background p-4 space-y-4 shrink-0">
+            <QuantitySelector />
+            <AddToCartButton />
+          </div>
+        </div>
       </div>
     </div>
   );
