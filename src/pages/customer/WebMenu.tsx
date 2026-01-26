@@ -118,8 +118,7 @@ const WebMenu = () => {
       }));
 
       setCategories(categoriesWithItems);
-      // Always set first category as default if no category is active
-      if (categoriesWithItems.length > 0 && !activeCategory) {
+      if (!activeCategory && categoriesWithItems[0]?.id) {
         setActiveCategory(categoriesWithItems[0].id);
       }
       setLoading(false);
@@ -417,7 +416,7 @@ const WebMenu = () => {
         <div className="space-y-8">
           {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items &&
             filteredCategories.find(cat => cat.id === activeCategory)!.menu_items.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">
+            <div className="grid grid-cols-2 md:flex lg:flex gap-2 md:gap-4 lg:gap-6 justify-start">
               {filteredCategories
                 .filter(cat => cat.menu_items.length > 0)
                 .find(cat => cat.id === activeCategory)?.menu_items.map((item) => {
@@ -440,7 +439,7 @@ const WebMenu = () => {
                       className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer ${!item.is_available ? 'opacity-50' : ''}`}
                     >
                       {/* Product Image */}
-                      <div className="relative w-full aspect-square bg-muted rounded-2xl">
+                      <div className="relative h-48 w-48 aspect-square bg-muted rounded-2xl">
                         {item.image_url ? (
                           <img
                             src={item.image_url}

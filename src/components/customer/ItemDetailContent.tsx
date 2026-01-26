@@ -411,14 +411,19 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex flex-1 min-h-0">
         {/* Left Column - Image */}
-        <div className="w-2/5 shrink-0 bg-muted">
+        <div className="w-3/6 shrink-0 bg-muted">
           <ImageSection className="w-full h-full min-h-[300px]" />
         </div>
 
         {/* Right Column - Details */}
         <div className="flex-1 flex flex-col min-h-0">
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 overflow-y-auto scrollbar-hide">
             <div className="p-6 space-y-5">
+              {/* Name */}
+              {item.name && (
+                <p className="text-lg font-semibold text-muted-background leading-relaxed">{item.name}</p>
+              )}
+
               {/* Description */}
               {item.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>

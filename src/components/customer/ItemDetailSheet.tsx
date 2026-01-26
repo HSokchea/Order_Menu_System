@@ -52,12 +52,9 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="max-w-3xl max-h-[85vh] p-0 overflow-hidden flex flex-col gap-0"
+        className="max-w-5xl max-h-[85vh] p-0 overflow-hidden flex flex-col gap-0"
         hideCloseButton={false}
       >
-        <DialogHeader className="px-6 py-4 border-b bg-background shrink-0">
-          <DialogTitle className="text-lg font-semibold">{item.name}</DialogTitle>
-        </DialogHeader>
         <ItemDetailContent
           item={item}
           open={open}
