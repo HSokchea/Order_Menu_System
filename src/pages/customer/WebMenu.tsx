@@ -197,7 +197,6 @@ const WebMenu = () => {
   const handleItemClick = (item: MenuItem) => {
     const hasOptions = item.options?.options && item.options.options.length > 0;
     const hasSizes = item.size_enabled && item.sizes && item.sizes.length > 0;
-    
     if (hasOptions || hasSizes) {
       setSelectedItem(item);
       setIsItemSheetOpen(true);
@@ -209,7 +208,7 @@ const WebMenu = () => {
   // Handle quick add
   const handleQuickAdd = async (item: MenuItem) => {
     const orderItem: OrderItem = {
-      id: crypto.randomUUID(),
+      id: item.id,
       menu_item_id: item.id,
       name: item.name,
       quantity: 1,
@@ -253,7 +252,7 @@ const WebMenu = () => {
     }
 
     const orderItem: OrderItem = {
-      id: crypto.randomUUID(),
+      id: item.id,
       menu_item_id: item.id,
       name: item.name,
       quantity,

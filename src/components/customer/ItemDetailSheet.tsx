@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import ItemDetailContent, { MenuItem } from './ItemDetailContent';
 import { SelectedOption } from '@/hooks/useCart';
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { DialogDescription } from '@radix-ui/react-dialog';
 
 // Re-export types for backward compatibility
 export type { OptionValue, OptionGroup, ItemOptions, SizeOption, MenuItem } from './ItemDetailContent';
@@ -55,6 +57,12 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
         className="max-w-5xl max-h-[85vh] p-0 overflow-hidden flex flex-col gap-0"
         hideCloseButton={false}
       >
+        <VisuallyHidden asChild>
+          <DialogTitle>Item Details</DialogTitle>
+        </VisuallyHidden>
+        <VisuallyHidden asChild>
+          <DialogDescription>Description</DialogDescription>
+        </VisuallyHidden>
         <ItemDetailContent
           item={item}
           open={open}
