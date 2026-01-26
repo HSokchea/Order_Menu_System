@@ -118,7 +118,8 @@ const WebMenu = () => {
       }));
 
       setCategories(categoriesWithItems);
-      if (!activeCategory && categoriesWithItems[0]?.id) {
+      // Always set first category as default if no category is active
+      if (categoriesWithItems.length > 0 && !activeCategory) {
         setActiveCategory(categoriesWithItems[0].id);
       }
       setLoading(false);
