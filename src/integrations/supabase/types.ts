@@ -1064,6 +1064,14 @@ export type Database = {
           table_number: string
         }[]
       }
+      get_public_table_by_id: {
+        Args: { p_table_id: string }
+        Returns: {
+          id: string
+          restaurant_id: string
+          table_number: string
+        }[]
+      }
       get_role_effective_permissions: {
         Args: { p_role_id: string }
         Returns: {

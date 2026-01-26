@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ShoppingCart, Plus, Minus, Search, X, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceOrder, OrderItem } from '@/hooks/useDeviceOrder';
@@ -38,6 +38,8 @@ interface ShopInfo {
 
 const WebMenu = () => {
   const { shopId } = useParams();
+  const [searchParams] = useSearchParams();
+  const tableId = searchParams.get('table_id'); // Extract table_id from URL query params
   const [categories, setCategories] = useState<Category[]>([]);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ const WebMenu = () => {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isItemSheetOpen, setIsItemSheetOpen] = useState(false);
 
-  // Use device-based order hook
+  // Use device-based order hook with optional table_id
   const {
     order,
     isLoading: orderLoading,
@@ -59,7 +61,7 @@ const WebMenu = () => {
     removeItem,
     updateItemQuantity,
     clearOrder,
-  } = useDeviceOrder(shopId);
+  } = useDeviceOrder(shopId, tableId);
 
   const fetchMenuData = async () => {
     if (!shopId) {
