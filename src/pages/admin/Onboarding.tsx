@@ -460,7 +460,6 @@ const Onboarding = () => {
                   <SelectContent>
                     <SelectItem value="dine_in">Dine In</SelectItem>
                     <SelectItem value="takeaway">Takeaway</SelectItem>
-                    <SelectItem value="delivery">Delivery</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
