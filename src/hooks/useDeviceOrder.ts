@@ -24,6 +24,8 @@ export interface TemporaryOrder {
   total_usd: number;
   customer_notes: string | null;
   items: OrderItem[];
+  order_type: 'dine_in' | 'takeaway';
+  table_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,8 +48,10 @@ interface UseDeviceOrderResult {
 /**
  * Hook to manage device-based temporary orders
  * Handles order creation, updates, and payment completion
+ * @param shopId - The shop ID
+ * @param tableId - Optional table ID for dine-in orders (from URL query param)
  */
-export const useDeviceOrder = (shopId?: string): UseDeviceOrderResult => {
+export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDeviceOrderResult => {
   const { deviceId, isLoaded: deviceIdLoaded } = useDeviceId();
   const [order, setOrder] = useState<TemporaryOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,10 +66,17 @@ export const useDeviceOrder = (shopId?: string): UseDeviceOrderResult => {
     setError(null);
 
     try {
-      const { data, error: rpcError } = await supabase.rpc('get_or_create_device_order', {
+      // Build RPC params - include table_id if provided
+      const rpcParams: { p_shop_id: string; p_device_id: string; p_table_id?: string } = {
         p_shop_id: shopId,
         p_device_id: deviceId,
-      });
+      };
+      
+      if (tableId) {
+        rpcParams.p_table_id = tableId;
+      }
+
+      const { data, error: rpcError } = await supabase.rpc('get_or_create_device_order', rpcParams);
 
       if (rpcError) {
         console.error('Error fetching device order:', rpcError);
@@ -84,6 +95,8 @@ export const useDeviceOrder = (shopId?: string): UseDeviceOrderResult => {
         setOrder({
           ...orderData,
           items,
+          order_type: orderData.order_type || 'takeaway',
+          table_id: orderData.table_id || null,
         });
       }
     } catch (err: any) {
@@ -92,7 +105,7 @@ export const useDeviceOrder = (shopId?: string): UseDeviceOrderResult => {
     } finally {
       setIsLoading(false);
     }
-  }, [shopId, deviceId]);
+  }, [shopId, deviceId, tableId]);
 
   // Load order when device ID is ready
   useEffect(() => {

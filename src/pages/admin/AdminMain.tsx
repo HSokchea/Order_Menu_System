@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import Categories from "./Categories";
 import MenuItems from "./MenuItems";
 import OrderDashboard from "./OrderDashboard";
+import CustomerOrders from "./CustomerOrders";
 import QRGenerator from "./QRGenerator";
 import TableSessions from "./TableSessions";
 import Settings from "./Settings";
@@ -24,7 +25,9 @@ const getPageInfo = (pathname: string) => {
     case "/admin/menu-items":
       return { title: "Menu Items", description: "Add and manage your menu items" };
     case "/admin/order-dashboard":
-      return { title: "Order Dashboard", description: "Monitor live orders" };
+      return { title: "Order Dashboard", description: "Monitor dine-in table orders" };
+    case "/admin/customer-orders":
+      return { title: "Customer Orders", description: "QR menu orders (dine-in & takeaway)" };
     case "/admin/table-sessions":
       return { title: "Table Sessions", description: "Manage dining sessions and billing" };
     case "/admin/settings":
@@ -117,7 +120,15 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        
+        {/* Customer Orders (QR Menu) - requires order permissions */}
+        <Route path="customer-orders" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.ORDERS_VIEW]} 
+            fallback={<AccessDenied message="You don't have permission to view orders." />}
+          >
+            <CustomerOrders />
+          </PermissionGuard>
+        } />
         {/* Table Sessions - requires billing or table permissions */}
         <Route path="table-sessions" element={
           <PermissionGuard 
