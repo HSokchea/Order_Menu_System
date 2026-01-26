@@ -1,14 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { supabase } from '@/integrations/supabase/client';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Search, X, ImageIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { useDeviceOrder, OrderItem } from '@/hooks/useDeviceOrder';
-import ItemDetailSheet, { ItemOptions, SizeOption } from '@/components/customer/ItemDetailSheet';
-import { SelectedOption } from '@/hooks/useCart';
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { ShoppingCart, Plus, Minus, Search, X, ImageIcon } from "lucide-react";
+import { toast } from "sonner";
+import { useDeviceOrder, OrderItem } from "@/hooks/useDeviceOrder";
+import ItemDetailSheet, { ItemOptions, SizeOption } from "@/components/customer/ItemDetailSheet";
+import { SelectedOption } from "@/hooks/useCart";
 
 interface MenuItem {
   id: string;
@@ -39,14 +39,14 @@ interface ShopInfo {
 const WebMenu = () => {
   const { shopId } = useParams();
   const [searchParams] = useSearchParams();
-  const tableId = searchParams.get('table_id'); // Extract table_id from URL query params
+  const tableId = searchParams.get("table_id"); // Extract table_id from URL query params
   const [categories, setCategories] = useState<Category[]>([]);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  
+
   // Item detail sheet state
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isItemSheetOpen, setIsItemSheetOpen] = useState(false);
@@ -71,13 +71,12 @@ const WebMenu = () => {
 
     try {
       // Fetch shop info using secure RPC
-      const { data: shopResult, error: shopError } = await supabase
-        .rpc('get_public_shop', { p_shop_id: shopId });
+      const { data: shopResult, error: shopError } = await supabase.rpc("get_public_shop", { p_shop_id: shopId });
 
       const shopData = shopResult?.[0] || null;
 
       if (shopError || !shopData) {
-        console.error('Shop fetch error:', shopError);
+        console.error("Shop fetch error:", shopError);
         setLoading(false);
         toast.error("Shop not found. The QR code may be invalid.");
         return;
@@ -86,22 +85,24 @@ const WebMenu = () => {
       setShop(shopData);
 
       // Fetch menu categories using secure RPC
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .rpc('get_public_menu_categories', { p_restaurant_id: shopData.id });
+      const { data: categoriesData, error: categoriesError } = await supabase.rpc("get_public_menu_categories", {
+        p_restaurant_id: shopData.id,
+      });
 
       if (categoriesError) {
-        console.error('Categories fetch error:', categoriesError);
+        console.error("Categories fetch error:", categoriesError);
         toast.error("Unable to load menu categories.");
         setLoading(false);
         return;
       }
 
       // Fetch menu items using secure RPC
-      const { data: menuItemsData, error: menuItemsError } = await supabase
-        .rpc('get_shop_menu_items', { p_shop_id: shopData.id });
+      const { data: menuItemsData, error: menuItemsError } = await supabase.rpc("get_shop_menu_items", {
+        p_shop_id: shopData.id,
+      });
 
       if (menuItemsError) {
-        console.error('Menu items fetch error:', menuItemsError);
+        console.error("Menu items fetch error:", menuItemsError);
         toast.error("Unable to load menu items.");
         setLoading(false);
         return;
@@ -116,7 +117,7 @@ const WebMenu = () => {
             ...item,
             options: item.options as ItemOptions | null,
             sizes: item.sizes as SizeOption[] | null,
-          }))
+          })),
       }));
 
       setCategories(categoriesWithItems);
@@ -125,7 +126,7 @@ const WebMenu = () => {
       }
       setLoading(false);
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error("Unexpected error:", error);
       setLoading(false);
       toast.error("Something went wrong. Please try again.");
     }
@@ -156,7 +157,7 @@ const WebMenu = () => {
 
   const handleSearchClose = () => {
     setIsSearchExpanded(false);
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   // Auto focus when search expands
@@ -170,23 +171,24 @@ const WebMenu = () => {
   }, [isSearchExpanded]);
 
   // Filter items based on search query AND active category
-  const filteredCategories = categories.map(category => ({
-    ...category,
-    menu_items: category.menu_items.filter(item => {
-      const matchesSearch = !searchQuery ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = !searchQuery || category.id === activeCategory;
-      return matchesSearch && matchesCategory;
-    })
-  })).filter(category => category.menu_items.length > 0);
+  const filteredCategories = categories
+    .map((category) => ({
+      ...category,
+      menu_items: category.menu_items.filter((item) => {
+        const matchesSearch =
+          !searchQuery ||
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = !searchQuery || category.id === activeCategory;
+        return matchesSearch && matchesCategory;
+      }),
+    }))
+    .filter((category) => category.menu_items.length > 0);
 
   // Get item count from order
   const getItemCount = (menuItemId: string): number => {
     if (!order) return 0;
-    return order.items
-      .filter(item => item.menu_item_id === menuItemId)
-      .reduce((sum, item) => sum + item.quantity, 0);
+    return order.items.filter((item) => item.menu_item_id === menuItemId).reduce((sum, item) => sum + item.quantity, 0);
   };
 
   // Get total items in order
@@ -221,14 +223,14 @@ const WebMenu = () => {
       await addItem(orderItem);
       toast.success(`${item.name} added to your order`);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to add item');
+      toast.error(err.message || "Failed to add item");
     }
   };
 
   // Handle quick remove
   const handleQuickRemove = async (e: React.MouseEvent, menuItemId: string) => {
     e.stopPropagation();
-    const item = order?.items.find(i => i.menu_item_id === menuItemId);
+    const item = order?.items.find((i) => i.menu_item_id === menuItemId);
     if (!item) return;
 
     try {
@@ -238,7 +240,7 @@ const WebMenu = () => {
         await removeItem(menuItemId);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to remove item');
+      toast.error(err.message || "Failed to remove item");
     }
   };
 
@@ -247,7 +249,7 @@ const WebMenu = () => {
     // Determine base price
     let basePrice = item.price_usd;
     if (item.size_enabled && selectedOptions) {
-      const sizeOption = selectedOptions.find(o => o.groupName === 'Size');
+      const sizeOption = selectedOptions.find((o) => o.groupName === "Size");
       if (sizeOption) {
         basePrice = sizeOption.price;
       }
@@ -259,14 +261,14 @@ const WebMenu = () => {
       name: item.name,
       quantity,
       price_usd: basePrice,
-      options: selectedOptions?.filter(o => o.groupName !== 'Size'),
+      options: selectedOptions?.filter((o) => o.groupName !== "Size"),
     };
 
     try {
       await addItem(orderItem);
       toast.success(`${quantity}x ${item.name} added to your order`);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to add item');
+      toast.error(err.message || "Failed to add item");
     }
   };
 
@@ -322,7 +324,7 @@ const WebMenu = () => {
                   />
                   {searchQuery && (
                     <button
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => setSearchQuery("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
                     >
                       ×
@@ -334,22 +336,12 @@ const WebMenu = () => {
               {/* Icons */}
               <div className="flex items-center gap-2 ml-auto md:ml-0">
                 {/* Mobile Search Icon */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSearchExpand}
-                  className="h-9 w-9 p-0 md:hidden"
-                >
+                <Button variant="outline" size="sm" onClick={handleSearchExpand} className="h-9 w-9 p-0 md:hidden">
                   <Search className="h-4 w-4" />
                 </Button>
 
                 {/* Cart Icon */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="relative h-9 w-9 p-0"
-                >
+                <Button variant="outline" size="sm" asChild className="relative h-9 w-9 p-0">
                   <Link to={`/menu/${shopId}/cart`}>
                     <ShoppingCart className="h-4 w-4" />
                     {getTotalItems() > 0 && (
@@ -373,12 +365,7 @@ const WebMenu = () => {
                   className="pl-9 pr-8"
                 />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSearchClose}
-                className="h-10 w-10 p-0 flex-shrink-0"
-              >
+              <Button variant="outline" size="sm" onClick={handleSearchClose} className="h-10 w-10 p-0 flex-shrink-0">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -389,25 +376,20 @@ const WebMenu = () => {
       {/* Category Pills */}
       <div className="sticky top-[61px] z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md">
         <div className={`container mx-auto pr-0 py-3 transition-all ${isScrolled ? "pl-0" : "pl-4"}`}>
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            className="flex gap-2 overflow-x-auto scrollbar-hide"
-          >
-            {(searchQuery
-              ? categories.filter(cat => cat.menu_items.length > 0)
-              : filteredCategories
-            ).map((category) => (
-              <Button
-                key={category.id}
-                variant={activeCategory === category.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveCategory(category.id)}
-                className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-regular transition-all"
-              >
-                {category.name}
-              </Button>
-            ))}
+          <div ref={scrollRef} onScroll={handleScroll} className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {(searchQuery ? categories.filter((cat) => cat.menu_items.length > 0) : filteredCategories).map(
+              (category) => (
+                <Button
+                  key={category.id}
+                  variant={activeCategory === category.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveCategory(category.id)}
+                  className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-regular transition-all"
+                >
+                  {category.name}
+                </Button>
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -415,29 +397,30 @@ const WebMenu = () => {
       {/* Main Content */}
       <main className="container mx-auto px-2 py-2 pb-24">
         <div className="space-y-8">
-          {filteredCategories.find(cat => cat.id === activeCategory)?.menu_items &&
-            filteredCategories.find(cat => cat.id === activeCategory)!.menu_items.length > 0 ? (
+          {filteredCategories.find((cat) => cat.id === activeCategory)?.menu_items &&
+          filteredCategories.find((cat) => cat.id === activeCategory)!.menu_items.length > 0 ? (
             <div className="grid grid-cols-2 md:flex lg:flex gap-2 md:gap-4 lg:gap-6 justify-start">
               {filteredCategories
-                .filter(cat => cat.menu_items.length > 0)
-                .find(cat => cat.id === activeCategory)?.menu_items.map((item) => {
+                .filter((cat) => cat.menu_items.length > 0)
+                .find((cat) => cat.id === activeCategory)
+                ?.menu_items.map((item) => {
                   const itemCount = getItemCount(item.id);
                   const hasOptions = item.options?.options && item.options.options.length > 0;
-                  
+
                   // Get display price
                   const displayPrice = (() => {
                     if (item.size_enabled && item.sizes && item.sizes.length > 0) {
-                      const defaultSize = item.sizes.find(s => s.default);
+                      const defaultSize = item.sizes.find((s) => s.default);
                       return defaultSize ? defaultSize.price : item.sizes[0].price;
                     }
                     return item.price_usd;
                   })();
-                  
+
                   return (
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
-                      className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer ${!item.is_available ? 'opacity-50' : ''}`}
+                      className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer ${!item.is_available ? "opacity-50" : ""}`}
                     >
                       {/* Product Image */}
                       <div className="relative h-48 w-48 aspect-square bg-muted rounded-2xl">
@@ -465,9 +448,7 @@ const WebMenu = () => {
                               >
                                 <Minus className="h-4 w-4" />
                               </Button>
-                              <span className="text-sm font-semibold min-w-[20px] text-center">
-                                {itemCount}
-                              </span>
+                              <span className="text-sm font-semibold min-w-[20px] text-center">{itemCount}</span>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -488,7 +469,7 @@ const WebMenu = () => {
                                 handleItemClick(item);
                               }}
                               disabled={!item.is_available}
-                              variant='outline'
+                              variant="outline"
                               size="sm"
                               className="h-9 w-9 p-0 rounded-full shadow-sm"
                             >
@@ -500,11 +481,17 @@ const WebMenu = () => {
 
                       {/* Card Content */}
                       <div className="p-3">
-                        <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">{item.name}</h6>
+                        <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">
+                          {item.name}
+                        </h6>
                         <div className="flex items-center justify-between">
-                          <span className="text-primary font-bold text-base md:text-lg">${displayPrice.toFixed(2)}</span>
+                          <span className="text-primary font-bold text-base md:text-lg">
+                            ${displayPrice.toFixed(2)}
+                          </span>
                           {!item.is_available && (
-                            <Badge variant="secondary" className="text-xs">Unavailable</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              Unavailable
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -516,7 +503,9 @@ const WebMenu = () => {
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
               <Search className="h-10 w-10 text-muted-foreground mb-3" />
               <p className="text-muted-foreground text-sm">
-                {searchQuery ? `No items found matching "${searchQuery}" in this category.` : 'No items in this category.'}
+                {searchQuery
+                  ? `No items found matching "${searchQuery}" in this category.`
+                  : "No items in this category."}
               </p>
             </div>
           )}
@@ -532,7 +521,7 @@ const WebMenu = () => {
               className="h-10 bg-white text-white rounded-full shadow-lg flex items-center justify-center w-10"
               onClick={() => {
                 clearOrder();
-                toast.success('Order cleared');
+                toast.success("Order cleared");
               }}
             >
               <X className="h-5 w-5 text-muted-foreground" />
@@ -544,7 +533,7 @@ const WebMenu = () => {
               size="sm"
               asChild
             >
-              <Link to={`/web/${shopId}/cart`} className="flex items-center justify-center">
+              <Link to={`/menu/${shopId}/cart`} className="flex items-center justify-center">
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 View Cart ({getTotalItems()}) – ${order.total_usd.toFixed(2)}
               </Link>
