@@ -994,7 +994,7 @@ export type Database = {
       }
       get_inherited_role_ids: { Args: { p_role_id: string }; Returns: string[] }
       get_or_create_device_order: {
-        Args: { p_device_id: string; p_shop_id: string }
+        Args: { p_device_id: string; p_shop_id: string; p_table_id?: string }
         Returns: Json
       }
       get_or_create_table_session: {
