@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2, CreditCard, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceOrder } from '@/hooks/useDeviceOrder';
@@ -20,6 +20,8 @@ import {
 
 const WebCart = () => {
   const { shopId } = useParams();
+  const [searchParams] = useSearchParams();
+  const tableId = searchParams.get("table_id");
   const navigate = useNavigate();
   const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -34,7 +36,7 @@ const WebCart = () => {
     clearOrder,
     updateNotes,
     completePayment,
-  } = useDeviceOrder(shopId);
+  } = useDeviceOrder(shopId, tableId);
 
   const handleUpdateQuantity = async (menuItemId: string, newQuantity: number) => {
     try {
@@ -63,7 +65,7 @@ const WebCart = () => {
 
   const handlePayment = async () => {
     setIsProcessing(true);
-    
+
     try {
       // Update notes before payment
       if (notes) {
@@ -71,15 +73,20 @@ const WebCart = () => {
       }
 
       const result = await completePayment();
-      
+
       if (result.success) {
         setPaymentComplete(true);
         toast.success('Payment completed successfully!');
-        
+
         // Wait a moment to show success state, then redirect
         setTimeout(() => {
           setShowPaymentDialog(false);
-          navigate(`/menu/${shopId}`);
+          // navigate(`/menu/${shopId}`);
+          navigate(  
+            tableId
+                    ? `/menu/${shopId}?table_id=${tableId}`
+                    : `/menu/${shopId}`
+          )
         }, 2000);
       } else {
         toast.error(result.error || 'Payment failed');
@@ -125,7 +132,15 @@ const WebCart = () => {
               <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
               <p className="text-muted-foreground mb-4">Add some items from the menu</p>
               <Button asChild>
-                <Link to={`/menu/${shopId}`}>Browse Menu</Link>
+                <Link
+                  to={
+                    tableId
+                      ? `/menu/${shopId}?table_id=${tableId}`
+                      : `/menu/${shopId}`
+                  }
+                >
+                  Browse Menu
+                </Link>
               </Button>
             </CardContent>
           </Card>

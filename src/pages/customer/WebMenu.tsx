@@ -39,7 +39,7 @@ interface ShopInfo {
 const WebMenu = () => {
   const { shopId } = useParams();
   const [searchParams] = useSearchParams();
-  const tableId = searchParams.get("table_id"); // Extract table_id from URL query params
+  const tableId = searchParams.get("table_id");
   const [categories, setCategories] = useState<Category[]>([]);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -342,7 +342,14 @@ const WebMenu = () => {
 
                 {/* Cart Icon */}
                 <Button variant="outline" size="sm" asChild className="relative h-9 w-9 p-0">
-                  <Link to={`/menu/${shopId}/cart`}>
+                  <Link 
+                    to={
+                      tableId
+                        ? `/menu/${shopId}/cart?table_id=${tableId}`
+                        : `/menu/${shopId}/cart`
+                    }
+                    className="flex items-center justify-center"
+                  >
                     <ShoppingCart className="h-4 w-4" />
                     {getTotalItems() > 0 && (
                       <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -533,7 +540,14 @@ const WebMenu = () => {
               size="sm"
               asChild
             >
-              <Link to={`/menu/${shopId}/cart`} className="flex items-center justify-center">
+              <Link 
+                to={
+                  tableId
+                    ? `/menu/${shopId}/cart?table_id=${tableId}`
+                    : `/menu/${shopId}/cart`
+                }
+                className="flex items-center justify-center"
+               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 View Cart ({getTotalItems()}) – ${order.total_usd.toFixed(2)}
               </Link>

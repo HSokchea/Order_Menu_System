@@ -112,7 +112,7 @@ const CustomerOrders = () => {
         created_at: order.created_at,
         updated_at: order.updated_at,
       }));
-
+      console.log("customer: ", mappedOrders)
       setOrders(mappedOrders);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
