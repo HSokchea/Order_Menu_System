@@ -719,10 +719,13 @@ export type Database = {
           device_id: string
           id: string
           items: Json | null
+          order_type: string | null
           original_order_id: string | null
           paid_at: string | null
           shop_id: string
           status: string
+          table_id: string | null
+          table_number: string | null
           total_usd: number | null
           updated_at: string
         }
@@ -732,10 +735,13 @@ export type Database = {
           device_id: string
           id?: string
           items?: Json | null
+          order_type?: string | null
           original_order_id?: string | null
           paid_at?: string | null
           shop_id: string
           status?: string
+          table_id?: string | null
+          table_number?: string | null
           total_usd?: number | null
           updated_at?: string
         }
@@ -745,10 +751,13 @@ export type Database = {
           device_id?: string
           id?: string
           items?: Json | null
+          order_type?: string | null
           original_order_id?: string | null
           paid_at?: string | null
           shop_id?: string
           status?: string
+          table_id?: string | null
+          table_number?: string | null
           total_usd?: number | null
           updated_at?: string
         }
@@ -777,8 +786,10 @@ export type Database = {
           id: string
           items: Json | null
           order_date: string
+          order_type: string | null
           shop_id: string
           status: string
+          table_id: string | null
           total_usd: number | null
           updated_at: string
         }
@@ -789,8 +800,10 @@ export type Database = {
           id?: string
           items?: Json | null
           order_date?: string
+          order_type?: string | null
           shop_id: string
           status?: string
+          table_id?: string | null
           total_usd?: number | null
           updated_at?: string
         }
@@ -801,8 +814,10 @@ export type Database = {
           id?: string
           items?: Json | null
           order_date?: string
+          order_type?: string | null
           shop_id?: string
           status?: string
+          table_id?: string | null
           total_usd?: number | null
           updated_at?: string
         }
