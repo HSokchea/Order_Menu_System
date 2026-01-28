@@ -11,6 +11,8 @@ import Onboarding from "./pages/admin/Onboarding";
 import ChangePassword from "./pages/ChangePassword";
 import WebMenu from "./pages/customer/WebMenu";
 import WebCart from "./pages/customer/WebCart";
+import ActiveOrder from "./pages/customer/ActiveOrder";
+import Bill from "./pages/customer/Bill";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +29,8 @@ const AppContent = () => {
       {/* Static shop QR menu routes (public) */}
       <Route path="/menu/:shopId" element={<WebMenu />} />
       <Route path="/menu/:shopId/cart" element={<WebCart />} />
+      <Route path="/menu/:shopId/order" element={<ActiveOrder />} />
+      <Route path="/menu/:shopId/bill" element={<Bill />} />
       
       {/* Auth routes */}
       {!user ? (

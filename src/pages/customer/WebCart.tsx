@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2, CreditCard, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2, Send, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeviceOrder } from '@/hooks/useDeviceOrder';
 import {
@@ -25,17 +25,16 @@ const WebCart = () => {
   const navigate = useNavigate();
   const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const {
     order,
     isLoading,
     updateItemQuantity,
     removeItem,
-    clearOrder,
     updateNotes,
-    completePayment,
+    placeOrder,
   } = useDeviceOrder(shopId, tableId);
 
   const handleUpdateQuantity = async (menuItemId: string, newQuantity: number) => {
@@ -63,38 +62,37 @@ const WebCart = () => {
     }
   };
 
-  const handlePayment = async () => {
+  const handlePlaceOrder = async () => {
     setIsProcessing(true);
 
     try {
-      // Update notes before payment
+      // Update notes before placing order
       if (notes) {
         await updateNotes(notes);
       }
 
-      const result = await completePayment();
+      const result = await placeOrder();
 
       if (result.success) {
-        setPaymentComplete(true);
-        toast.success('Payment completed successfully!');
+        setOrderPlaced(true);
+        toast.success('Order placed successfully!');
 
-        // Wait a moment to show success state, then redirect
+        // Wait a moment to show success state, then redirect to active order page
         setTimeout(() => {
-          setShowPaymentDialog(false);
-          // navigate(`/menu/${shopId}`);
-          navigate(  
+          setShowConfirmDialog(false);
+          navigate(
             tableId
-                    ? `/menu/${shopId}?table_id=${tableId}`
-                    : `/menu/${shopId}`
-          )
-        }, 2000);
+              ? `/menu/${shopId}/order?table_id=${tableId}`
+              : `/menu/${shopId}/order`
+          );
+        }, 1500);
       } else {
-        toast.error(result.error || 'Payment failed');
-        setShowPaymentDialog(false);
+        toast.error(result.error || 'Failed to place order');
+        setShowConfirmDialog(false);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Payment failed');
-      setShowPaymentDialog(false);
+      toast.error(err.message || 'Failed to place order');
+      setShowConfirmDialog(false);
     } finally {
       setIsProcessing(false);
     }
@@ -267,11 +265,11 @@ const WebCart = () => {
                 <Button
                   className="w-full"
                   size="lg"
-                  onClick={() => setShowPaymentDialog(true)}
+                  onClick={() => setShowConfirmDialog(true)}
                   disabled={isProcessing}
                 >
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Proceed to Payment
+                  <Send className="h-5 w-5 mr-2" />
+                  Place Order
                 </Button>
               </CardContent>
             </Card>
@@ -279,31 +277,31 @@ const WebCart = () => {
         )}
       </main>
 
-      {/* Payment Confirmation Dialog */}
-      <AlertDialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+      {/* Order Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
-          {!paymentComplete ? (
+          {!orderPlaced ? (
             <>
               <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
+                <AlertDialogTitle>Confirm Order</AlertDialogTitle>
                 <AlertDialogDescription>
-                  You are about to complete your order for ${order?.total_usd.toFixed(2)}.
+                  You are about to place your order for ${order?.total_usd.toFixed(2)}.
                   <br /><br />
-                  Once paid, this order cannot be modified.
+                  Once placed, your order will be sent to the kitchen.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handlePayment} disabled={isProcessing}>
-                  {isProcessing ? 'Processing...' : 'Confirm Payment'}
+                <AlertDialogAction onClick={handlePlaceOrder} disabled={isProcessing}>
+                  {isProcessing ? 'Placing Order...' : 'Confirm Order'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </>
           ) : (
             <div className="text-center py-8">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
-              <p className="text-muted-foreground">Thank you for your order.</p>
+              <h2 className="text-2xl font-bold mb-2">Order Placed!</h2>
+              <p className="text-muted-foreground">Redirecting to your order status...</p>
             </div>
           )}
         </AlertDialogContent>

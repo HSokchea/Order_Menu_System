@@ -41,7 +41,7 @@ interface UseDeviceOrderResult {
   updateItemQuantity: (menuItemId: string, quantity: number) => Promise<void>;
   clearOrder: () => Promise<void>;
   updateNotes: (notes: string) => Promise<void>;
-  completePayment: () => Promise<{ success: boolean; historyId?: string; error?: string }>;
+  placeOrder: () => Promise<{ success: boolean; historyId?: string; orderId?: string; error?: string }>;
   refreshOrder: () => Promise<void>;
 }
 
@@ -209,41 +209,44 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
     await updateOrder(order.items, notes);
   }, [order, updateOrder]);
 
-  // Complete payment
-  const completePayment = useCallback(async () => {
+  // Place order (without payment)
+  const placeOrder = useCallback(async () => {
     if (!order || !deviceId) {
       return { success: false, error: 'No active order' };
     }
 
+    if (!order.items || order.items.length === 0) {
+      return { success: false, error: 'Cannot place an empty order' };
+    }
+
     try {
-      const { data, error: paymentError } = await supabase.rpc('complete_device_order_payment', {
+      const { data, error: placeError } = await supabase.rpc('place_device_order', {
         p_order_id: order.id,
         p_device_id: deviceId,
       });
 
-      if (paymentError) {
-        return { success: false, error: paymentError.message };
+      if (placeError) {
+        return { success: false, error: placeError.message };
       }
 
-      const response = data as { success: boolean; history_id?: string; error?: string };
+      const response = data as { success: boolean; history_id?: string; order_id?: string; error?: string };
       
       if (response.success) {
-        // Clear local order state
+        // Clear local order state - order is now placed
         setOrder(null);
         setIsExistingOrder(false);
-        // Refetch to create new empty order
-        await fetchOrCreateOrder();
       }
 
       return {
         success: response.success,
         historyId: response.history_id,
+        orderId: response.order_id,
         error: response.error,
       };
     } catch (err: any) {
       return { success: false, error: err.message };
     }
-  }, [order, deviceId, fetchOrCreateOrder]);
+  }, [order, deviceId]);
 
   // Refresh order from database
   const refreshOrder = useCallback(async () => {
@@ -261,7 +264,7 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
     updateItemQuantity,
     clearOrder,
     updateNotes,
-    completePayment,
+    placeOrder,
     refreshOrder,
   };
 };
