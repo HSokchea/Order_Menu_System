@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { ShoppingCart, Plus, Minus, Search, X, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { useDeviceOrder, OrderItem } from "@/hooks/useDeviceOrder";
+import { useLocalCart, LocalCartItem } from "@/hooks/useLocalCart";
 import ItemDetailSheet, { ItemOptions, SizeOption } from "@/components/customer/ItemDetailSheet";
 import { SelectedOption } from "@/hooks/useCart";
 
@@ -51,17 +51,17 @@ const WebMenu = () => {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isItemSheetOpen, setIsItemSheetOpen] = useState(false);
 
-  // Use device-based order hook with optional table_id
+  // Use LOCAL cart only - NO backend calls during browsing
   const {
-    order,
-    isLoading: orderLoading,
-    isExistingOrder,
-    error: orderError,
+    items,
+    total,
+    isLoaded: cartLoaded,
     addItem,
-    removeItem,
-    updateItemQuantity,
-    clearOrder,
-  } = useDeviceOrder(shopId, tableId);
+    removeByMenuItemId,
+    clearCart,
+    getItemCount,
+    getTotalItems,
+  } = useLocalCart(shopId, tableId);
 
   const fetchMenuData = async () => {
     if (!shopId) {
@@ -136,13 +136,6 @@ const WebMenu = () => {
     fetchMenuData();
   }, [shopId]);
 
-  // Show notification if resuming existing order
-  useEffect(() => {
-    if (isExistingOrder && order && order.items.length > 0) {
-      toast.info(`Resuming your order with ${order.items.length} item(s)`);
-    }
-  }, [isExistingOrder]);
-
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -185,18 +178,6 @@ const WebMenu = () => {
     }))
     .filter((category) => category.menu_items.length > 0);
 
-  // Get item count from order
-  const getItemCount = (menuItemId: string): number => {
-    if (!order) return 0;
-    return order.items.filter((item) => item.menu_item_id === menuItemId).reduce((sum, item) => sum + item.quantity, 0);
-  };
-
-  // Get total items in order
-  const getTotalItems = (): number => {
-    if (!order) return 0;
-    return order.items.reduce((sum, item) => sum + item.quantity, 0);
-  };
-
   // Handle item click - open detail sheet if has options or sizes
   const handleItemClick = (item: MenuItem) => {
     const hasOptions = item.options?.options && item.options.options.length > 0;
@@ -209,43 +190,28 @@ const WebMenu = () => {
     }
   };
 
-  // Handle quick add
-  const handleQuickAdd = async (item: MenuItem) => {
-    const orderItem: OrderItem = {
-      id: item.id,
+  // Handle quick add - LOCAL ONLY, no backend call
+  const handleQuickAdd = (item: MenuItem) => {
+    const cartItem: LocalCartItem = {
+      id: `${item.id}-${Date.now()}`,
       menu_item_id: item.id,
       name: item.name,
       quantity: 1,
       price_usd: item.price_usd,
     };
 
-    try {
-      await addItem(orderItem);
-      toast.success(`${item.name} added to your order`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add item");
-    }
+    addItem(cartItem);
+    toast.success(`${item.name} added to cart`);
   };
 
-  // Handle quick remove
-  const handleQuickRemove = async (e: React.MouseEvent, menuItemId: string) => {
+  // Handle quick remove - LOCAL ONLY, no backend call
+  const handleQuickRemove = (e: React.MouseEvent, menuItemId: string) => {
     e.stopPropagation();
-    const item = order?.items.find((i) => i.menu_item_id === menuItemId);
-    if (!item) return;
-
-    try {
-      if (item.quantity > 1) {
-        await updateItemQuantity(menuItemId, item.quantity - 1);
-      } else {
-        await removeItem(menuItemId);
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to remove item");
-    }
+    removeByMenuItemId(menuItemId);
   };
 
-  // Handle add to cart with options from detail sheet
-  const handleAddToCartWithOptions = async (item: MenuItem, quantity: number, selectedOptions?: SelectedOption[]) => {
+  // Handle add to cart with options from detail sheet - LOCAL ONLY
+  const handleAddToCartWithOptions = (item: MenuItem, quantity: number, selectedOptions?: SelectedOption[]) => {
     // Determine base price
     let basePrice = item.price_usd;
     if (item.size_enabled && selectedOptions) {
@@ -255,8 +221,8 @@ const WebMenu = () => {
       }
     }
 
-    const orderItem: OrderItem = {
-      id: item.id,
+    const cartItem: LocalCartItem = {
+      id: `${item.id}-${Date.now()}`,
       menu_item_id: item.id,
       name: item.name,
       quantity,
@@ -264,15 +230,11 @@ const WebMenu = () => {
       options: selectedOptions?.filter((o) => o.groupName !== "Size"),
     };
 
-    try {
-      await addItem(orderItem);
-      toast.success(`${quantity}x ${item.name} added to your order`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add item");
-    }
+    addItem(cartItem);
+    toast.success(`${quantity}x ${item.name} added to cart`);
   };
 
-  if (loading || orderLoading) {
+  if (loading || !cartLoaded) {
     return <div className="flex items-center justify-center min-h-screen">Loading menu...</div>;
   }
 
@@ -287,16 +249,7 @@ const WebMenu = () => {
     );
   }
 
-  if (orderError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Error</h1>
-          <p className="text-muted-foreground">{orderError}</p>
-        </div>
-      </div>
-    );
-  }
+  const totalItems = getTotalItems();
 
   return (
     <div className="min-h-screen">
@@ -351,9 +304,9 @@ const WebMenu = () => {
                     className="flex items-center justify-center"
                   >
                     <ShoppingCart className="h-4 w-4" />
-                    {getTotalItems() > 0 && (
+                    {totalItems > 0 && (
                       <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {getTotalItems()}
+                        {totalItems}
                       </span>
                     )}
                   </Link>
@@ -520,15 +473,15 @@ const WebMenu = () => {
       </main>
 
       {/* Fixed Cart Button */}
-      {order && order.items.length > 0 && (
+      {totalItems > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4 z-40">
           <div className="flex gap-3 items-end relative md:justify-center left-0 right-0">
             <Button
               variant="custom"
               className="h-10 bg-white text-white rounded-full shadow-lg flex items-center justify-center w-10"
               onClick={() => {
-                clearOrder();
-                toast.success("Order cleared");
+                clearCart();
+                toast.success("Cart cleared");
               }}
             >
               <X className="h-5 w-5 text-muted-foreground" />
@@ -549,7 +502,7 @@ const WebMenu = () => {
                 className="flex items-center justify-center"
                >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                View Cart ({getTotalItems()}) – ${order.total_usd.toFixed(2)}
+                View Cart ({totalItems}) – ${total.toFixed(2)}
               </Link>
             </Button>
           </div>
