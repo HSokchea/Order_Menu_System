@@ -21,12 +21,31 @@ BEGIN
     AND device_id = p_device_id
     AND status = 'pending';
 
-  IF NOT FOUND THEN
+-- If not pending, check if already placed
+IF NOT FOUND THEN
+  SELECT id INTO v_history_id
+  FROM tb_his_admin
+  WHERE original_order_id = p_order_id
+    AND device_id = p_device_id
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  IF FOUND THEN
+    -- Order already placed → return success (idempotent)
     RETURN jsonb_build_object(
-      'success', false,
-      'error', 'Order not found or already placed'
+      'success', true,
+      'history_id', v_history_id,
+      'order_id', p_order_id,
+      'message', 'Order already placed'
     );
   END IF;
+
+  -- Truly not found
+  RETURN jsonb_build_object(
+    'success', false,
+    'error', 'Order not found'
+  );
+END IF;
 
   -- Check if order has items
   IF v_order.items IS NULL OR jsonb_array_length(v_order.items) = 0 THEN
