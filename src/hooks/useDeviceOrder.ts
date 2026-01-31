@@ -122,28 +122,28 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
     }, 0);
   }, []);
 
-  // Update order in database
-  const updateOrder = useCallback(async (items: OrderItem[], notes?: string) => {
+  // Direct update to tb_order_temporary (for local-only operations like remove/clear)
+  // This sets items directly without append behavior
+  const setOrderItems = useCallback(async (items: OrderItem[], notes?: string) => {
     if (!order || !deviceId) return;
 
     const total = calculateTotal(items);
     
-    const { data, error: updateError } = await supabase.rpc('update_device_order', {
-      p_order_id: order.id,
-      p_device_id: deviceId,
-      p_items: items as any,
-      p_total_usd: total,
-      p_customer_notes: notes ?? order.customer_notes,
-    });
+    // Direct table update (not using the append RPC)
+    const { error: updateError } = await supabase
+      .from('tb_order_temporary')
+      .update({
+        items: items as any,
+        total_usd: total,
+        customer_notes: notes ?? order.customer_notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', order.id)
+      .eq('device_id', deviceId);
 
     if (updateError) {
-      console.error('Error updating order:', updateError);
+      console.error('Error setting order items:', updateError);
       throw new Error(updateError.message);
-    }
-
-    const response = data as { success: boolean; order?: any; error?: string };
-    if (!response.success) {
-      throw new Error(response.error || 'Failed to update order');
     }
 
     // Update local state
@@ -155,32 +155,50 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
     } : null);
   }, [order, deviceId, calculateTotal]);
 
-  // Add item to order
+  // Add item to order (appends to existing items via RPC)
   const addItem = useCallback(async (item: OrderItem) => {
-    if (!order) return;
+    if (!order || !deviceId) return;
 
-    const existingItems = [...order.items];
-    const existingIndex = existingItems.findIndex(i => 
-      i.menu_item_id === item.menu_item_id && 
-      JSON.stringify(i.options) === JSON.stringify(item.options)
-    );
+    // Send only the new item - RPC will append it
+    const newItems = [item];
+    const newItemTotal = (item.price_usd + (item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0)) * item.quantity;
+    
+    const { data, error: updateError } = await supabase.rpc('update_device_order', {
+      p_order_id: order.id,
+      p_device_id: deviceId,
+      p_items: newItems as any,
+      p_total_usd: newItemTotal, // This is ignored by RPC, it recalculates
+      p_customer_notes: order.customer_notes,
+    });
 
-    if (existingIndex >= 0) {
-      existingItems[existingIndex].quantity += item.quantity;
-    } else {
-      existingItems.push(item);
+    if (updateError) {
+      console.error('Error adding item:', updateError);
+      throw new Error(updateError.message);
     }
 
-    await updateOrder(existingItems);
-  }, [order, updateOrder]);
+    const response = data as { success: boolean; order?: any; error?: string };
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to add item');
+    }
+
+    // Update local state from response (which has merged items)
+    if (response.order) {
+      const mergedItems = Array.isArray(response.order.items) ? response.order.items : [];
+      setOrder(prev => prev ? {
+        ...prev,
+        items: mergedItems,
+        total_usd: response.order.total_usd,
+      } : null);
+    }
+  }, [order, deviceId]);
 
   // Remove item from order
   const removeItem = useCallback(async (menuItemId: string) => {
     if (!order) return;
 
     const updatedItems = order.items.filter(i => i.menu_item_id !== menuItemId);
-    await updateOrder(updatedItems);
-  }, [order, updateOrder]);
+    await setOrderItems(updatedItems);
+  }, [order, setOrderItems]);
 
   // Update item quantity
   const updateItemQuantity = useCallback(async (menuItemId: string, quantity: number) => {
@@ -194,20 +212,20 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
     const updatedItems = order.items.map(i => 
       i.menu_item_id === menuItemId ? { ...i, quantity } : i
     );
-    await updateOrder(updatedItems);
-  }, [order, updateOrder, removeItem]);
+    await setOrderItems(updatedItems);
+  }, [order, setOrderItems, removeItem]);
 
   // Clear all items
   const clearOrder = useCallback(async () => {
     if (!order) return;
-    await updateOrder([]);
-  }, [order, updateOrder]);
+    await setOrderItems([]);
+  }, [order, setOrderItems]);
 
   // Update customer notes
   const updateNotes = useCallback(async (notes: string) => {
     if (!order) return;
-    await updateOrder(order.items, notes);
-  }, [order, updateOrder]);
+    await setOrderItems(order.items, notes);
+  }, [order, setOrderItems]);
 
   // Place order (without payment)
   const placeOrder = useCallback(async () => {
