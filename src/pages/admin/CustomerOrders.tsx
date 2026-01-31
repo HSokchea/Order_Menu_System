@@ -56,18 +56,18 @@ const CustomerOrders = () => {
 
     setLoading(true);
     try {
-      // Fetch orders from tb_his_admin (active placed orders)
-      const { data: historyOrders, error: historyError } = await supabase
-        .from('tb_his_admin')
+      // Fetch orders from tb_order_temporary (active placed orders)
+      const { data: tempOrders, error: tempError } = await supabase
+        .from('tb_order_temporary')
         .select('*')
         .eq('shop_id', restaurant.id)
-        .in('status', ['placed', 'preparing', 'ready'])
+        .eq('status', 'placed')
         .order('created_at', { ascending: false });
 
-      if (historyError) throw historyError;
+      if (tempError) throw tempError;
 
       // Fetch table numbers for dine-in orders
-      const tableIds = (historyOrders || [])
+      const tableIds = (tempOrders || [])
         .filter(o => o.table_id)
         .map(o => o.table_id as string);
 
@@ -85,17 +85,17 @@ const CustomerOrders = () => {
       }
 
       // Map orders with proper types
-      const mappedOrders: CustomerOrder[] = (historyOrders || []).map(order => {
-        // Parse items from JSON
+      const mappedOrders: CustomerOrder[] = (tempOrders || []).map(order => {
+        // Parse items from JSON - handle both cart format and expanded format
         const items: StoredOrderItem[] = Array.isArray(order.items)
-          ? (order.items as unknown as StoredOrderItem[]).map(item => ({
-              item_id: (item as any).item_id || '',
-              menu_item_id: (item as any).menu_item_id || '',
-              name: (item as any).name || '',
-              price: (item as any).price || 0,
-              options: (item as any).options || [],
-              status: (item as any).status || 'pending',
-              created_at: (item as any).created_at || '',
+          ? (order.items as unknown[]).filter((item: any) => item.item_id).map((item: any) => ({
+              item_id: item.item_id || '',
+              menu_item_id: item.menu_item_id || '',
+              name: item.name || '',
+              price: item.price || 0,
+              options: item.options || [],
+              status: item.status || 'pending',
+              created_at: item.created_at || '',
             }))
           : [];
 
@@ -109,7 +109,7 @@ const CustomerOrders = () => {
           items,
           order_type: order.order_type || 'takeaway',
           table_id: order.table_id || null,
-          table_number: order.table_id ? (order.table_number || tableMap[order.table_id]) : undefined,
+          table_number: order.table_id ? tableMap[order.table_id] : undefined,
           created_at: order.created_at,
           updated_at: order.updated_at,
         };
@@ -127,7 +127,7 @@ const CustomerOrders = () => {
   useEffect(() => {
     fetchOrders();
 
-    // Real-time subscription
+    // Real-time subscription to tb_order_temporary
     if (!restaurant?.id) return;
 
     const channel = supabase
@@ -137,7 +137,7 @@ const CustomerOrders = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'tb_his_admin',
+          table: 'tb_order_temporary',
           filter: `shop_id=eq.${restaurant.id}`,
         },
         () => {

@@ -95,7 +95,7 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
     }
   }, [deviceIdLoaded, shopId, deviceId, fetchActiveOrder]);
 
-  // Set up real-time subscription for order updates
+  // Set up real-time subscription for order updates from tb_order_temporary
   useEffect(() => {
     if (!order?.id) return;
 
@@ -106,7 +106,7 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
         {
           event: '*',
           schema: 'public',
-          table: 'tb_his_admin',
+          table: 'tb_order_temporary',
           filter: `id=eq.${order.id}`,
         },
         () => {
