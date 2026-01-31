@@ -1,9 +1,10 @@
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Receipt, Utensils, ShoppingBag } from 'lucide-react';
 import { useActiveOrder } from '@/hooks/useActiveOrder';
+import { groupOrderItems, calculateOrderTotal } from '@/types/order';
 import { format } from 'date-fns';
 
 const Bill = () => {
@@ -58,8 +59,11 @@ const Bill = () => {
     );
   }
 
-  // Calculate totals
-  const subtotal = order.total_usd;
+  // Group items for display and calculate total (excluding rejected)
+  const groupedItems = groupOrderItems(order.items);
+  const activeItems = groupedItems.filter(g => g.status !== 'rejected');
+  const rejectedItems = groupedItems.filter(g => g.status === 'rejected');
+  const subtotal = calculateOrderTotal(order.items);
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -109,16 +113,16 @@ const Bill = () => {
           </CardHeader>
 
           <CardContent className="pt-4">
-            {/* Items */}
+            {/* Active Items */}
             <div className="space-y-3">
-              {order.items.map((item, index) => {
+              {activeItems.map((item, index) => {
                 const optionsTotal = item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0;
-                const itemTotal = (item.price_usd + optionsTotal) * item.quantity;
+                const itemTotal = (item.price + optionsTotal) * item.count;
 
                 return (
-                  <div key={item.id || index} className="flex justify-between text-sm">
+                  <div key={index} className="flex justify-between text-sm">
                     <div className="flex-1">
-                      <span>{item.quantity} × {item.name}</span>
+                      <span>{item.count} × {item.name}</span>
                       {item.options && item.options.length > 0 && (
                         <div className="text-xs text-muted-foreground ml-4">
                           {item.options.map((opt, idx) => (
@@ -135,6 +139,27 @@ const Bill = () => {
                 );
               })}
             </div>
+
+            {/* Rejected Items (struck through) */}
+            {rejectedItems.length > 0 && (
+              <>
+                <Separator className="my-3" />
+                <div className="space-y-2 opacity-60">
+                  <p className="text-xs text-muted-foreground">Rejected Items:</p>
+                  {rejectedItems.map((item, index) => {
+                    const optionsTotal = item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0;
+                    const itemTotal = (item.price + optionsTotal) * item.count;
+
+                    return (
+                      <div key={index} className="flex justify-between text-sm line-through text-muted-foreground">
+                        <span>{item.count} × {item.name}</span>
+                        <span>${itemTotal.toFixed(2)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             <Separator className="my-4" />
 

@@ -1178,6 +1178,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: string
       }
+      mark_order_paid: { Args: { p_order_id: string }; Returns: Json }
       place_device_order: {
         Args: { p_device_id: string; p_order_id: string }
         Returns: Json
@@ -1190,6 +1191,14 @@ export type Database = {
           p_order_id: string
           p_total_usd: number
         }
+        Returns: Json
+      }
+      update_order_item_status: {
+        Args: { p_item_id: string; p_new_status: string; p_order_id: string }
+        Returns: Json
+      }
+      update_order_items_status: {
+        Args: { p_item_ids: string[]; p_new_status: string; p_order_id: string }
         Returns: Json
       }
       user_has_permission: {
