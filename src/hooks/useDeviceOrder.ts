@@ -227,7 +227,12 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
     await setOrderItems(order.items, notes);
   }, [order, setOrderItems]);
 
-  // Place order (without payment)
+  // Refresh order from database
+  const refreshOrder = useCallback(async () => {
+    await fetchOrCreateOrder();
+  }, [fetchOrCreateOrder]);
+
+  // Place order (without payment) - keeps data in tb_order_temporary
   const placeOrder = useCallback(async () => {
     if (!order || !deviceId) {
       return { success: false, error: 'No active order' };
@@ -247,29 +252,22 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
         return { success: false, error: placeError.message };
       }
 
-      const response = data as { success: boolean; history_id?: string; order_id?: string; error?: string };
+      const response = data as { success: boolean; order_id?: string; error?: string; message?: string };
       
       if (response.success) {
-        // Clear local order state - order is now placed
-        setOrder(null);
-        setIsExistingOrder(false);
+        // Refresh to get the expanded items (order stays in tb_order_temporary)
+        await refreshOrder();
       }
 
       return {
         success: response.success,
-        historyId: response.history_id,
         orderId: response.order_id,
         error: response.error,
       };
     } catch (err: any) {
       return { success: false, error: err.message };
     }
-  }, [order, deviceId]);
-
-  // Refresh order from database
-  const refreshOrder = useCallback(async () => {
-    await fetchOrCreateOrder();
-  }, [fetchOrCreateOrder]);
+  }, [order, deviceId, refreshOrder]);
 
   return {
     order,
