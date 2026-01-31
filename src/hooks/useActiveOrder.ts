@@ -1,42 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeviceId } from './useDeviceId';
-
-export interface ActiveOrderItem {
-  id: string;
-  menu_item_id: string;
-  name: string;
-  quantity: number;
-  price_usd: number;
-  options?: Array<{
-    groupName: string;
-    label: string;
-    price: number;
-  }>;
-  notes?: string;
-}
-
-export interface ActiveOrder {
-  id: string;
-  shop_id: string;
-  device_id: string;
-  status: 'placed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-  total_usd: number;
-  customer_notes: string | null;
-  items: ActiveOrderItem[];
-  order_type: 'dine_in' | 'takeaway';
-  table_id: string | null;
-  table_number: string | null;
-  created_at: string;
-  updated_at: string;
-  paid_at: string | null;
-}
-
-export interface ShopInfo {
-  name: string;
-  currency: string;
-  logo_url: string | null;
-}
+import type { ActiveOrder, ShopInfo, StoredOrderItem } from '@/types/order';
 
 interface UseActiveOrderResult {
   order: ActiveOrder | null;
@@ -48,6 +13,7 @@ interface UseActiveOrderResult {
 
 /**
  * Hook to fetch and track an active order for the current device
+ * Returns items with the new single-unit structure
  */
 export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
   const { deviceId, isLoaded: deviceIdLoaded } = useDeviceId();
@@ -78,10 +44,33 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
       const response = data as { success: boolean; order?: any; shop?: any; error?: string };
 
       if (response.success && response.order) {
-        const items = Array.isArray(response.order.items) ? response.order.items : [];
+        // Parse items - now they're individual units with status
+        const items: StoredOrderItem[] = Array.isArray(response.order.items) 
+          ? response.order.items.map((item: any) => ({
+              item_id: item.item_id,
+              menu_item_id: item.menu_item_id,
+              name: item.name,
+              price: item.price || 0,
+              options: item.options || [],
+              status: item.status || 'pending',
+              created_at: item.created_at,
+            }))
+          : [];
+
         setOrder({
-          ...response.order,
+          id: response.order.id,
+          shop_id: response.order.shop_id,
+          device_id: response.order.device_id,
+          status: response.order.status,
+          total_usd: response.order.total_usd || 0,
+          customer_notes: response.order.customer_notes,
           items,
+          order_type: response.order.order_type || 'takeaway',
+          table_id: response.order.table_id || null,
+          table_number: response.order.table_number || null,
+          created_at: response.order.created_at,
+          updated_at: response.order.updated_at,
+          paid_at: response.order.paid_at || null,
         });
         setShop(response.shop || null);
       } else {
@@ -106,16 +95,30 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
     }
   }, [deviceIdLoaded, shopId, deviceId, fetchActiveOrder]);
 
-  // Auto-refresh every 30 seconds for status updates
+  // Set up real-time subscription for order updates
   useEffect(() => {
-    if (!order) return;
+    if (!order?.id) return;
 
-    const interval = setInterval(() => {
-      fetchActiveOrder();
-    }, 30000);
+    const channel = supabase
+      .channel(`active-order-${order.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tb_his_admin',
+          filter: `id=eq.${order.id}`,
+        },
+        () => {
+          fetchActiveOrder();
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
-  }, [order, fetchActiveOrder]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [order?.id, fetchActiveOrder]);
 
   return {
     order,

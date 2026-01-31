@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, RefreshCw, Clock, ChefHat, CheckCircle2, Receipt, Utensils, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Clock, ChefHat, CheckCircle2, Receipt, Utensils, ShoppingBag, XCircle } from 'lucide-react';
 import { useActiveOrder } from '@/hooks/useActiveOrder';
+import { groupOrderItems, calculateOrderTotal } from '@/types/order';
 import { format } from 'date-fns';
 
 const statusConfig = {
@@ -29,20 +30,27 @@ const statusConfig = {
     color: 'bg-green-500',
     badgeVariant: 'default' as const,
   },
-  completed: {
-    label: 'Completed',
-    description: 'Order has been completed',
+  paid: {
+    label: 'Paid',
+    description: 'Order has been paid',
     icon: CheckCircle2,
     color: 'bg-gray-500',
     badgeVariant: 'outline' as const,
   },
-  cancelled: {
-    label: 'Cancelled',
-    description: 'Order was cancelled',
-    icon: Clock,
-    color: 'bg-red-500',
-    badgeVariant: 'destructive' as const,
-  },
+};
+
+const itemStatusColors: Record<string, string> = {
+  pending: 'text-muted-foreground',
+  preparing: 'text-orange-600',
+  ready: 'text-green-600',
+  rejected: 'text-red-500 line-through',
+};
+
+const itemStatusBadges: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  pending: { label: 'Pending', variant: 'secondary' },
+  preparing: { label: 'Preparing', variant: 'default' },
+  ready: { label: 'Ready', variant: 'default' },
+  rejected: { label: 'Rejected', variant: 'destructive' },
 };
 
 const ActiveOrder = () => {
@@ -102,6 +110,16 @@ const ActiveOrder = () => {
 
   const status = statusConfig[order.status] || statusConfig.placed;
   const StatusIcon = status.icon;
+
+  // Group items for display
+  const groupedItems = groupOrderItems(order.items);
+  const total = calculateOrderTotal(order.items);
+
+  // Group by item status for visual sections
+  const pendingItems = groupedItems.filter(g => g.status === 'pending');
+  const preparingItems = groupedItems.filter(g => g.status === 'preparing');
+  const readyItems = groupedItems.filter(g => g.status === 'ready');
+  const rejectedItems = groupedItems.filter(g => g.status === 'rejected');
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -163,46 +181,53 @@ const ActiveOrder = () => {
           </CardContent>
         </Card>
 
-        {/* Order Items */}
+        {/* Order Items - Grouped by Status */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Order Items</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {order.items.map((item, index) => {
-                const optionsTotal = item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0;
-                const itemTotal = (item.price_usd + optionsTotal) * item.quantity;
+            <div className="space-y-4">
+              {/* Ready Items */}
+              {readyItems.length > 0 && (
+                <ItemSection 
+                  title="Ready" 
+                  icon={<CheckCircle2 className="h-4 w-4 text-green-600" />}
+                  items={readyItems}
+                  statusClass="text-green-600"
+                />
+              )}
 
-                return (
-                  <div key={item.id || index}>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{item.quantity}×</span>
-                          <span className="font-medium">{item.name}</span>
-                        </div>
-                        {item.options && item.options.length > 0 && (
-                          <div className="ml-6 mt-1">
-                            {item.options.map((opt, idx) => (
-                              <p key={idx} className="text-xs text-muted-foreground">
-                                {opt.groupName}: {opt.label}
-                                {opt.price !== 0 && (
-                                  <span className={opt.price > 0 ? '' : 'text-green-600'}>
-                                    {' '}({opt.price > 0 ? '+' : ''}${opt.price.toFixed(2)})
-                                  </span>
-                                )}
-                              </p>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <span className="font-medium">${itemTotal.toFixed(2)}</span>
-                    </div>
-                    {index < order.items.length - 1 && <Separator className="mt-3" />}
-                  </div>
-                );
-              })}
+              {/* Preparing Items */}
+              {preparingItems.length > 0 && (
+                <ItemSection 
+                  title="Preparing" 
+                  icon={<ChefHat className="h-4 w-4 text-orange-600" />}
+                  items={preparingItems}
+                  statusClass="text-orange-600"
+                />
+              )}
+
+              {/* Pending Items */}
+              {pendingItems.length > 0 && (
+                <ItemSection 
+                  title="Pending" 
+                  icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+                  items={pendingItems}
+                  statusClass="text-muted-foreground"
+                />
+              )}
+
+              {/* Rejected Items - with strikethrough */}
+              {rejectedItems.length > 0 && (
+                <ItemSection 
+                  title="Rejected" 
+                  icon={<XCircle className="h-4 w-4 text-red-500" />}
+                  items={rejectedItems}
+                  statusClass="text-red-500 line-through"
+                  isRejected
+                />
+              )}
             </div>
 
             {order.customer_notes && (
@@ -222,8 +247,13 @@ const ActiveOrder = () => {
           <CardContent className="pt-6">
             <div className="flex justify-between items-center text-lg font-semibold mb-4">
               <span>Total</span>
-              <span>${order.total_usd.toFixed(2)}</span>
+              <span>${total.toFixed(2)}</span>
             </div>
+            {rejectedItems.length > 0 && (
+              <p className="text-xs text-muted-foreground mb-4 text-center">
+                * Total excludes rejected items
+              </p>
+            )}
             
             <div className="space-y-2">
               <Button variant="outline" className="w-full" asChild>
@@ -244,5 +274,58 @@ const ActiveOrder = () => {
     </div>
   );
 };
+
+// Item Section Component
+interface ItemSectionProps {
+  title: string;
+  icon: React.ReactNode;
+  items: ReturnType<typeof groupOrderItems>;
+  statusClass: string;
+  isRejected?: boolean;
+}
+
+const ItemSection = ({ title, icon, items, statusClass, isRejected }: ItemSectionProps) => (
+  <div className="space-y-2">
+    <div className="flex items-center gap-2 text-sm font-medium">
+      {icon}
+      <span>{title}</span>
+      <Badge variant="outline" className="text-xs">{items.reduce((sum, i) => sum + i.count, 0)}</Badge>
+    </div>
+    <div className="pl-6 space-y-2">
+      {items.map((item, index) => {
+        const optionsTotal = item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0;
+        const itemTotal = (item.price + optionsTotal) * item.count;
+
+        return (
+          <div key={index} className={`flex justify-between items-start ${isRejected ? 'opacity-60' : ''}`}>
+            <div className="flex-1">
+              <div className={`flex items-center gap-2 ${statusClass}`}>
+                <span className="font-medium">{item.count}×</span>
+                <span className={isRejected ? 'line-through' : ''}>{item.name}</span>
+              </div>
+              {item.options && item.options.length > 0 && (
+                <div className="ml-6 mt-1">
+                  {item.options.map((opt, idx) => (
+                    <p key={idx} className={`text-xs ${isRejected ? 'line-through text-muted-foreground' : 'text-muted-foreground'}`}>
+                      {opt.groupName}: {opt.label}
+                      {opt.price !== 0 && (
+                        <span>
+                          {' '}({opt.price > 0 ? '+' : ''}${opt.price.toFixed(2)})
+                        </span>
+                      )}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+            <span className={`font-medium ${isRejected ? 'line-through opacity-60' : ''}`}>
+              ${itemTotal.toFixed(2)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
 
 export default ActiveOrder;

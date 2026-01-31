@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,21 +13,21 @@ import {
   Store, 
   UtensilsCrossed,
   Bell,
-  Package
+  Package,
+  XCircle,
+  DollarSign,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-
-interface OrderItem {
-  id: string;
-  menu_item_id: string;
-  name: string;
-  quantity: number;
-  price_usd: number;
-  options?: Array<{ groupName: string; label: string; price: number }>;
-  notes?: string;
-}
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { StoredOrderItem, groupOrderItems, calculateOrderTotal } from '@/types/order';
 
 interface CustomerOrder {
   id: string;
@@ -36,7 +36,7 @@ interface CustomerOrder {
   status: string;
   total_usd: number;
   customer_notes: string | null;
-  items: OrderItem[];
+  items: StoredOrderItem[];
   order_type: string;
   table_id: string | null;
   table_number?: string;
@@ -49,38 +49,25 @@ const CustomerOrders = () => {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>('all');
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
   const fetchOrders = async () => {
     if (!restaurant?.id) return;
 
     setLoading(true);
     try {
-      // Fetch temporary orders (pending) - cast to any to handle new columns not yet in types
-      const { data: tempOrders, error: tempError } = await supabase
-        .from('tb_order_temporary')
+      // Fetch orders from tb_his_admin (active placed orders)
+      const { data: historyOrders, error: historyError } = await supabase
+        .from('tb_his_admin')
         .select('*')
         .eq('shop_id', restaurant.id)
+        .in('status', ['placed', 'preparing', 'ready'])
         .order('created_at', { ascending: false });
 
-      if (tempError) throw tempError;
-
-      // Cast to access new columns (order_type, table_id) that may not be in generated types yet
-      const ordersWithNewColumns = (tempOrders || []) as Array<{
-        id: string;
-        shop_id: string;
-        device_id: string;
-        status: string;
-        total_usd: number | null;
-        customer_notes: string | null;
-        items: any;
-        order_type?: string;
-        table_id?: string | null;
-        created_at: string;
-        updated_at: string;
-      }>;
+      if (historyError) throw historyError;
 
       // Fetch table numbers for dine-in orders
-      const tableIds = ordersWithNewColumns
+      const tableIds = (historyOrders || [])
         .filter(o => o.table_id)
         .map(o => o.table_id as string);
 
@@ -97,22 +84,37 @@ const CustomerOrders = () => {
         }, {} as Record<string, string>);
       }
 
-      // Map orders with table numbers
-      const mappedOrders: CustomerOrder[] = ordersWithNewColumns.map(order => ({
-        id: order.id,
-        shop_id: order.shop_id,
-        device_id: order.device_id,
-        status: order.status,
-        total_usd: order.total_usd || 0,
-        customer_notes: order.customer_notes,
-        items: Array.isArray(order.items) ? order.items : [],
-        order_type: order.order_type || 'takeaway',
-        table_id: order.table_id || null,
-        table_number: order.table_id ? tableMap[order.table_id] : undefined,
-        created_at: order.created_at,
-        updated_at: order.updated_at,
-      }));
-      console.log("customer: ", mappedOrders)
+      // Map orders with proper types
+      const mappedOrders: CustomerOrder[] = (historyOrders || []).map(order => {
+        // Parse items from JSON
+        const items: StoredOrderItem[] = Array.isArray(order.items)
+          ? (order.items as unknown as StoredOrderItem[]).map(item => ({
+              item_id: (item as any).item_id || '',
+              menu_item_id: (item as any).menu_item_id || '',
+              name: (item as any).name || '',
+              price: (item as any).price || 0,
+              options: (item as any).options || [],
+              status: (item as any).status || 'pending',
+              created_at: (item as any).created_at || '',
+            }))
+          : [];
+
+        return {
+          id: order.id,
+          shop_id: order.shop_id,
+          device_id: order.device_id,
+          status: order.status,
+          total_usd: order.total_usd || 0,
+          customer_notes: order.customer_notes,
+          items,
+          order_type: order.order_type || 'takeaway',
+          table_id: order.table_id || null,
+          table_number: order.table_id ? (order.table_number || tableMap[order.table_id]) : undefined,
+          created_at: order.created_at,
+          updated_at: order.updated_at,
+        };
+      });
+
       setOrders(mappedOrders);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
@@ -129,13 +131,13 @@ const CustomerOrders = () => {
     if (!restaurant?.id) return;
 
     const channel = supabase
-      .channel('customer-orders')
+      .channel('customer-orders-admin')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'tb_order_temporary',
+          table: 'tb_his_admin',
           filter: `shop_id=eq.${restaurant.id}`,
         },
         () => {
@@ -148,6 +150,18 @@ const CustomerOrders = () => {
       supabase.removeChannel(channel);
     };
   }, [restaurant?.id]);
+
+  const toggleOrderExpanded = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+      } else {
+        next.add(orderId);
+      }
+      return next;
+    });
+  };
 
   // Filter orders by type
   const filteredOrders = orders.filter(order => {
@@ -194,7 +208,7 @@ const CustomerOrders = () => {
             Customer Orders
           </h2>
           <p className="text-muted-foreground">
-            Real-time orders from QR menu scanning
+            Manage QR orders with item-level status
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchOrders} disabled={loading}>
@@ -209,7 +223,7 @@ const CustomerOrders = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Orders</p>
+                <p className="text-sm text-muted-foreground">Active Orders</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <Package className="h-8 w-8 text-primary opacity-50" />
@@ -274,7 +288,13 @@ const CustomerOrders = () => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredOrders.map(order => (
-                <OrderCard key={order.id} order={order} />
+                <OrderCard 
+                  key={order.id} 
+                  order={order} 
+                  expanded={expandedOrders.has(order.id)}
+                  onToggle={() => toggleOrderExpanded(order.id)}
+                  onRefresh={fetchOrders}
+                />
               ))}
             </div>
           )}
@@ -294,7 +314,13 @@ const CustomerOrders = () => {
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {tableOrders.map(order => (
-                      <OrderCard key={order.id} order={order} />
+                      <OrderCard 
+                        key={order.id} 
+                        order={order}
+                        expanded={expandedOrders.has(order.id)}
+                        onToggle={() => toggleOrderExpanded(order.id)}
+                        onRefresh={fetchOrders}
+                      />
                     ))}
                   </div>
                 </div>
@@ -309,7 +335,13 @@ const CustomerOrders = () => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {takeawayOrders.map(order => (
-                <OrderCard key={order.id} order={order} />
+                <OrderCard 
+                  key={order.id} 
+                  order={order}
+                  expanded={expandedOrders.has(order.id)}
+                  onToggle={() => toggleOrderExpanded(order.id)}
+                  onRefresh={fetchOrders}
+                />
               ))}
             </div>
           )}
@@ -320,7 +352,7 @@ const CustomerOrders = () => {
 };
 
 // Empty State Component
-const EmptyState = ({ message = "No pending orders" }: { message?: string }) => (
+const EmptyState = ({ message = "No active orders" }: { message?: string }) => (
   <Card>
     <CardContent className="flex flex-col items-center justify-center py-12">
       <CheckCircle className="h-12 w-12 text-muted-foreground mb-4" />
@@ -331,9 +363,70 @@ const EmptyState = ({ message = "No pending orders" }: { message?: string }) => 
 );
 
 // Order Card Component
-const OrderCard = ({ order }: { order: CustomerOrder }) => {
+interface OrderCardProps {
+  order: CustomerOrder;
+  expanded: boolean;
+  onToggle: () => void;
+  onRefresh: () => void;
+}
+
+const OrderCard = ({ order, expanded, onToggle, onRefresh }: OrderCardProps) => {
+  const [updating, setUpdating] = useState(false);
   const orderTime = formatDistanceToNow(new Date(order.created_at), { addSuffix: true });
   const isDineIn = order.order_type === 'dine_in';
+
+  // Group items by status for summary
+  const groupedItems = groupOrderItems(order.items);
+  const statusCounts = {
+    pending: order.items.filter(i => i.status === 'pending').length,
+    preparing: order.items.filter(i => i.status === 'preparing').length,
+    ready: order.items.filter(i => i.status === 'ready').length,
+    rejected: order.items.filter(i => i.status === 'rejected').length,
+  };
+
+  const updateItemStatus = async (itemIds: string[], newStatus: string) => {
+    setUpdating(true);
+    try {
+      const { data, error } = await supabase.rpc('update_order_items_status', {
+        p_order_id: order.id,
+        p_item_ids: itemIds,
+        p_new_status: newStatus,
+      });
+
+      if (error) throw error;
+
+      const response = data as { success: boolean; error?: string };
+      if (!response.success) throw new Error(response.error);
+
+      toast.success(`Items marked as ${newStatus}`);
+      onRefresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const markAsPaid = async () => {
+    setUpdating(true);
+    try {
+      const { data, error } = await supabase.rpc('mark_order_paid', {
+        p_order_id: order.id,
+      });
+
+      if (error) throw error;
+
+      const response = data as { success: boolean; error?: string };
+      if (!response.success) throw new Error(response.error);
+
+      toast.success('Order marked as paid');
+      onRefresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to mark as paid');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <Card className={`border-l-4 ${isDineIn ? 'border-l-blue-500' : 'border-l-green-500'}`}>
@@ -352,7 +445,7 @@ const OrderCard = ({ order }: { order: CustomerOrder }) => {
               </>
             )}
           </CardTitle>
-          <Badge variant={order.status === 'pending' ? 'secondary' : 'default'}>
+          <Badge variant={order.status === 'placed' ? 'secondary' : 'default'}>
             {order.status}
           </Badge>
         </div>
@@ -362,21 +455,88 @@ const OrderCard = ({ order }: { order: CustomerOrder }) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Order Items */}
-        <div className="space-y-1">
-          {order.items.slice(0, 3).map((item, idx) => (
-            <div key={idx} className="flex items-start gap-2 text-sm">
-              <span className="font-medium text-primary">{item.quantity}×</span>
-              <span className="flex-1">{item.name}</span>
-              <span className="text-muted-foreground">${(item.price_usd * item.quantity).toFixed(2)}</span>
-            </div>
-          ))}
-          {order.items.length > 3 && (
-            <p className="text-xs text-muted-foreground">
-              +{order.items.length - 3} more item(s)
-            </p>
+        {/* Status Summary */}
+        <div className="flex flex-wrap gap-2 text-xs">
+          {statusCounts.pending > 0 && (
+            <Badge variant="outline" className="gap-1">
+              <Clock className="h-3 w-3" /> Pending: {statusCounts.pending}
+            </Badge>
+          )}
+          {statusCounts.preparing > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              <ChefHat className="h-3 w-3" /> Preparing: {statusCounts.preparing}
+            </Badge>
+          )}
+          {statusCounts.ready > 0 && (
+            <Badge className="gap-1 bg-green-500">
+              <CheckCircle className="h-3 w-3" /> Ready: {statusCounts.ready}
+            </Badge>
+          )}
+          {statusCounts.rejected > 0 && (
+            <Badge variant="destructive" className="gap-1">
+              <XCircle className="h-3 w-3" /> Rejected: {statusCounts.rejected}
+            </Badge>
           )}
         </div>
+
+        {/* Expandable Items List */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full justify-between"
+          onClick={onToggle}
+        >
+          <span>{order.items.length} items</span>
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+
+        {expanded && (
+          <div className="space-y-2 border rounded-md p-2">
+            {groupedItems.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between text-sm">
+                <div className="flex-1">
+                  <span className={item.status === 'rejected' ? 'line-through text-muted-foreground' : ''}>
+                    {item.count}× {item.name}
+                  </span>
+                  {item.options.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {item.options.map(o => o.label).join(', ')}
+                    </p>
+                  )}
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      disabled={updating}
+                      className="h-7 px-2"
+                    >
+                      <StatusBadge status={item.status} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'pending')}>
+                      <Clock className="h-4 w-4 mr-2" /> Pending
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'preparing')}>
+                      <ChefHat className="h-4 w-4 mr-2" /> Preparing
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'ready')}>
+                      <CheckCircle className="h-4 w-4 mr-2" /> Ready
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => updateItemStatus(item.item_ids, 'rejected')}
+                      className="text-destructive"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" /> Reject
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Customer Notes */}
         {order.customer_notes && (
@@ -392,13 +552,34 @@ const OrderCard = ({ order }: { order: CustomerOrder }) => {
           <span className="font-bold text-lg">${order.total_usd?.toFixed(2) || '0.00'}</span>
         </div>
 
-        {/* Device ID (truncated) */}
-        <p className="text-xs text-muted-foreground truncate">
-          Device: {order.device_id.substring(0, 8)}...
-        </p>
+        {/* Mark as Paid Button */}
+        <Button 
+          className="w-full" 
+          onClick={markAsPaid}
+          disabled={updating}
+        >
+          <DollarSign className="h-4 w-4 mr-2" />
+          Mark as Paid
+        </Button>
       </CardContent>
     </Card>
   );
+};
+
+// Status Badge Component
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case 'pending':
+      return <Badge variant="outline" className="text-xs"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+    case 'preparing':
+      return <Badge variant="secondary" className="text-xs"><ChefHat className="h-3 w-3 mr-1" />Preparing</Badge>;
+    case 'ready':
+      return <Badge className="text-xs bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Ready</Badge>;
+    case 'rejected':
+      return <Badge variant="destructive" className="text-xs"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
+    default:
+      return <Badge variant="outline" className="text-xs">{status}</Badge>;
+  }
 };
 
 export default CustomerOrders;
