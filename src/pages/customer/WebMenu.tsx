@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link, useSearchParams } from "react-router-dom";
-import { ShoppingCart, Plus, Minus, Search, X, ImageIcon } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Search, X, ImageIcon, ClipboardList, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { useLocalCart, LocalCartItem } from "@/hooks/useLocalCart";
 import ItemDetailSheet, { ItemOptions, SizeOption } from "@/components/customer/ItemDetailSheet";
@@ -291,6 +291,34 @@ const WebMenu = () => {
                 {/* Mobile Search Icon */}
                 <Button variant="outline" size="sm" onClick={handleSearchExpand} className="h-9 w-9 p-0 md:hidden">
                   <Search className="h-4 w-4" />
+                </Button>
+
+                {/* Active Order Button */}
+                <Button variant="outline" size="sm" asChild className="h-9 w-9 p-0">
+                  <Link 
+                    to={
+                      tableId
+                        ? `/menu/${shopId}/order?table_id=${tableId}`
+                        : `/menu/${shopId}/order`
+                    }
+                    className="flex items-center justify-center"
+                  >
+                    <ClipboardList className="h-4 w-4" />
+                  </Link>
+                </Button>
+
+                {/* Bill Button */}
+                <Button variant="outline" size="sm" asChild className="h-9 w-9 p-0">
+                  <Link 
+                    to={
+                      tableId
+                        ? `/menu/${shopId}/bill?table_id=${tableId}`
+                        : `/menu/${shopId}/bill`
+                    }
+                    className="flex items-center justify-center"
+                  >
+                    <Receipt className="h-4 w-4" />
+                  </Link>
                 </Button>
 
                 {/* Cart Icon */}
