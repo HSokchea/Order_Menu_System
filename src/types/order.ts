@@ -17,6 +17,7 @@ export interface StoredOrderItem {
   options: OrderItemOption[];
   status: 'pending' | 'preparing' | 'ready' | 'rejected';
   created_at: string;
+  category_name?: string;
 }
 
 // Item structure in local cart (with quantity for UI convenience)
@@ -30,7 +31,7 @@ export interface CartItem {
   notes?: string;
 }
 
-// Active order from tb_his_admin
+// Active order from tb_order_temporary
 export interface ActiveOrder {
   id: string;
   shop_id: string;
@@ -63,6 +64,15 @@ export interface GroupedOrderItem {
   count: number;
   item_ids: string[];
   created_at: string; // earliest created_at in the group
+  category_name?: string;
+}
+
+// Round (order placement) structure - items grouped by creation time
+export interface OrderRound {
+  roundNumber: number;
+  timestamp: string;
+  items: StoredOrderItem[];
+  specialRequest: string | null;
 }
 
 // Helper to group stored items for display
@@ -91,6 +101,7 @@ export function groupOrderItems(items: StoredOrderItem[]): GroupedOrderItem[] {
         count: 1,
         item_ids: [item.item_id],
         created_at: item.created_at,
+        category_name: item.category_name,
       });
     }
   }
@@ -119,4 +130,62 @@ export function calculateOrderTotal(items: StoredOrderItem[]): number {
       const optionsTotal = item.options?.reduce((optSum, opt) => optSum + opt.price, 0) || 0;
       return sum + item.price + optionsTotal;
     }, 0);
+}
+
+// Group items into rounds based on created_at timestamp
+// Items placed at the same time (within a minute threshold) are grouped together
+export function groupItemsIntoRounds(items: StoredOrderItem[], specialNotes: string | null): OrderRound[] {
+  if (!items || items.length === 0) return [];
+
+  // Sort items by created_at
+  const sortedItems = [...items].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  const rounds: OrderRound[] = [];
+  let currentRound: StoredOrderItem[] = [];
+  let currentTimestamp: string | null = null;
+  const MINUTE_THRESHOLD = 60 * 1000; // 1 minute threshold to group items
+
+  for (const item of sortedItems) {
+    const itemTime = new Date(item.created_at).getTime();
+
+    if (currentTimestamp === null) {
+      currentTimestamp = item.created_at;
+      currentRound = [item];
+    } else {
+      const lastTime = new Date(currentTimestamp).getTime();
+      if (itemTime - lastTime <= MINUTE_THRESHOLD) {
+        // Same round
+        currentRound.push(item);
+      } else {
+        // New round - save current and start new
+        rounds.push({
+          roundNumber: rounds.length + 1,
+          timestamp: currentTimestamp,
+          items: currentRound,
+          specialRequest: rounds.length === 0 ? specialNotes : null, // Only first round gets the notes for now
+        });
+        currentTimestamp = item.created_at;
+        currentRound = [item];
+      }
+    }
+  }
+
+  // Push last round
+  if (currentRound.length > 0 && currentTimestamp) {
+    rounds.push({
+      roundNumber: rounds.length + 1,
+      timestamp: currentTimestamp,
+      items: currentRound,
+      specialRequest: rounds.length === 0 ? specialNotes : null,
+    });
+  }
+
+  return rounds;
+}
+
+// Group items within a round for display (by name + options + status)
+export function groupRoundItems(items: StoredOrderItem[]): GroupedOrderItem[] {
+  return groupOrderItems(items);
 }

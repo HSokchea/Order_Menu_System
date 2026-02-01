@@ -1,33 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { toast } from 'sonner';
 import { 
   RefreshCw, 
-  Clock, 
   CheckCircle, 
-  ChefHat, 
-  Store, 
   UtensilsCrossed,
-  Bell,
   Package,
-  XCircle,
-  DollarSign,
-  ChevronDown,
-  ChevronUp
+  Store,
+  DollarSign
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { StoredOrderItem, groupOrderItems, calculateOrderTotal } from '@/types/order';
+import { StoredOrderItem } from '@/types/order';
+import OrderCard from '@/components/admin/orders/OrderCard';
 
 interface CustomerOrder {
   id: string;
@@ -45,11 +33,11 @@ interface CustomerOrder {
 }
 
 const CustomerOrders = () => {
+  const navigate = useNavigate();
   const { restaurant } = useUserProfile();
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>('all');
-  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
   const fetchOrders = async () => {
     if (!restaurant?.id) return;
@@ -62,7 +50,7 @@ const CustomerOrders = () => {
         .select('*')
         .eq('shop_id', restaurant.id)
         .eq('status', 'placed')
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (tempError) throw tempError;
 
@@ -95,7 +83,7 @@ const CustomerOrders = () => {
               price: item.price || 0,
               options: item.options || [],
               status: item.status || 'pending',
-              created_at: item.created_at || '',
+              created_at: item.created_at || order.created_at,
             }))
           : [];
 
@@ -151,18 +139,6 @@ const CustomerOrders = () => {
     };
   }, [restaurant?.id]);
 
-  const toggleOrderExpanded = (orderId: string) => {
-    setExpandedOrders(prev => {
-      const next = new Set(prev);
-      if (next.has(orderId)) {
-        next.delete(orderId);
-      } else {
-        next.add(orderId);
-      }
-      return next;
-    });
-  };
-
   // Filter orders by type
   const filteredOrders = orders.filter(order => {
     if (activeTab === 'all') return true;
@@ -188,6 +164,10 @@ const CustomerOrders = () => {
     dineIn: orders.filter(o => o.order_type === 'dine_in').length,
     takeaway: orders.filter(o => o.order_type === 'takeaway').length,
     totalRevenue: orders.reduce((sum, o) => sum + (o.total_usd || 0), 0),
+  };
+
+  const handleOrderClick = (orderId: string) => {
+    navigate(`/admin/customer-orders/${orderId}`);
   };
 
   if (loading && orders.length === 0) {
@@ -259,7 +239,7 @@ const CustomerOrders = () => {
                 <p className="text-sm text-muted-foreground">Revenue</p>
                 <p className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
               </div>
-              <Bell className="h-8 w-8 text-yellow-500 opacity-50" />
+              <DollarSign className="h-8 w-8 text-yellow-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
@@ -291,9 +271,7 @@ const CustomerOrders = () => {
                 <OrderCard 
                   key={order.id} 
                   order={order} 
-                  expanded={expandedOrders.has(order.id)}
-                  onToggle={() => toggleOrderExpanded(order.id)}
-                  onRefresh={fetchOrders}
+                  onClick={() => handleOrderClick(order.id)}
                 />
               ))}
             </div>
@@ -310,16 +288,13 @@ const CustomerOrders = () => {
                   <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                     <UtensilsCrossed className="h-5 w-5" />
                     Table {tableNumber}
-                    <Badge variant="secondary">{tableOrders.length} order(s)</Badge>
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {tableOrders.map(order => (
                       <OrderCard 
                         key={order.id} 
                         order={order}
-                        expanded={expandedOrders.has(order.id)}
-                        onToggle={() => toggleOrderExpanded(order.id)}
-                        onRefresh={fetchOrders}
+                        onClick={() => handleOrderClick(order.id)}
                       />
                     ))}
                   </div>
@@ -338,9 +313,7 @@ const CustomerOrders = () => {
                 <OrderCard 
                   key={order.id} 
                   order={order}
-                  expanded={expandedOrders.has(order.id)}
-                  onToggle={() => toggleOrderExpanded(order.id)}
-                  onRefresh={fetchOrders}
+                  onClick={() => handleOrderClick(order.id)}
                 />
               ))}
             </div>
@@ -361,225 +334,5 @@ const EmptyState = ({ message = "No active orders" }: { message?: string }) => (
     </CardContent>
   </Card>
 );
-
-// Order Card Component
-interface OrderCardProps {
-  order: CustomerOrder;
-  expanded: boolean;
-  onToggle: () => void;
-  onRefresh: () => void;
-}
-
-const OrderCard = ({ order, expanded, onToggle, onRefresh }: OrderCardProps) => {
-  const [updating, setUpdating] = useState(false);
-  const orderTime = formatDistanceToNow(new Date(order.created_at), { addSuffix: true });
-  const isDineIn = order.order_type === 'dine_in';
-
-  // Group items by status for summary
-  const groupedItems = groupOrderItems(order.items);
-  const statusCounts = {
-    pending: order.items.filter(i => i.status === 'pending').length,
-    preparing: order.items.filter(i => i.status === 'preparing').length,
-    ready: order.items.filter(i => i.status === 'ready').length,
-    rejected: order.items.filter(i => i.status === 'rejected').length,
-  };
-
-  const updateItemStatus = async (itemIds: string[], newStatus: string) => {
-    setUpdating(true);
-    try {
-      const { data, error } = await supabase.rpc('update_order_items_status', {
-        p_order_id: order.id,
-        p_item_ids: itemIds,
-        p_new_status: newStatus,
-      });
-
-      if (error) throw error;
-
-      const response = data as { success: boolean; error?: string };
-      if (!response.success) throw new Error(response.error);
-
-      toast.success(`Items marked as ${newStatus}`);
-      onRefresh();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to update status');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const markAsPaid = async () => {
-    setUpdating(true);
-    try {
-      const { data, error } = await supabase.rpc('mark_order_paid', {
-        p_order_id: order.id,
-      });
-
-      if (error) throw error;
-
-      const response = data as { success: boolean; error?: string };
-      if (!response.success) throw new Error(response.error);
-
-      toast.success('Order marked as paid');
-      onRefresh();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to mark as paid');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  return (
-    <Card className={`border-l-4 ${isDineIn ? 'border-l-blue-500' : 'border-l-green-500'}`}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            {isDineIn ? (
-              <>
-                <UtensilsCrossed className="h-4 w-4 text-blue-500" />
-                Table {order.table_number || 'N/A'}
-              </>
-            ) : (
-              <>
-                <Store className="h-4 w-4 text-green-500" />
-                Takeaway
-              </>
-            )}
-          </CardTitle>
-          <Badge variant={order.status === 'placed' ? 'secondary' : 'default'}>
-            {order.status}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          {orderTime}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Status Summary */}
-        <div className="flex flex-wrap gap-2 text-xs">
-          {statusCounts.pending > 0 && (
-            <Badge variant="outline" className="gap-1">
-              <Clock className="h-3 w-3" /> Pending: {statusCounts.pending}
-            </Badge>
-          )}
-          {statusCounts.preparing > 0 && (
-            <Badge variant="secondary" className="gap-1">
-              <ChefHat className="h-3 w-3" /> Preparing: {statusCounts.preparing}
-            </Badge>
-          )}
-          {statusCounts.ready > 0 && (
-            <Badge className="gap-1 bg-green-500">
-              <CheckCircle className="h-3 w-3" /> Ready: {statusCounts.ready}
-            </Badge>
-          )}
-          {statusCounts.rejected > 0 && (
-            <Badge variant="destructive" className="gap-1">
-              <XCircle className="h-3 w-3" /> Rejected: {statusCounts.rejected}
-            </Badge>
-          )}
-        </div>
-
-        {/* Expandable Items List */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full justify-between"
-          onClick={onToggle}
-        >
-          <span>{order.items.length} items</span>
-          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-
-        {expanded && (
-          <div className="space-y-2 border rounded-md p-2">
-            {groupedItems.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between text-sm">
-                <div className="flex-1">
-                  <span className={item.status === 'rejected' ? 'line-through text-muted-foreground' : ''}>
-                    {item.count}× {item.name}
-                  </span>
-                  {item.options.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {item.options.map(o => o.label).join(', ')}
-                    </p>
-                  )}
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      disabled={updating}
-                      className="h-7 px-2"
-                    >
-                      <StatusBadge status={item.status} />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'pending')}>
-                      <Clock className="h-4 w-4 mr-2" /> Pending
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'preparing')}>
-                      <ChefHat className="h-4 w-4 mr-2" /> Preparing
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'ready')}>
-                      <CheckCircle className="h-4 w-4 mr-2" /> Ready
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => updateItemStatus(item.item_ids, 'rejected')}
-                      className="text-destructive"
-                    >
-                      <XCircle className="h-4 w-4 mr-2" /> Reject
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Customer Notes */}
-        {order.customer_notes && (
-          <div className="bg-muted/50 rounded p-2 text-sm">
-            <span className="text-muted-foreground">Note: </span>
-            {order.customer_notes}
-          </div>
-        )}
-
-        {/* Total */}
-        <div className="flex items-center justify-between pt-2 border-t">
-          <span className="font-medium">Total</span>
-          <span className="font-bold text-lg">${order.total_usd?.toFixed(2) || '0.00'}</span>
-        </div>
-
-        {/* Mark as Paid Button */}
-        <Button 
-          className="w-full" 
-          onClick={markAsPaid}
-          disabled={updating}
-        >
-          <DollarSign className="h-4 w-4 mr-2" />
-          Mark as Paid
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Status Badge Component
-const StatusBadge = ({ status }: { status: string }) => {
-  switch (status) {
-    case 'pending':
-      return <Badge variant="outline" className="text-xs"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-    case 'preparing':
-      return <Badge variant="secondary" className="text-xs"><ChefHat className="h-3 w-3 mr-1" />Preparing</Badge>;
-    case 'ready':
-      return <Badge className="text-xs bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Ready</Badge>;
-    case 'rejected':
-      return <Badge variant="destructive" className="text-xs"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
-    default:
-      return <Badge variant="outline" className="text-xs">{status}</Badge>;
-  }
-};
 
 export default CustomerOrders;
