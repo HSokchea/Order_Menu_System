@@ -9,11 +9,11 @@ import Categories from "./Categories";
 import MenuItems from "./MenuItems";
 import OrderDashboard from "./OrderDashboard";
 import CustomerOrders from "./CustomerOrders";
+import OrderDetail from "./OrderDetail";
 import QRGenerator from "./QRGenerator";
 import TableSessions from "./TableSessions";
 import Settings from "./Settings";
 import RolesPermissions from "./RolesPermissions";
-
 
 const getPageInfo = (pathname: string) => {
   switch (pathname) {
@@ -127,6 +127,14 @@ export default function AdminMain() {
             fallback={<AccessDenied message="You don't have permission to view orders." />}
           >
             <CustomerOrders />
+          </PermissionGuard>
+        } />
+        <Route path="customer-orders/:orderId" element={
+          <PermissionGuard 
+            permissions={[PERMISSIONS.ORDERS_VIEW]} 
+            fallback={<AccessDenied message="You don't have permission to view orders." />}
+          >
+            <OrderDetail />
           </PermissionGuard>
         } />
         {/* Table Sessions - requires billing or table permissions */}
