@@ -76,6 +76,14 @@ export interface OrderRound {
   specialRequest: string | null;
 }
 
+// Status priority for sorting (lower = higher priority, shown first)
+const STATUS_PRIORITY: Record<string, number> = {
+  pending: 0,
+  preparing: 1,
+  ready: 2,
+  rejected: 3,
+};
+
 // Helper to group stored items for display
 export function groupOrderItems(items: StoredOrderItem[]): GroupedOrderItem[] {
   const groups: Map<string, GroupedOrderItem> = new Map();
@@ -107,10 +115,16 @@ export function groupOrderItems(items: StoredOrderItem[]): GroupedOrderItem[] {
     }
   }
 
-  // Sort by created_at (earliest first)
-  return Array.from(groups.values()).sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  );
+  // Sort by status priority (pending first, then preparing, ready, rejected)
+  return Array.from(groups.values()).sort((a, b) => {
+    const priorityA = STATUS_PRIORITY[a.status] ?? 99;
+    const priorityB = STATUS_PRIORITY[b.status] ?? 99;
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    // If same status, sort by created_at (earliest first)
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
 }
 
 // Helper to group items by status
@@ -186,6 +200,13 @@ export function groupItemsIntoRounds(items: StoredOrderItem[], _specialNotes?: s
       specialRequest: roundSpecialRequest,
     });
   }
+
+  // Reverse to show most recent round first (descending order)
+  const reversedRounds = rounds.reverse();
+  
+  // Re-number rounds so the most recent is Round 1 display-wise but keep logical numbering
+  // Actually, keep original round numbers but reverse the array order
+  return reversedRounds;
 
   return rounds;
 }
