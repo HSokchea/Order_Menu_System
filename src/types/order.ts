@@ -18,6 +18,7 @@ export interface StoredOrderItem {
   status: 'pending' | 'preparing' | 'ready' | 'rejected';
   created_at: string;
   category_name?: string;
+  special_request?: string; // Per-round special request note
 }
 
 // Item structure in local cart (with quantity for UI convenience)
@@ -134,7 +135,8 @@ export function calculateOrderTotal(items: StoredOrderItem[]): number {
 
 // Group items into rounds based on created_at timestamp
 // Items placed at the same time (within a minute threshold) are grouped together
-export function groupItemsIntoRounds(items: StoredOrderItem[], specialNotes: string | null): OrderRound[] {
+// Special request notes are extracted from items (all items in same round share the same note)
+export function groupItemsIntoRounds(items: StoredOrderItem[], _specialNotes?: string | null): OrderRound[] {
   if (!items || items.length === 0) return [];
 
   // Sort items by created_at
@@ -160,11 +162,13 @@ export function groupItemsIntoRounds(items: StoredOrderItem[], specialNotes: str
         currentRound.push(item);
       } else {
         // New round - save current and start new
+        // Extract special request from any item in this round (they all share the same note)
+        const roundSpecialRequest = currentRound.find(i => i.special_request)?.special_request || null;
         rounds.push({
           roundNumber: rounds.length + 1,
           timestamp: currentTimestamp,
           items: currentRound,
-          specialRequest: rounds.length === 0 ? specialNotes : null, // Only first round gets the notes for now
+          specialRequest: roundSpecialRequest,
         });
         currentTimestamp = item.created_at;
         currentRound = [item];
@@ -172,13 +176,14 @@ export function groupItemsIntoRounds(items: StoredOrderItem[], specialNotes: str
     }
   }
 
-  // Push last round
+  // Push last round - extract special request from items
   if (currentRound.length > 0 && currentTimestamp) {
+    const roundSpecialRequest = currentRound.find(i => i.special_request)?.special_request || null;
     rounds.push({
       roundNumber: rounds.length + 1,
       timestamp: currentTimestamp,
       items: currentRound,
-      specialRequest: rounds.length === 0 ? specialNotes : null,
+      specialRequest: roundSpecialRequest,
     });
   }
 
