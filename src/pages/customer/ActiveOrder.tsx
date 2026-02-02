@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, RefreshCw, Clock, ChefHat, CheckCircle2, Receipt, Utensils, ShoppingBag, XCircle } from 'lucide-react';
 import { useActiveOrder } from '@/hooks/useActiveOrder';
-import { groupOrderItems, calculateOrderTotal } from '@/types/order';
+import { groupOrderItems, calculateOrderTotal, groupItemsIntoRounds, groupRoundItems } from '@/types/order';
 import { format } from 'date-fns';
 
 const statusConfig = {
@@ -111,6 +111,9 @@ const ActiveOrder = () => {
   const status = statusConfig[order.status] || statusConfig.placed;
   const StatusIcon = status.icon;
 
+  // Group items into rounds for special requests display
+  const rounds = groupItemsIntoRounds(order.items);
+
   // Group items for display
   const groupedItems = groupOrderItems(order.items);
   const total = calculateOrderTotal(order.items);
@@ -120,6 +123,11 @@ const ActiveOrder = () => {
   const preparingItems = groupedItems.filter(g => g.status === 'preparing');
   const readyItems = groupedItems.filter(g => g.status === 'ready');
   const rejectedItems = groupedItems.filter(g => g.status === 'rejected');
+
+  // Collect all special requests from rounds
+  const specialRequests = rounds
+    .filter(r => r.specialRequest)
+    .map(r => ({ roundNumber: r.roundNumber, note: r.specialRequest! }));
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -230,15 +238,23 @@ const ActiveOrder = () => {
               )}
             </div>
 
-            {order.customer_notes && (
-              <>
-                <Separator className="my-4" />
-                <div>
-                  <p className="text-sm font-medium mb-1">Special Instructions</p>
-                  <p className="text-sm text-muted-foreground">{order.customer_notes}</p>
-                </div>
-              </>
-            )}
+              {/* Special Requests per Round */}
+              {specialRequests.length > 0 && (
+                <>
+                  <Separator className="my-4" />
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Special Instructions</p>
+                    {specialRequests.map((req) => (
+                      <div key={req.roundNumber} className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                          Round {req.roundNumber}
+                        </p>
+                        <p className="text-sm text-muted-foreground italic">"{req.note}"</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
           </CardContent>
         </Card>
 
