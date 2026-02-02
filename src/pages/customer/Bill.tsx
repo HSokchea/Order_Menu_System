@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Receipt, Utensils, ShoppingBag } from 'lucide-react';
 import { useActiveOrder } from '@/hooks/useActiveOrder';
-import { groupOrderItems, calculateOrderTotal } from '@/types/order';
+import { groupOrderItems, calculateOrderTotal, groupItemsIntoRounds } from '@/types/order';
 import { format } from 'date-fns';
 
 const Bill = () => {
@@ -64,6 +64,12 @@ const Bill = () => {
   const activeItems = groupedItems.filter(g => g.status !== 'rejected');
   const rejectedItems = groupedItems.filter(g => g.status === 'rejected');
   const subtotal = calculateOrderTotal(order.items);
+
+  // Get special requests per round
+  const rounds = groupItemsIntoRounds(order.items);
+  const specialRequests = rounds
+    .filter(r => r.specialRequest)
+    .map(r => ({ roundNumber: r.roundNumber, note: r.specialRequest! }));
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -184,12 +190,18 @@ const Bill = () => {
               </p>
             </div>
 
-            {order.customer_notes && (
+            {/* Special Requests per Round */}
+            {specialRequests.length > 0 && (
               <>
                 <Separator className="my-4" />
-                <div className="text-sm">
-                  <p className="font-medium mb-1">Notes</p>
-                  <p className="text-muted-foreground">{order.customer_notes}</p>
+                <div className="text-sm space-y-2">
+                  <p className="font-medium">Notes</p>
+                  {specialRequests.map((req) => (
+                    <div key={req.roundNumber} className="bg-muted/50 rounded p-2">
+                      <p className="text-xs font-medium text-muted-foreground">Round {req.roundNumber}</p>
+                      <p className="text-muted-foreground italic">"{req.note}"</p>
+                    </div>
+                  ))}
                 </div>
               </>
             )}

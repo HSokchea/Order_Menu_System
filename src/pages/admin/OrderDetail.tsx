@@ -80,7 +80,7 @@ const OrderDetail = () => {
         tableNumber = tableData?.table_number;
       }
 
-      // Parse items
+      // Parse items - include special_request field
       const items: StoredOrderItem[] = Array.isArray(data.items)
         ? (data.items as unknown[]).filter((item: any) => item.item_id).map((item: any) => ({
             item_id: item.item_id || '',
@@ -91,6 +91,7 @@ const OrderDetail = () => {
             status: item.status || 'pending',
             created_at: item.created_at || data.created_at,
             category_name: item.category_name,
+            special_request: item.special_request || null,
           }))
         : [];
 

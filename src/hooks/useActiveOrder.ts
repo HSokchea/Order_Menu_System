@@ -44,7 +44,7 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
       const response = data as { success: boolean; order?: any; shop?: any; error?: string };
 
       if (response.success && response.order) {
-        // Parse items - now they're individual units with status
+        // Parse items - now they're individual units with status and special_request
         const items: StoredOrderItem[] = Array.isArray(response.order.items) 
           ? response.order.items.map((item: any) => ({
               item_id: item.item_id,
@@ -54,6 +54,7 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
               options: item.options || [],
               status: item.status || 'pending',
               created_at: item.created_at,
+              special_request: item.special_request || null,
             }))
           : [];
 
