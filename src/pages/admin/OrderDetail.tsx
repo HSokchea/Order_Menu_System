@@ -6,11 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { toast } from 'sonner';
-import {
-  ArrowLeft,
-  Clock,
-  CheckCircle,
-  ChefHat,
+import { 
+  ArrowLeft, 
+  Clock, 
+  CheckCircle, 
+  ChefHat, 
   XCircle,
   DollarSign,
   Printer,
@@ -20,17 +20,17 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
-import {
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  StoredOrderItem,
-  groupItemsIntoRounds,
+import { 
+  StoredOrderItem, 
+  groupItemsIntoRounds, 
   groupRoundItems,
-  calculateOrderTotal
+  calculateOrderTotal 
 } from '@/types/order';
 
 interface OrderData {
@@ -83,7 +83,6 @@ const OrderDetail = () => {
       // Parse items - include special_request field
       const items: StoredOrderItem[] = Array.isArray(data.items)
         ? (data.items as unknown[]).filter((item: any) => item.item_id).map((item: any) => ({
-<<<<<<< Updated upstream
             item_id: item.item_id || '',
             menu_item_id: item.menu_item_id || '',
             name: item.name || '',
@@ -94,17 +93,6 @@ const OrderDetail = () => {
             category_name: item.category_name,
             special_request: item.special_request || null,
           }))
-=======
-          item_id: item.item_id || '',
-          menu_item_id: item.menu_item_id || '',
-          name: item.name || '',
-          price: item.price || 0,
-          options: item.options || [],
-          status: item.status || 'pending',
-          created_at: item.created_at || data.created_at,
-          category_name: item.category_name,
-        }))
->>>>>>> Stashed changes
         : [];
 
       setOrder({
@@ -230,7 +218,7 @@ const OrderDetail = () => {
   const rounds = groupItemsIntoRounds(order.items, order.customer_notes);
   const subtotal = calculateOrderTotal(order.items);
   // Tax calculation - can be enhanced if restaurant settings are fetched
-  const taxRate = 0;
+  const taxRate = 0; 
   const taxAmount = subtotal * (taxRate / 100);
   const total = subtotal + taxAmount;
   const isDineIn = order.order_type === 'dine_in';
@@ -243,24 +231,26 @@ const OrderDetail = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
+          <Button 
+            variant="ghost" 
+            size="sm" 
             onClick={() => navigate('/admin/customer-orders')}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
+            Back to All Orders
           </Button>
+          <div className="border-l h-6" />
           <div>
             <h1 className="text-xl font-bold">Order Detail</h1>
             <p className="text-sm text-muted-foreground">
-              {shortId} • {rounds.length} Round{rounds.length !== 1 ? 's' : ''} •
+              {shortId} • {rounds.length} Round{rounds.length !== 1 ? 's' : ''} • 
               {isDineIn ? ` Table ${order.table_number || 'N/A'}` : ' Takeaway'}
             </p>
           </div>
         </div>
-        <Badge
-          variant="outline"
+        <Badge 
+          variant="outline" 
           className="gap-2 bg-green-50 text-green-700 border-green-200"
         >
           <span className="h-2 w-2 rounded-full bg-green-500" />
@@ -274,7 +264,7 @@ const OrderDetail = () => {
           {rounds.map((round) => {
             const groupedItems = groupRoundItems(round.items);
             const roundTime = format(new Date(round.timestamp), 'h:mm a');
-
+            
             return (
               <Card key={round.roundNumber}>
                 <CardHeader className="pb-3">
@@ -295,10 +285,10 @@ const OrderDetail = () => {
                   {groupedItems.map((item, idx) => {
                     const itemTotal = (item.price + (item.options?.reduce((s, o) => s + o.price, 0) || 0)) * item.count;
                     const isRejected = item.status === 'rejected';
-
+                    
                     return (
-                      <div
-                        key={idx}
+                      <div 
+                        key={idx} 
                         className={`flex items-center justify-between py-2 ${isRejected ? 'opacity-50' : ''}`}
                       >
                         <div className="flex items-start gap-3">
@@ -320,8 +310,8 @@ const OrderDetail = () => {
                         <div className="flex items-center gap-3">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
+                              <Button 
+                                variant="ghost" 
                                 size="sm"
                                 disabled={updating}
                                 className="h-7 px-2"
@@ -339,7 +329,7 @@ const OrderDetail = () => {
                               <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'ready')}>
                                 <CheckCircle className="h-4 w-4 mr-2" /> Ready
                               </DropdownMenuItem>
-                              <DropdownMenuItem
+                              <DropdownMenuItem 
                                 onClick={() => updateItemStatus(item.item_ids, 'rejected')}
                                 className="text-destructive"
                               >
@@ -401,30 +391,30 @@ const OrderDetail = () => {
                 <span className="font-semibold">Total Amount</span>
                 <span className="text-2xl font-bold text-primary">${total.toFixed(2)}</span>
               </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 gap-2">
-                  <Printer className="h-4 w-4" />
-                  Print Receipt
-                </Button>
-                <Button variant="outline" className="flex-1 gap-2">
-                  <Pencil className="h-4 w-4" />
-                  Edit Order
-                </Button>
-              </div>
-
-              <Button
-                className="w-full gap-2"
-                size="lg"
-                onClick={markAsPaid}
-                disabled={updating}
-              >
-                <DollarSign className="h-4 w-4" />
-                Mark as Paid
-              </Button>
             </CardContent>
           </Card>
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 gap-2">
+              <Printer className="h-4 w-4" />
+              Print Receipt
+            </Button>
+            <Button variant="outline" className="flex-1 gap-2">
+              <Pencil className="h-4 w-4" />
+              Edit Order
+            </Button>
+          </div>
+          
+          <Button 
+            className="w-full gap-2" 
+            size="lg"
+            onClick={markAsPaid}
+            disabled={updating}
+          >
+            <DollarSign className="h-4 w-4" />
+            Mark as Paid
+          </Button>
 
           {/* Activity History */}
           <Card>

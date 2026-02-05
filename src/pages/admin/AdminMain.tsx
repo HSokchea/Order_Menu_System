@@ -37,7 +37,7 @@ const getPageInfo = (pathname: string) => {
     case "/admin/qr-generator":
       return { title: "QR Generator", description: "Create QR codes for tables" };
     default:
-      return { title: "Customer Orders", description: "QR menu orders (dine-in & takeaway)" };
+      return { title: "Admin", description: "Restaurant Management" };
   }
 };
 
