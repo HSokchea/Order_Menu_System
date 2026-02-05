@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,8 +14,14 @@ import {
   DollarSign
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StoredOrderItem } from '@/types/order';
+import { StoredOrderItem, groupItemsIntoRounds } from '@/types/order';
 import OrderCard from '@/components/admin/orders/OrderCard';
+import { 
+  CustomerOrdersFilters, 
+  OrderFilters, 
+  defaultFilters 
+} from '@/components/admin/orders/CustomerOrdersFilters';
+import { startOfDay, subMinutes, isAfter, isBefore, isEqual } from 'date-fns';
 
 interface CustomerOrder {
   id: string;
@@ -32,12 +38,35 @@ interface CustomerOrder {
   updated_at: string;
 }
 
+// Calculate total excluding rejected items
+function calculateOrderTotal(items: StoredOrderItem[]): number {
+  return items
+    .filter(item => item.status !== 'rejected')
+    .reduce((sum, item) => {
+      const optionsTotal = item.options?.reduce((optSum, opt) => optSum + opt.price, 0) || 0;
+      return sum + item.price + optionsTotal;
+    }, 0);
+}
+
+// Get the number of rounds in an order
+function getOrderRoundsCount(items: StoredOrderItem[]): number {
+  const rounds = groupItemsIntoRounds(items);
+  return rounds.length;
+}
+
+// Check if order contains items with specific status
+function orderContainsStatus(items: StoredOrderItem[], status: string): boolean {
+  return items.some(item => item.status === status);
+}
+
 const CustomerOrders = () => {
   const navigate = useNavigate();
   const { restaurant } = useUserProfile();
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>('all');
+  const [filters, setFilters] = useState<OrderFilters>(defaultFilters);
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     if (!restaurant?.id) return;
@@ -84,6 +113,7 @@ const CustomerOrders = () => {
               options: item.options || [],
               status: item.status || 'pending',
               created_at: item.created_at || order.created_at,
+              special_request: item.special_request || null,
             }))
           : [];
 
@@ -139,11 +169,123 @@ const CustomerOrders = () => {
     };
   }, [restaurant?.id]);
 
-  // Filter orders by type
-  const filteredOrders = orders.filter(order => {
-    if (activeTab === 'all') return true;
-    return order.order_type === activeTab;
-  });
+  // Apply all filters
+  const filteredOrders = useMemo(() => {
+    let result = orders;
+
+    // Order Type filter (from tabs)
+    if (activeTab !== 'all') {
+      result = result.filter(order => order.order_type === activeTab);
+    }
+
+    // Time filter
+    const now = new Date();
+    if (filters.timePreset === 'last15min') {
+      const threshold = subMinutes(now, 15);
+      result = result.filter(order => isAfter(new Date(order.created_at), threshold));
+    } else if (filters.timePreset === 'last30min') {
+      const threshold = subMinutes(now, 30);
+      result = result.filter(order => isAfter(new Date(order.created_at), threshold));
+    } else if (filters.timePreset === 'today') {
+      const todayStart = startOfDay(now);
+      result = result.filter(order => isAfter(new Date(order.created_at), todayStart) || isEqual(new Date(order.created_at), todayStart));
+    } else if (filters.timePreset === 'custom' && filters.customDateFrom && filters.customDateTo) {
+      const fromDate = startOfDay(filters.customDateFrom);
+      const toDate = new Date(filters.customDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      result = result.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return (isAfter(orderDate, fromDate) || isEqual(orderDate, fromDate)) && 
+               (isBefore(orderDate, toDate) || isEqual(orderDate, toDate));
+      });
+    }
+
+    // Amount filter (using calculated total excluding rejected items)
+    if (filters.amountOperator !== 'none') {
+      result = result.filter(order => {
+        const total = calculateOrderTotal(order.items);
+        if (filters.amountOperator === 'gt' && filters.amountValue !== undefined) {
+          return total > filters.amountValue;
+        }
+        if (filters.amountOperator === 'lt' && filters.amountValue !== undefined) {
+          return total < filters.amountValue;
+        }
+        if (filters.amountOperator === 'between' && filters.amountMin !== undefined && filters.amountMax !== undefined) {
+          return total >= filters.amountMin && total <= filters.amountMax;
+        }
+        return true;
+      });
+    }
+
+    // Item count filter
+    if (filters.itemCountOperator !== 'none' && filters.itemCountValue !== undefined) {
+      result = result.filter(order => {
+        const count = order.items.length;
+        if (filters.itemCountOperator === 'gte') {
+          return count >= filters.itemCountValue!;
+        }
+        if (filters.itemCountOperator === 'lte') {
+          return count <= filters.itemCountValue!;
+        }
+        return true;
+      });
+    }
+
+    // Rounds filter
+    if (filters.roundsFilter !== 'all') {
+      result = result.filter(order => {
+        const roundsCount = getOrderRoundsCount(order.items);
+        if (filters.roundsFilter === 'single') {
+          return roundsCount === 1;
+        }
+        if (filters.roundsFilter === 'multiple') {
+          return roundsCount >= 2;
+        }
+        return true;
+      });
+    }
+
+    // Item status contains filter
+    const statusFiltersActive = Object.values(filters.statusContains).some(v => v);
+    if (statusFiltersActive) {
+      result = result.filter(order => {
+        // Order must contain at least one item with any of the selected statuses
+        if (filters.statusContains.pending && orderContainsStatus(order.items, 'pending')) return true;
+        if (filters.statusContains.preparing && orderContainsStatus(order.items, 'preparing')) return true;
+        if (filters.statusContains.ready && orderContainsStatus(order.items, 'ready')) return true;
+        if (filters.statusContains.rejected && orderContainsStatus(order.items, 'rejected')) return true;
+        return false;
+      });
+    }
+
+    return result;
+  }, [orders, activeTab, filters]);
+
+  // Handle quick filter clicks
+  const handleQuickFilter = (type: 'waiting' | 'inProgress' | 'ready') => {
+    if (activeQuickFilter === type) {
+      // Toggle off
+      setActiveQuickFilter(null);
+      setFilters(defaultFilters);
+    } else {
+      setActiveQuickFilter(type);
+      const newFilters = { ...defaultFilters };
+      if (type === 'waiting') {
+        newFilters.statusContains.pending = true;
+      } else if (type === 'inProgress') {
+        newFilters.statusContains.preparing = true;
+      } else if (type === 'ready') {
+        newFilters.statusContains.ready = true;
+      }
+      setFilters(newFilters);
+    }
+  };
+
+  // Handle filter changes - clear quick filter when manually changing filters
+  const handleFiltersChange = (newFilters: OrderFilters) => {
+    setFilters(newFilters);
+    setActiveQuickFilter(null);
+  };
 
   // Group dine-in orders by table
   const groupedByTable = filteredOrders
@@ -158,12 +300,12 @@ const CustomerOrders = () => {
   // Get takeaway orders
   const takeawayOrders = filteredOrders.filter(o => o.order_type === 'takeaway');
 
-  // Stats
+  // Stats (from all orders, not filtered)
   const stats = {
     total: orders.length,
     dineIn: orders.filter(o => o.order_type === 'dine_in').length,
     takeaway: orders.filter(o => o.order_type === 'takeaway').length,
-    totalRevenue: orders.reduce((sum, o) => sum + (o.total_usd || 0), 0),
+    totalRevenue: orders.reduce((sum, o) => sum + calculateOrderTotal(o.items), 0),
   };
 
   const handleOrderClick = (orderId: string) => {
@@ -245,25 +387,40 @@ const CustomerOrders = () => {
         </Card>
       </div>
 
+      {/* Filters */}
+      <CustomerOrdersFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onQuickFilter={handleQuickFilter}
+        activeQuickFilter={activeQuickFilter}
+      />
+
+      {/* Filtered Results Count */}
+      {filteredOrders.length !== orders.length && (
+        <p className="text-sm text-muted-foreground">
+          Showing {filteredOrders.length} of {orders.length} orders
+        </p>
+      )}
+
       {/* Orders Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <TabsList>
           <TabsTrigger value="all" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            All ({stats.total})
+            All ({filteredOrders.length})
           </TabsTrigger>
           <TabsTrigger value="dine_in" className="flex items-center gap-2">
             <UtensilsCrossed className="h-4 w-4" />
-            Dine-in ({stats.dineIn})
+            Dine-in ({filteredOrders.filter(o => o.order_type === 'dine_in').length})
           </TabsTrigger>
           <TabsTrigger value="takeaway" className="flex items-center gap-2">
             <Store className="h-4 w-4" />
-            Takeaway ({stats.takeaway})
+            Takeaway ({filteredOrders.filter(o => o.order_type === 'takeaway').length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-6">
-          {orders.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -279,8 +436,8 @@ const CustomerOrders = () => {
         </TabsContent>
 
         <TabsContent value="dine_in" className="mt-6">
-          {stats.dineIn === 0 ? (
-            <EmptyState message="No dine-in orders yet" />
+          {filteredOrders.filter(o => o.order_type === 'dine_in').length === 0 ? (
+            <EmptyState message="No dine-in orders match filters" />
           ) : (
             <div className="space-y-6">
               {Object.entries(groupedByTable).map(([tableNumber, tableOrders]) => (
@@ -305,8 +462,8 @@ const CustomerOrders = () => {
         </TabsContent>
 
         <TabsContent value="takeaway" className="mt-6">
-          {stats.takeaway === 0 ? (
-            <EmptyState message="No takeaway orders yet" />
+          {takeawayOrders.length === 0 ? (
+            <EmptyState message="No takeaway orders match filters" />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {takeawayOrders.map(order => (
