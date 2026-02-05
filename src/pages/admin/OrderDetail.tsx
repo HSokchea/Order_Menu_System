@@ -351,16 +351,19 @@ const OrderDetail = () => {
                       <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                         <FileText className="h-4 w-4 text-blue-600" />
                       </div>
-                      <div>
+
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
                           Round {round.roundNumber} Special Request
                         </p>
-                        <p className="text-sm text-blue-800 italic mt-1">
+
+                        <p className="text-sm text-blue-800 italic mt-1 break-words whitespace-pre-wrap leading-relaxed">
                           "{round.specialRequest}"
                         </p>
                       </div>
                     </div>
                   )}
+
                 </CardContent>
               </Card>
             );
