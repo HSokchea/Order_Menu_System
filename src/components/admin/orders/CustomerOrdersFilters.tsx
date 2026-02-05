@@ -17,7 +17,10 @@ import {
   ChevronDown,
   X,
   CalendarIcon,
-  RotateCcw
+  RotateCcw,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -68,11 +71,15 @@ export const defaultFilters: OrderFilters = {
   },
 };
 
+export type SortDirection = 'desc' | 'asc';
+
 interface CustomerOrdersFiltersProps {
   filters: OrderFilters;
   onFiltersChange: (filters: OrderFilters) => void;
   onQuickFilter: (type: 'waiting' | 'inProgress' | 'ready') => void;
   activeQuickFilter: string | null;
+  sortDirection: SortDirection;
+  onSortChange: (direction: SortDirection) => void;
 }
 
 export function CustomerOrdersFilters({
@@ -80,6 +87,8 @@ export function CustomerOrdersFilters({
   onFiltersChange,
   onQuickFilter,
   activeQuickFilter,
+  sortDirection,
+  onSortChange,
 }: CustomerOrdersFiltersProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -202,6 +211,21 @@ export function CustomerOrdersFilters({
             </Popover>
           )}
         </div>
+
+        {/* Sort Toggle */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onSortChange(sortDirection === 'desc' ? 'asc' : 'desc')}
+          className="gap-2"
+        >
+          {sortDirection === 'desc' ? (
+            <ArrowDown className="h-4 w-4" />
+          ) : (
+            <ArrowUp className="h-4 w-4" />
+          )}
+          {sortDirection === 'desc' ? 'Newest First' : 'Oldest First'}
+        </Button>
 
         {/* Advanced Filters Toggle */}
         <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen} className="flex-1">

@@ -24,6 +24,18 @@ interface OrderCardProps {
   onClick: () => void;
 }
 
+// Calculate status counts from items
+function getStatusCounts(items: StoredOrderItem[]) {
+  const counts = { pending: 0, preparing: 0, ready: 0, rejected: 0 };
+  items.forEach(item => {
+    const status = item.status || 'pending';
+    if (status in counts) {
+      counts[status as keyof typeof counts]++;
+    }
+  });
+  return counts;
+}
+
 const OrderCard = ({ order, onClick }: OrderCardProps) => {
   const isDineIn = order.order_type === 'dine_in';
   const orderTime = formatDistanceToNow(new Date(order.updated_at), { addSuffix: true });
@@ -32,6 +44,9 @@ const OrderCard = ({ order, onClick }: OrderCardProps) => {
   const rounds = groupItemsIntoRounds(order.items, order.customer_notes);
   const itemCount = order.items.length;
   const roundCount = rounds.length;
+  
+  // Calculate status counts
+  const statusCounts = getStatusCounts(order.items);
 
   // Get status badge variant
   const getStatusBadge = () => {
@@ -79,8 +94,32 @@ const OrderCard = ({ order, onClick }: OrderCardProps) => {
         </div>
 
         {/* Items & Rounds Info */}
-        <div className="text-sm text-muted-foreground mb-4">
+        <div className="text-sm text-muted-foreground mb-2">
           {itemCount} Items • {roundCount} Round{roundCount !== 1 ? 's' : ''}
+        </div>
+
+        {/* Status Counts */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {statusCounts.pending > 0 && (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs">
+              {statusCounts.pending} pending
+            </Badge>
+          )}
+          {statusCounts.preparing > 0 && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+              {statusCounts.preparing} preparing
+            </Badge>
+          )}
+          {statusCounts.ready > 0 && (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+              {statusCounts.ready} ready
+            </Badge>
+          )}
+          {statusCounts.rejected > 0 && (
+            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
+              {statusCounts.rejected} rejected
+            </Badge>
+          )}
         </div>
 
         {/* Separator */}
