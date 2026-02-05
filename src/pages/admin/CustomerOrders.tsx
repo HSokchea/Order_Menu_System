@@ -19,7 +19,8 @@ import OrderCard from '@/components/admin/orders/OrderCard';
 import { 
   CustomerOrdersFilters, 
   OrderFilters, 
-  defaultFilters 
+  defaultFilters,
+  SortDirection
 } from '@/components/admin/orders/CustomerOrdersFilters';
 import { startOfDay, subMinutes, isAfter, isBefore, isEqual } from 'date-fns';
 
@@ -67,6 +68,7 @@ const CustomerOrders = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>('all');
   const [filters, setFilters] = useState<OrderFilters>(defaultFilters);
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const fetchOrders = async () => {
     if (!restaurant?.id) return;
@@ -258,8 +260,15 @@ const CustomerOrders = () => {
       });
     }
 
+    // Apply sorting
+    result = [...result].sort((a, b) => {
+      const dateA = new Date(a.updated_at).getTime();
+      const dateB = new Date(b.updated_at).getTime();
+      return sortDirection === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+
     return result;
-  }, [orders, activeTab, filters]);
+  }, [orders, activeTab, filters, sortDirection]);
 
   // Handle quick filter clicks
   const handleQuickFilter = (type: 'waiting' | 'inProgress' | 'ready') => {
@@ -393,6 +402,8 @@ const CustomerOrders = () => {
         onFiltersChange={handleFiltersChange}
         onQuickFilter={handleQuickFilter}
         activeQuickFilter={activeQuickFilter}
+        sortDirection={sortDirection}
+        onSortChange={setSortDirection}
       />
 
       {/* Filtered Results Count */}
