@@ -48,6 +48,10 @@ const OrderCard = ({ order, onClick }: OrderCardProps) => {
   // Calculate status counts
   const statusCounts = getStatusCounts(order.items);
 
+  // Generate order short ID from last 4 digits of created_at timestamp
+  const match = order.created_at.match(/\.(\d+)/);
+  const shortId = `#${match[1].slice(-4)}`;
+
   // Get status badge variant
   const getStatusBadge = () => {
     switch (order.status) {
@@ -84,7 +88,7 @@ const OrderCard = ({ order, onClick }: OrderCardProps) => {
               <h3 className="font-semibold text-base">
                 {isDineIn ? `Table ${order.table_number || 'N/A'}` : 'Takeaway'}
                 <span className="ml-2 text-xs font-mono text-muted-foreground">
-                  #{order.created_at.replace(/\D/g, '').slice(-4)}
+                  {shortId}
                 </span>
               </h3>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">

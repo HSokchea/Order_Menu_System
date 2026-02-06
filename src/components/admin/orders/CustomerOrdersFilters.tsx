@@ -8,12 +8,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { 
-  Clock, 
-  DollarSign, 
-  Filter, 
-  Hash, 
-  Layers, 
+import {
+  Clock,
+  DollarSign,
+  Filter,
+  Hash,
+  Layers,
   ChevronDown,
   X,
   CalendarIcon,
@@ -35,20 +35,20 @@ export interface OrderFilters {
   timePreset: TimePreset;
   customDateFrom?: Date;
   customDateTo?: Date;
-  
+
   // Amount filter
   amountOperator: AmountOperator;
   amountValue?: number;
   amountMin?: number;
   amountMax?: number;
-  
+
   // Item count filter
   itemCountOperator: ItemCountOperator;
   itemCountValue?: number;
-  
+
   // Rounds filter
   roundsFilter: RoundsFilter;
-  
+
   // Item status filter (show orders containing items with these statuses)
   statusContains: {
     pending: boolean;
@@ -228,31 +228,22 @@ export function CustomerOrdersFilters({
         </Button>
 
         {/* Advanced Filters Toggle */}
-        <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen} className="flex-1">
-          <div className="flex items-center gap-2">
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" />
-                Advanced Filters
-                {activeCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    {activeCount}
-                  </Badge>
-                )}
-                <ChevronDown className={cn("h-4 w-4 transition-transform", advancedOpen && "rotate-180")} />
-              </Button>
-            </CollapsibleTrigger>
+        <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Filter className="h-4 w-4" />
+              Advanced Filters
+              {activeCount > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {activeCount}
+                </Badge>
+              )}
+              <ChevronDown className={cn("h-4 w-4 transition-transform", advancedOpen && "rotate-180")} />
+            </Button>
+          </PopoverTrigger>
 
-            {activeCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1 text-muted-foreground">
-                <RotateCcw className="h-3 w-3" />
-                Reset
-              </Button>
-            )}
-          </div>
-
-          <CollapsibleContent className="mt-4">
-            <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
+          <PopoverContent className="mt-2 w-[600px] max-w-full p-0" align="start">
+            <div className="grid gap-4 p-4 rounded-lg bg-muted/30">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {/* Total Amount Filter */}
                 <div className="space-y-2">
@@ -274,7 +265,7 @@ export function CustomerOrdersFilters({
                       <SelectItem value="between">Between</SelectItem>
                     </SelectContent>
                   </Select>
-                  
+
                   {filters.amountOperator === 'gt' && (
                     <Input
                       type="number"
@@ -328,7 +319,7 @@ export function CustomerOrdersFilters({
                       <SelectItem value="lte">≤ (at most)</SelectItem>
                     </SelectContent>
                   </Select>
-                  
+
                   {filters.itemCountOperator !== 'none' && (
                     <Input
                       type="number"
@@ -397,8 +388,16 @@ export function CustomerOrdersFilters({
                 </div>
               </div>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          </PopoverContent>
+        </Popover>
+        <div>
+          {activeCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1 text-muted-foreground mt-2">
+              <RotateCcw className="h-3 w-3" />
+              Reset
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

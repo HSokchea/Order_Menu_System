@@ -224,7 +224,8 @@ const OrderDetail = () => {
   const isDineIn = order.order_type === 'dine_in';
 
   // Generate order short ID from last 4 digits of created_at timestamp
-  const shortId = `#${order.created_at.replace(/\D/g, '').slice(-4)}`;
+  const match = order.created_at.match(/\.(\d+)/);
+  const shortId = `#${match[1].slice(-4)}`;
 
   return (
     <div className="space-y-6">
@@ -436,7 +437,7 @@ const OrderDetail = () => {
                         {round.roundNumber === 1 ? 'First Order Round (#1)' : `New Order Round (#${round.roundNumber})`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(round.timestamp), 'h:mm a')} - Customer QR
+                        {format(new Date(round.timestamp), 'dd MMM, yyyy • h:mm a')}
                       </p>
                     </div>
                   </div>
