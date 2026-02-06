@@ -223,8 +223,8 @@ const OrderDetail = () => {
   const total = subtotal + taxAmount;
   const isDineIn = order.order_type === 'dine_in';
 
-  // Generate order short ID
-  const shortId = `#ORD-${order.id.slice(0, 4).toUpperCase()}`;
+  // Generate order short ID from last 4 digits of created_at timestamp
+  const shortId = `#${order.created_at.replace(/\D/g, '').slice(-4)}`;
 
   return (
     <div className="space-y-6">
