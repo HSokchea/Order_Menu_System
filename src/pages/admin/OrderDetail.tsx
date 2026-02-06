@@ -17,7 +17,8 @@ import {
   Pencil,
   ClipboardList,
   FileText,
-  RefreshCw
+  RefreshCw,
+  Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -55,6 +56,7 @@ const OrderDetail = () => {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const fetchOrder = async () => {
     if (!orderId || !restaurant?.id) return;
@@ -230,7 +232,7 @@ const OrderDetail = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -250,20 +252,51 @@ const OrderDetail = () => {
             </p>
           </div>
         </div>
-        <Badge
-          variant="outline"
-          className="gap-2 bg-green-50 text-green-700 border-green-200"
-        >
-          <span className="h-2 w-2 rounded-full bg-green-500" />
-          ACTIVE SESSION
-        </Badge>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Filter className="h-4 w-4" />
+                {statusFilter === 'all' ? 'All Status' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setStatusFilter('all')}>
+                All Status
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter('pending')}>
+                <Clock className="h-4 w-4 mr-2" /> Pending
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter('preparing')}>
+                <ChefHat className="h-4 w-4 mr-2" /> Preparing
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter('ready')}>
+                <CheckCircle className="h-4 w-4 mr-2" /> Ready
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter('rejected')}>
+                <XCircle className="h-4 w-4 mr-2" /> Rejected
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Badge
+            variant="outline"
+            className="gap-2 bg-green-50 text-green-700 border-green-200"
+          >
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            ACTIVE SESSION
+          </Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content - Order Rounds */}
         <div className="lg:col-span-2 space-y-4">
           {rounds.map((round) => {
-            const groupedItems = groupRoundItems(round.items);
+            const filteredRoundItems = statusFilter === 'all'
+              ? round.items
+              : round.items.filter(i => (i.status || 'pending') === statusFilter);
+            if (filteredRoundItems.length === 0) return null;
+            const groupedItems = groupRoundItems(filteredRoundItems);
             const roundTime = format(new Date(round.timestamp), 'h:mm a');
 
             return (
