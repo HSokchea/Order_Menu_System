@@ -83,6 +83,9 @@ const OrderCard = ({ order, onClick }: OrderCardProps) => {
             <div>
               <h3 className="font-semibold text-base">
                 {isDineIn ? `Table ${order.table_number || 'N/A'}` : 'Takeaway'}
+                <span className="ml-2 text-xs font-mono text-muted-foreground">
+                  #{order.created_at.replace(/\D/g, '').slice(-4)}
+                </span>
               </h3>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Clock className="h-3 w-3" />
