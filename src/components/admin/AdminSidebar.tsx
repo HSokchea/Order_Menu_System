@@ -1,4 +1,6 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutGrid,
   UtensilsCrossed,
@@ -12,6 +14,7 @@ import {
   LogOut,
   LucideIcon
 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   Sidebar,
@@ -24,6 +27,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useUserProfile, PERMISSIONS } from "@/hooks/useUserProfile";
+import { useAuth } from "@/hooks/useAuth";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Button } from "@/components/ui/button";
 
 interface NavigationItem {
   title: string;
@@ -116,7 +122,27 @@ function getInitials(name: string | null | undefined): string {
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const { hasAnyPermission, restaurant, getPrimaryRoleType, profile, user } = useUserProfile();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { signOut } = useAuth();
+  const { hasAnyPermission, restaurant, getPrimaryRoleType, profile, user, clearState } = useUserProfile();
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      clearState();
+      queryClient.clear();
+      const { error } = await signOut();
+      if (error) console.warn("Sign out warning:", error);
+      toast.success("You have been successfully signed out.");
+      navigate("/auth", { replace: true });
+      setShowSignOutDialog(false);
+      window.history.pushState(null, '', '/auth');
+    } catch (err) {
+      console.error("Sign out error:", err);
+      navigate("/auth", { replace: true });
+    }
+  };
 
   const isActive = (path: string) => {
     if (path === "/admin") {
@@ -194,7 +220,7 @@ export function AdminSidebar() {
       </SidebarGroup>
 
       {/* Footer – User profile */}
-      <div className="shrink-0 border-t px-3 py-3">
+      <div className="shrink-0 border-t px-3 py-3 space-y-2">
         <div className={`flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50 ${state === "collapsed" ? "justify-center" : ""}`}>
           <div className="h-9 w-9 shrink-0 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
             <span className="text-sm font-semibold text-primary leading-none">{initials}</span>
@@ -206,8 +232,26 @@ export function AdminSidebar() {
             </div>
           )}
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowSignOutDialog(true)}
+          className={`w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 ${state === "collapsed" ? "px-0 justify-center" : "justify-start"}`}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          {state !== "collapsed" && <span className="ml-2">Sign Out</span>}
+        </Button>
       </div>
 
+      <ConfirmDialog
+        open={showSignOutDialog}
+        onOpenChange={setShowSignOutDialog}
+        title="Sign Out"
+        description="Are you sure you want to sign out?"
+        confirmLabel="Sign Out"
+        variant="destructive"
+        onConfirm={handleSignOut}
+      />
     </SidebarContent>
   </Sidebar>
   );
