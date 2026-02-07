@@ -53,7 +53,7 @@ const navigationItems: NavigationItem[] = [
     permissions: [PERMISSIONS.MENU_MANAGE],
   },
   {
-    title: "Menu Items", 
+    title: "Menu Items",
     url: "/admin/menu-items",
     icon: UtensilsCrossed,
     description: "Add and edit menu items",
@@ -61,7 +61,7 @@ const navigationItems: NavigationItem[] = [
   },
   {
     title: "Table Orders",
-    url: "/admin/order-dashboard", 
+    url: "/admin/order-dashboard",
     icon: ClipboardList,
     description: "Monitor dine-in orders",
     permissions: [PERMISSIONS.ORDERS_VIEW],
@@ -107,7 +107,7 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const { hasAnyPermission, restaurant, getPrimaryRoleType } = useUserProfile();
-  
+
   const isActive = (path: string) => {
     if (path === "/admin") {
       return location.pathname === "/admin" || location.pathname === "/" || location.pathname === "/dashboard";
@@ -117,11 +117,10 @@ export function AdminSidebar() {
 
   const getNavClassName = (path: string) => {
     const active = isActive(path);
-    return `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-      active 
-        ? "bg-primary/10 text-primary border border-primary/20" 
-        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-    }`;
+    return `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${active
+      ? "bg-primary/10 text-primary border border-primary/20"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`;
   };
 
   /**
@@ -136,57 +135,77 @@ export function AdminSidebar() {
 
   // Get display role for the header (display only, not for access control)
   const displayRole = getPrimaryRoleType();
-  const displayRoleLabel = displayRole === 'owner' ? 'Owner' : 
-                           displayRole === 'admin' ? 'Admin' :
-                           displayRole.charAt(0).toUpperCase() + displayRole.slice(1);
+  const displayRoleLabel = displayRole === 'owner' ? 'Owner' :
+    displayRole === 'admin' ? 'Admin' :
+      displayRole.charAt(0).toUpperCase() + displayRole.slice(1);
 
   return (
-    <Sidebar className="border-r border-border/40">
-      <SidebarContent className="bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-2.5">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <Store className="h-4 w-4 text-primary-foreground" />
-            </div>
-            {state !== "collapsed" && (
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight truncate max-w-[160px]">
-                  {restaurant?.name || 'Admin'}
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  {displayRoleLabel}
-                </p>
-              </div>
-            )}
+  <Sidebar className="border-r border-border/40">
+    <SidebarContent className="bg-background flex flex-col h-full p-0 overflow-hidden">
+      {/* Header */}
+      <div className="shrink-0 border-b px-6 py-2.5">
+        <div className="flex items-center">
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <Store className="h-4 w-4 text-primary-foreground" />
           </div>
+          {state !== "collapsed" && (
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight truncate max-w-[160px]">
+                {restaurant?.name || "Admin"}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {displayRoleLabel}
+              </p>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Navigation */}
-        <SidebarGroup className="px-0">
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
-              {visibleItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-auto p-0">
-                    <NavLink to={item.url} className={getNavClassName(item.url)}>
-                      <item.icon className={`h-5 w-5 ${state === "collapsed" ? 'mx-auto' : ''}`} />
-                      {state !== "collapsed" && (
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">{item.title}</div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {item.description}
-                          </div>
+      {/* Navigation – ONLY THIS SCROLLS */}
+      <SidebarGroup className="flex-1 p-0 m-0 overflow-y-auto">
+        <SidebarGroupContent className="p-0 m-0">
+          <SidebarMenu className="p-0 m-0">
+            {visibleItems.map((item) => (
+              <SidebarMenuItem key={item.title} className="p-0 m-0">
+                <SidebarMenuButton asChild className="h-auto p-0">
+                  <NavLink to={item.url} className={getNavClassName(item.url)}>
+                    <item.icon className={`h-5 w-5 ${state === "collapsed" ? "mx-auto" : ""}`} />
+                    {state !== "collapsed" && (
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{item.title}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {item.description}
                         </div>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+                      </div>
+                    )}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t px-6 py-2.5">
+        <div className="flex items-center">
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <Store className="h-4 w-4 text-primary-foreground" />
+          </div>
+          {state !== "collapsed" && (
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight truncate max-w-[160px]">
+                {restaurant?.name || "Admin"}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {displayRoleLabel}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+    </SidebarContent>
+  </Sidebar>
   );
 }
