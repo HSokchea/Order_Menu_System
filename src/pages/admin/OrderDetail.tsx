@@ -238,14 +238,12 @@ const OrderDetail = () => {
             variant="ghost"
             size="sm"
             onClick={() => navigate('/admin/customer-orders')}
-            className="gap-2"
+            className="gap-2 hover:bg-transparent"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to All Orders
           </Button>
-          <div className="border-l h-6" />
           <div>
-            <h1 className="text-xl font-bold">Order Detail</h1>
+            <h1 className="text-l font-bold">Order Detail</h1>
             <p className="text-sm text-muted-foreground">
               {shortId} • {rounds.length} Round{rounds.length !== 1 ? 's' : ''} •
               {isDineIn ? ` Table ${order.table_number || 'N/A'}` : ' Takeaway'}
@@ -288,7 +286,7 @@ const OrderDetail = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Main Content - Order Rounds */}
         <div className="lg:col-span-2 space-y-4">
           {rounds.map((round) => {
@@ -348,7 +346,7 @@ const OrderDetail = () => {
                                 variant="ghost"
                                 size="sm"
                                 disabled={updating}
-                                className="h-7 px-2"
+                                className="h-7 px-2 hover:bg-transparent"
                               >
                                 <StatusBadge status={item.status} />
                               </Button>
@@ -381,18 +379,18 @@ const OrderDetail = () => {
 
                   {/* Special Request for this round */}
                   {round.specialRequest && (
-                    <div className="mt-4 flex items-start gap-3 bg-blue-50 rounded-lg p-3">
-                      <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <FileText className="h-4 w-4 text-blue-600" />
+                    <div className="mt-4 flex items-start gap-3 bg-muted-foreground/5 rounded-lg p-3">
+                      <div className="h-6 w-6 rounded-lg bg-muted-foreground/10 flex items-center justify-center flex-shrink-0">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
-                          Round {round.roundNumber} Special Request
+                        <p className="text-sm font-semibold text-muted-foreground tracking-wide">
+                          Special Request
                         </p>
 
-                        <p className="text-sm text-blue-800 italic mt-1 break-words whitespace-pre-wrap leading-relaxed">
-                          "{round.specialRequest}"
+                        <p className="text-sm text-muted-foreground break-words whitespace-pre-wrap leading-relaxed">
+                          {round.specialRequest}
                         </p>
                       </div>
                     </div>
@@ -460,12 +458,12 @@ const OrderDetail = () => {
                 {rounds.slice().reverse().map((round, idx) => (
                   <div key={round.roundNumber} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={`h-2 w-2 rounded-full ${idx === 0 ? 'bg-blue-500' : 'bg-muted-foreground/30'}`} />
+                      <div className={`h-2 w-2 p-1 rounded-full ${idx === 0 ? 'bg-blue-500' : 'bg-muted-foreground/30'}`} />
                       {idx !== rounds.length - 1 && (
                         <div className="w-px h-full bg-muted-foreground/20 mt-1" />
                       )}
                     </div>
-                    <div className="pb-4">
+                    <div className="pb-2">
                       <p className="text-sm font-medium">
                         {round.roundNumber === 1 ? 'First Order Round (#1)' : `New Order Round (#${round.roundNumber})`}
                       </p>
@@ -490,7 +488,8 @@ const StatusBadge = ({ status }: { status: string }) => {
     case 'pending':
       return (
         <Badge variant="outline" className="text-xs gap-1">
-          <Clock className="h-3 w-3" /> Pending
+          {/* <Clock className="h-3 w-3" /> Pending */}
+           <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" /> Pending
         </Badge>
       );
     case 'preparing':
@@ -501,7 +500,7 @@ const StatusBadge = ({ status }: { status: string }) => {
       );
     case 'ready':
       return (
-        <Badge className="text-xs gap-1 bg-green-100 text-green-700 hover:bg-green-100">
+        <Badge className="text-xs gap-1 bg-green-100 text-green-700">
           <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Ready
         </Badge>
       );
