@@ -7,9 +7,9 @@ import {
   Store,
   Users,
   Settings,
-  Shield,
   CreditCard,
   Package,
+  LogOut,
   LucideIcon
 } from "lucide-react";
 
@@ -103,10 +103,20 @@ const navigationItems: NavigationItem[] = [
   }
 ];
 
+function getInitials(name: string | null | undefined): string {
+  if (!name) return "?";
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(w => w[0].toUpperCase())
+    .slice(0, 2)
+    .join("");
+}
+
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const { hasAnyPermission, restaurant, getPrimaryRoleType } = useUserProfile();
+  const { hasAnyPermission, restaurant, getPrimaryRoleType, profile, user } = useUserProfile();
 
   const isActive = (path: string) => {
     if (path === "/admin") {
@@ -123,21 +133,18 @@ export function AdminSidebar() {
       }`;
   };
 
-  /**
-   * Filter navigation items based on user permissions ONLY
-   * No role name checks - purely permission-based
-   */
   const visibleItems = navigationItems.filter(item => {
-    // Check if user has any of the required permissions
-    // hasAnyPermission already handles owner access internally
     return hasAnyPermission(item.permissions);
   });
 
-  // Get display role for the header (display only, not for access control)
   const displayRole = getPrimaryRoleType();
   const displayRoleLabel = displayRole === 'owner' ? 'Owner' :
     displayRole === 'admin' ? 'Admin' :
       displayRole.charAt(0).toUpperCase() + displayRole.slice(1);
+
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+  const displayEmail = user?.email || '';
+  const initials = getInitials(profile?.full_name);
 
   return (
   <Sidebar className="border-r border-border/40">
@@ -161,7 +168,7 @@ export function AdminSidebar() {
         </div>
       </div>
 
-      {/* Navigation – ONLY THIS SCROLLS */}
+      {/* Navigation */}
       <SidebarGroup className="flex-1 p-0 m-0 overflow-y-auto">
         <SidebarGroupContent className="p-0 m-0">
           <SidebarMenu className="p-0 m-0">
@@ -186,20 +193,16 @@ export function AdminSidebar() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      {/* Footer */}
-      <div className="shrink-0 border-t px-6 py-2.5">
-        <div className="flex items-center">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <Store className="h-4 w-4 text-primary-foreground" />
+      {/* Footer – User profile */}
+      <div className="shrink-0 border-t px-3 py-3">
+        <div className={`flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50 ${state === "collapsed" ? "justify-center" : ""}`}>
+          <div className="h-9 w-9 shrink-0 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <span className="text-sm font-semibold text-primary leading-none">{initials}</span>
           </div>
           {state !== "collapsed" && (
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight truncate max-w-[160px]">
-                {restaurant?.name || "Admin"}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {displayRoleLabel}
-              </p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate leading-tight">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate leading-tight">{displayEmail}</p>
             </div>
           )}
         </div>
