@@ -33,6 +33,7 @@ import {
   groupRoundItems,
   calculateOrderTotal
 } from '@/types/order';
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface OrderData {
   id: string;
@@ -57,6 +58,7 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [confirmPaidOpen, setConfirmPaidOpen] = useState(false);
 
   const fetchOrder = async () => {
     if (!orderId || !restaurant?.id) return;
@@ -438,7 +440,7 @@ const OrderDetail = () => {
             <Button
               className="flex-1 gap-2"
               size="sm"
-              onClick={markAsPaid}
+              onClick={() => setConfirmPaidOpen(true)}
               disabled={updating}
             >
               <DollarSign className="h-4 w-4" />
@@ -478,6 +480,16 @@ const OrderDetail = () => {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmPaidOpen}
+        onOpenChange={setConfirmPaidOpen}
+        title="Mark Order as Paid"
+        description="Are you sure you want to mark this order as paid? This action cannot be undone."
+        confirmLabel="Mark as Paid"
+        variant="destructive"
+        onConfirm={markAsPaid}
+      />
     </div>
   );
 };
@@ -488,8 +500,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     case 'pending':
       return (
         <Badge variant="outline" className="text-xs gap-1">
-          {/* <Clock className="h-3 w-3" /> Pending */}
-           <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" /> Pending
+          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" /> Pending
         </Badge>
       );
     case 'preparing':
