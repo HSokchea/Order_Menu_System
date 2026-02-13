@@ -60,15 +60,43 @@ function orderContainsStatus(items: StoredOrderItem[], status: string): boolean 
   return items.some(item => item.status === status);
 }
 
+const FILTER_STORAGE_KEY = 'customerOrdersFilters';
+
+function loadPersistedFilters(): {
+  filters: OrderFilters;
+  activeTab: 'all' | 'dine_in' | 'takeaway';
+  activeQuickFilter: string | null;
+  sortDirection: SortDirection;
+} {
+  try {
+    const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Restore Date objects for custom range
+      if (parsed.filters?.customDateFrom) parsed.filters.customDateFrom = new Date(parsed.filters.customDateFrom);
+      if (parsed.filters?.customDateTo) parsed.filters.customDateTo = new Date(parsed.filters.customDateTo);
+      return parsed;
+    }
+  } catch {}
+  return { filters: defaultFilters, activeTab: 'all', activeQuickFilter: null, sortDirection: 'desc' };
+}
+
 const CustomerOrders = () => {
   const navigate = useNavigate();
   const { restaurant } = useUserProfile();
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>('all');
-  const [filters, setFilters] = useState<OrderFilters>(defaultFilters);
-  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const persisted = useMemo(() => loadPersistedFilters(), []);
+  const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>(persisted.activeTab);
+  const [filters, setFilters] = useState<OrderFilters>(persisted.filters);
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(persisted.activeQuickFilter);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(persisted.sortDirection);
+
+  // Persist filter state to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({ filters, activeTab, activeQuickFilter, sortDirection }));
+  }, [filters, activeTab, activeQuickFilter, sortDirection]);
 
   const fetchOrders = async () => {
     if (!restaurant?.id) return;
