@@ -59,6 +59,7 @@ const OrderDetail = () => {
   const [updating, setUpdating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [confirmPaidOpen, setConfirmPaidOpen] = useState(false);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
 
   const fetchOrder = async () => {
     if (!orderId || !restaurant?.id) return;
@@ -446,18 +447,35 @@ const OrderDetail = () => {
 
           {/* Actions */}
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1 gap-2" size="sm">
-              <Printer className="h-4 w-4" />
-              Print Receipt
-            </Button>
             <Button
-              className="flex-1 gap-2"
+              className="flex-1 gap-2 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive"
               size="sm"
+              variant="outline"
+              onClick={() => setConfirmCancelOpen(true)}
+              disabled={updating}
+            >
+              <XCircle className="h-4 w-4" />
+              Cancel Order
+            </Button>
+
+            <Button
+              className="flex-1 gap-2 text-green-500 border-green-500 hover:bg-green-500/10 hover:text-green-500"
+              size="sm"
+              variant="outline"
               onClick={() => setConfirmPaidOpen(true)}
               disabled={updating}
             >
               <DollarSign className="h-4 w-4" />
-              Mark as Paid
+              Paid
+            </Button>
+
+            <Button
+              variant="outline"
+              className="flex-1 gap-2 text-blue-500 border-blue-500 hover:bg-blue-500/10 hover:text-blue-500"
+              size="sm"
+            >
+              <Printer className="h-4 w-4" />
+              Print Receipt
             </Button>
           </div>
 
