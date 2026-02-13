@@ -179,6 +179,27 @@ const OrderDetail = () => {
     }
   };
 
+  const cancelOrder = async () => {
+    if (!order) return;
+    setUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('tb_order_temporary')
+        .delete()
+        .eq('id', order.id)
+        .eq('shop_id', order.shop_id);
+
+      if (error) throw error;
+
+      toast.success('Order cancelled successfully');
+      navigate('/admin/customer-orders');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to cancel order');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const markAsPaid = async () => {
     if (!order) return;
     setUpdating(true);
@@ -520,6 +541,18 @@ const OrderDetail = () => {
         confirmLabel="Mark as Paid"
         variant="destructive"
         onConfirm={markAsPaid}
+        loading={updating}
+      />
+
+      <ConfirmDialog
+        open={confirmCancelOpen}
+        onOpenChange={setConfirmCancelOpen}
+        title="Cancel Order"
+        description="Are you sure you want to cancel this order? This will permanently remove the order and cannot be undone."
+        confirmLabel="Cancel Order"
+        variant="destructive"
+        onConfirm={cancelOrder}
+        loading={updating}
       />
     </div>
   );
