@@ -335,10 +335,23 @@ const OrderDetail = () => {
                               <p className="text-sm text-muted-foreground">{item.category_name}</p>
                             )}
                             {item.options && item.options.length > 0 && (
-                              <p className="text-xs text-muted-foreground">
-                                {item.options.map(o => o.label).join(', ')}
-                              </p>
+                              <div className="text-xs text-muted-foreground space-y-1">
+                                {Object.entries(
+                                  item.options.reduce((acc, option) => {
+                                    if (!acc[option.groupName]) {
+                                      acc[option.groupName] = [];
+                                    }
+                                    acc[option.groupName].push(option.label);
+                                    return acc;
+                                  }, {} as Record<string, string[]>)
+                                ).map(([group, labels]) => (
+                                  <div key={group}>
+                                    <span className="font-medium">{group}:</span> {labels.join(', ')}
+                                  </div>
+                                ))}
+                              </div>
                             )}
+
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
