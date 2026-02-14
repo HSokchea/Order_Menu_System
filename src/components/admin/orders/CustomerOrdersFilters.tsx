@@ -140,14 +140,14 @@ export function CustomerOrdersFilters({
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
         <Select
-          value={activeQuickFilter || ""}
-          onValueChange={v => onQuickFilter(v as 'waiting' | 'inProgress' | 'ready')}
+          value={activeQuickFilter || "all"}
+          onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'waiting' | 'inProgress' | 'ready')}
         >
           <SelectTrigger className="w-[160px] h-8 text-xs">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="waiting">
               <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Waiting</span>
             </SelectItem>
