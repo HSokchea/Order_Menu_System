@@ -7,20 +7,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Clock,
   DollarSign,
   Filter,
   Hash,
   Layers,
-  ChevronDown,
-  X,
   CalendarIcon,
   RotateCcw,
-  ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -31,25 +28,16 @@ export type ItemCountOperator = 'none' | 'gte' | 'lte';
 export type RoundsFilter = 'all' | 'single' | 'multiple';
 
 export interface OrderFilters {
-  // Time filter
   timePreset: TimePreset;
   customDateFrom?: Date;
   customDateTo?: Date;
-
-  // Amount filter
   amountOperator: AmountOperator;
   amountValue?: number;
   amountMin?: number;
   amountMax?: number;
-
-  // Item count filter
   itemCountOperator: ItemCountOperator;
   itemCountValue?: number;
-
-  // Rounds filter
   roundsFilter: RoundsFilter;
-
-  // Item status filter (show orders containing items with these statuses)
   statusContains: {
     pending: boolean;
     preparing: boolean;
@@ -111,7 +99,6 @@ export function CustomerOrdersFilters({
 
   const getActiveFilterCount = (): number => {
     let count = 0;
-    if (filters.timePreset !== 'today') count++;
     if (filters.amountOperator !== 'none') count++;
     if (filters.itemCountOperator !== 'none') count++;
     if (filters.roundsFilter !== 'all') count++;
@@ -136,127 +123,141 @@ export function CustomerOrdersFilters({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Quick Filters */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={activeQuickFilter === 'waiting' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onQuickFilter('waiting')}
-          className="gap-2"
-        >
-          <Clock className="h-4 w-4" />
-          Waiting to Prepare
-        </Button>
-        <Button
-          variant={activeQuickFilter === 'inProgress' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onQuickFilter('inProgress')}
-          className="gap-2"
-        >
-          <Layers className="h-4 w-4" />
-          In Progress
-        </Button>
-        <Button
-          variant={activeQuickFilter === 'ready' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onQuickFilter('ready')}
-          className="gap-2"
-        >
-          <Hash className="h-4 w-4" />
-          Ready to Serve
-        </Button>
+    <div className="space-y-3">
+      {/* Row 1: Status quick filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider mr-1">Status</span>
+        {([
+          { key: 'waiting' as const, label: 'Waiting', icon: Clock },
+          { key: 'inProgress' as const, label: 'In Progress', icon: Layers },
+          { key: 'ready' as const, label: 'Ready', icon: Hash },
+        ]).map(({ key, label, icon: Icon }) => (
+          <Button
+            key={key}
+            variant={activeQuickFilter === key ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onQuickFilter(key)}
+            className={cn(
+              "h-8 gap-1.5 text-xs font-medium rounded-full px-3",
+              activeQuickFilter === key && "shadow-sm"
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </Button>
+        ))}
       </div>
 
-      {/* Main Filters Row */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Time Filter */}
-        <div className="flex items-center gap-2">
-          <Select
-            value={filters.timePreset}
-            onValueChange={(v) => updateFilter('timePreset', v as TimePreset)}
-          >
-            <SelectTrigger className="w-[160px]">
-              <Clock className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Time" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="last15min">Last 15 minutes</SelectItem>
-              <SelectItem value="last30min">Last 30 minutes</SelectItem>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="custom">Custom Range</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Row 2: Time + Sort + Advanced — all secondary controls */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Time select */}
+        <Select
+          value={filters.timePreset}
+          onValueChange={(v) => updateFilter('timePreset', v as TimePreset)}
+        >
+          <SelectTrigger className="w-[150px] h-8 text-xs">
+            <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+            <SelectValue placeholder="Time" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="last15min">Last 15 min</SelectItem>
+            <SelectItem value="last30min">Last 30 min</SelectItem>
+            <SelectItem value="today">Today</SelectItem>
+            <SelectItem value="custom">Custom range</SelectItem>
+          </SelectContent>
+        </Select>
 
-          {filters.timePreset === 'custom' && (
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <CalendarIcon className="h-4 w-4" />
-                  {filters.customDateFrom && filters.customDateTo
-                    ? `${format(filters.customDateFrom, 'MMM d')} - ${format(filters.customDateTo, 'MMM d')}`
-                    : 'Select dates'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  defaultMonth={tempDateRange.from || new Date()}
-                  selected={tempDateRange as { from: Date; to: Date }}
-                  onSelect={handleCalendarSelect}
-                  numberOfMonths={2}
-                  disabled={(date) => date > new Date()}
-                />
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
+        {/* Custom date picker */}
+        {filters.timePreset === 'custom' && (
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {filters.customDateFrom && filters.customDateTo
+                  ? `${format(filters.customDateFrom, 'MMM d')} – ${format(filters.customDateTo, 'MMM d')}`
+                  : 'Pick dates'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={tempDateRange.from || new Date()}
+                selected={tempDateRange as { from: Date; to: Date }}
+                onSelect={handleCalendarSelect}
+                numberOfMonths={2}
+                disabled={(date) => date > new Date()}
+              />
+            </PopoverContent>
+          </Popover>
+        )}
 
-        {/* Sort Toggle */}
+        {/* Divider */}
+        <div className="h-5 w-px bg-border hidden sm:block" />
+
+        {/* Sort */}
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={() => onSortChange(sortDirection === 'desc' ? 'asc' : 'desc')}
-          className="gap-2"
+          className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           {sortDirection === 'desc' ? (
-            <ArrowDown className="h-4 w-4" />
+            <ArrowDown className="h-3.5 w-3.5" />
           ) : (
-            <ArrowUp className="h-4 w-4" />
+            <ArrowUp className="h-3.5 w-3.5" />
           )}
-          {sortDirection === 'desc' ? 'Newest First' : 'Oldest First'}
+          {sortDirection === 'desc' ? 'Newest' : 'Oldest'}
         </Button>
 
-        {/* Advanced Filters Toggle */}
+        {/* Divider */}
+        <div className="h-5 w-px bg-border hidden sm:block" />
+
+        {/* Advanced Filters */}
         <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Advanced Filters
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground",
+                activeCount > 0 && "text-foreground"
+              )}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filters
               {activeCount > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                <Badge variant="secondary" className="ml-0.5 h-4 min-w-4 px-1 text-[10px] rounded-full">
                   {activeCount}
                 </Badge>
               )}
-              <ChevronDown className={cn("h-4 w-4 transition-transform", advancedOpen && "rotate-180")} />
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent className="mt-2 w-[600px] max-w-full p-0" align="start">
-            <div className="grid gap-4 p-4 rounded-lg bg-muted/30">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {/* Total Amount Filter */}
+          <PopoverContent className="w-[520px] max-w-[calc(100vw-2rem)] p-4" align="start">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold">Advanced Filters</h4>
+                {activeCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="h-7 gap-1 text-xs text-muted-foreground">
+                    <RotateCcw className="h-3 w-3" />
+                    Reset all
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* Total Amount */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium">
-                    <DollarSign className="h-4 w-4" />
+                  <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <DollarSign className="h-3.5 w-3.5" />
                     Total Amount
                   </Label>
                   <Select
                     value={filters.amountOperator}
                     onValueChange={(v) => updateFilter('amountOperator', v as AmountOperator)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select condition" />
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Any amount</SelectItem>
@@ -265,34 +266,25 @@ export function CustomerOrdersFilters({
                       <SelectItem value="between">Between</SelectItem>
                     </SelectContent>
                   </Select>
-
                   {filters.amountOperator === 'gt' && (
-                    <Input
-                      type="number"
-                      placeholder="$ min"
+                    <Input type="number" placeholder="$ min" className="h-8 text-xs"
                       value={filters.amountValue || ''}
                       onChange={(e) => updateFilter('amountValue', parseFloat(e.target.value) || undefined)}
                     />
                   )}
                   {filters.amountOperator === 'lt' && (
-                    <Input
-                      type="number"
-                      placeholder="$ max"
+                    <Input type="number" placeholder="$ max" className="h-8 text-xs"
                       value={filters.amountValue || ''}
                       onChange={(e) => updateFilter('amountValue', parseFloat(e.target.value) || undefined)}
                     />
                   )}
                   {filters.amountOperator === 'between' && (
                     <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        placeholder="$ min"
+                      <Input type="number" placeholder="$ min" className="h-8 text-xs"
                         value={filters.amountMin || ''}
                         onChange={(e) => updateFilter('amountMin', parseFloat(e.target.value) || undefined)}
                       />
-                      <Input
-                        type="number"
-                        placeholder="$ max"
+                      <Input type="number" placeholder="$ max" className="h-8 text-xs"
                         value={filters.amountMax || ''}
                         onChange={(e) => updateFilter('amountMax', parseFloat(e.target.value) || undefined)}
                       />
@@ -300,18 +292,18 @@ export function CustomerOrdersFilters({
                   )}
                 </div>
 
-                {/* Item Count Filter */}
+                {/* Item Count */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium">
-                    <Hash className="h-4 w-4" />
+                  <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Hash className="h-3.5 w-3.5" />
                     Item Count
                   </Label>
                   <Select
                     value={filters.itemCountOperator}
                     onValueChange={(v) => updateFilter('itemCountOperator', v as ItemCountOperator)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select condition" />
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Any count</SelectItem>
@@ -319,85 +311,67 @@ export function CustomerOrdersFilters({
                       <SelectItem value="lte">≤ (at most)</SelectItem>
                     </SelectContent>
                   </Select>
-
                   {filters.itemCountOperator !== 'none' && (
-                    <Input
-                      type="number"
-                      placeholder="Number of items"
-                      min={1}
+                    <Input type="number" placeholder="Count" min={1} className="h-8 text-xs"
                       value={filters.itemCountValue || ''}
                       onChange={(e) => updateFilter('itemCountValue', parseInt(e.target.value) || undefined)}
                     />
                   )}
                 </div>
 
-                {/* Rounds Filter */}
+                {/* Rounds */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium">
-                    <Layers className="h-4 w-4" />
+                  <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Layers className="h-3.5 w-3.5" />
                     Order Rounds
                   </Label>
                   <Select
                     value={filters.roundsFilter}
                     onValueChange={(v) => updateFilter('roundsFilter', v as RoundsFilter)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select condition" />
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="All" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All orders</SelectItem>
-                      <SelectItem value="single">Single round (= 1)</SelectItem>
-                      <SelectItem value="multiple">Multiple rounds (≥ 2)</SelectItem>
+                      <SelectItem value="single">Single round</SelectItem>
+                      <SelectItem value="multiple">Multiple rounds</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Item Status Contains Filter */}
+                {/* Item Status */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Item Status Contains</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={filters.statusContains.pending}
-                        onCheckedChange={(checked) => updateStatusContains('pending', !!checked)}
-                      />
-                      <span className="text-yellow-600">Pending</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={filters.statusContains.preparing}
-                        onCheckedChange={(checked) => updateStatusContains('preparing', !!checked)}
-                      />
-                      <span className="text-blue-600">Preparing</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={filters.statusContains.ready}
-                        onCheckedChange={(checked) => updateStatusContains('ready', !!checked)}
-                      />
-                      <span className="text-green-600">Ready</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={filters.statusContains.rejected}
-                        onCheckedChange={(checked) => updateStatusContains('rejected', !!checked)}
-                      />
-                      <span className="text-red-600">Rejected</span>
-                    </label>
+                  <Label className="text-xs font-medium text-muted-foreground">Contains Status</Label>
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-3 pt-1">
+                    {([
+                      { key: 'pending' as const, label: 'Pending', color: 'text-yellow-600' },
+                      { key: 'preparing' as const, label: 'Preparing', color: 'text-blue-600' },
+                      { key: 'ready' as const, label: 'Ready', color: 'text-green-600' },
+                      { key: 'rejected' as const, label: 'Rejected', color: 'text-red-600' },
+                    ]).map(({ key, label, color }) => (
+                      <label key={key} className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={filters.statusContains[key]}
+                          onCheckedChange={(checked) => updateStatusContains(key, !!checked)}
+                        />
+                        <span className={color}>{label}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
           </PopoverContent>
         </Popover>
-        <div>
-          {activeCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1 text-muted-foreground mt-2">
-              <RotateCcw className="h-3 w-3" />
-              Reset
-            </Button>
-          )}
-        </div>
+
+        {/* Reset (only when advanced filters active) */}
+        {activeCount > 0 && (
+          <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 gap-1 text-xs text-muted-foreground">
+            <RotateCcw className="h-3 w-3" />
+            Reset
+          </Button>
+        )}
       </div>
     </div>
   );
