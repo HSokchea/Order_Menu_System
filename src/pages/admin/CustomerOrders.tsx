@@ -65,7 +65,7 @@ const FILTER_STORAGE_KEY = 'customerOrdersFilters';
 function loadPersistedFilters(): {
   filters: OrderFilters;
   activeTab: 'all' | 'dine_in' | 'takeaway';
-  activeQuickFilter: '' | 'waiting' | 'inProgress' | 'ready';
+  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready';
   sortDirection: SortDirection;
 } {
   try {
@@ -90,7 +90,7 @@ const CustomerOrders = () => {
   const persisted = useMemo(() => loadPersistedFilters(), []);
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>(persisted.activeTab);
   const [filters, setFilters] = useState<OrderFilters>(persisted.filters);
-  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'waiting' | 'inProgress' | 'ready'>(persisted.activeQuickFilter || '');
+  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'pending' | 'preparing' | 'ready'>(persisted.activeQuickFilter || '');
   const [sortDirection, setSortDirection] = useState<SortDirection>(persisted.sortDirection);
 
   // Persist filter state to sessionStorage
@@ -299,7 +299,7 @@ const CustomerOrders = () => {
   }, [orders, activeTab, filters, sortDirection]);
 
   // Handle quick filter clicks
-  const handleQuickFilter = (type: 'waiting' | 'inProgress' | 'ready') => {
+  const handleQuickFilter = (type: 'pending' | 'preparing' | 'ready') => {
     if (activeQuickFilter === type) {
       // Toggle off
       setActiveQuickFilter('');
@@ -310,9 +310,9 @@ const CustomerOrders = () => {
         ...defaultFilters,
         statusContains: { ...defaultFilters.statusContains },
       };
-      if (type === 'waiting') {
+      if (type === 'pending') {
         newFilters.statusContains.pending = true;
-      } else if (type === 'inProgress') {
+      } else if (type === 'preparing') {
         newFilters.statusContains.preparing = true;
       } else if (type === 'ready') {
         newFilters.statusContains.ready = true;
@@ -362,22 +362,6 @@ const CustomerOrders = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      {/* <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Package className="h-6 w-6" />
-            Customer Orders
-          </h2>
-          <p className="text-muted-foreground">
-            Manage QR orders with item-level status
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={fetchOrders} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div> */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

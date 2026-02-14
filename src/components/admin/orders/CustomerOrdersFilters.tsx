@@ -77,8 +77,8 @@ export type SortDirection = 'desc' | 'asc';
 interface CustomerOrdersFiltersProps {
   filters: OrderFilters;
   onFiltersChange: (filters: OrderFilters) => void;
-  onQuickFilter: (type: 'waiting' | 'inProgress' | 'ready') => void;
-  activeQuickFilter: '' | 'waiting' | 'inProgress' | 'ready';
+  onQuickFilter: (type: 'pending' | 'preparing' | 'ready') => void;
+  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready';
   sortDirection: SortDirection;
   onSortChange: (direction: SortDirection) => void;
 }
@@ -141,18 +141,18 @@ export function CustomerOrdersFilters({
       <div className="flex items-center gap-2 flex-wrap">
         <Select
           value={activeQuickFilter || "all"}
-          onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'waiting' | 'inProgress' | 'ready')}
+          onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'preparing' | 'ready')}
         >
           <SelectTrigger className="w-[160px] h-8 text-xs">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="waiting">
-              <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Waiting</span>
+            <SelectItem value="pending">
+              <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span>
             </SelectItem>
-            <SelectItem value="inProgress">
-              <span className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" /> In Progress</span>
+            <SelectItem value="preparing">
+              <span className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" /> Preparing</span>
             </SelectItem>
             <SelectItem value="ready">
               <span className="flex items-center gap-2"><Hash className="h-3.5 w-3.5" /> Ready</span>
@@ -201,15 +201,12 @@ export function CustomerOrdersFilters({
           </Popover>
         )}
 
-        {/* Divider */}
-        <div className="h-5 w-px bg-border hidden sm:block" />
-
         {/* Sort */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => onSortChange(sortDirection === 'desc' ? 'asc' : 'desc')}
-          className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          className="h-8 gap-1.5 text-xs border text-muted-foreground hover:text-foreground"
         >
           {sortDirection === 'desc' ? (
             <ArrowDown className="h-3.5 w-3.5" />
@@ -219,9 +216,6 @@ export function CustomerOrdersFilters({
           {sortDirection === 'desc' ? 'Newest' : 'Oldest'}
         </Button>
 
-        {/* Divider */}
-        <div className="h-5 w-px bg-border hidden sm:block" />
-
         {/* Advanced Filters */}
         <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
           <PopoverTrigger asChild>
@@ -229,7 +223,7 @@ export function CustomerOrdersFilters({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground",
+                "h-8 gap-1.5 text-xs border text-muted-foreground hover:text-foreground",
                 activeCount > 0 && "text-foreground"
               )}
             >
@@ -243,7 +237,7 @@ export function CustomerOrdersFilters({
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent className="w-[520px] max-w-[calc(100vw-2rem)] p-4" align="start">
+          <PopoverContent className="w-[520px] max-w-[calc(100vw-2rem)] p-4" align="center">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold">Advanced Filters</h4>
