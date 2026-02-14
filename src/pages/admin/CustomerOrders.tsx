@@ -411,39 +411,40 @@ const CustomerOrders = () => {
         </Card>
       </div>
 
-      {/* Filters */}
-      <CustomerOrdersFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onQuickFilter={handleQuickFilter}
-        activeQuickFilter={activeQuickFilter}
-        sortDirection={sortDirection}
-        onSortChange={setSortDirection}
-      />
-
-      {/* Filtered Results Count */}
-      {filteredOrders.length !== orders.length && (
-        <p className="text-sm text-muted-foreground">
-          Showing {filteredOrders.length} of {orders.length} orders
-        </p>
-      )}
-
-      {/* Orders Tabs */}
+      {/* Tabs + Filters in one row */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList>
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            All ({filteredOrders.length})
-          </TabsTrigger>
-          <TabsTrigger value="dine_in" className="flex items-center gap-2">
-            <UtensilsCrossed className="h-4 w-4" />
-            Dine-in ({filteredOrders.filter(o => o.order_type === 'dine_in').length})
-          </TabsTrigger>
-          <TabsTrigger value="takeaway" className="flex items-center gap-2">
-            <Store className="h-4 w-4" />
-            Takeaway ({filteredOrders.filter(o => o.order_type === 'takeaway').length})
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <TabsList>
+            <TabsTrigger value="all" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              All ({filteredOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="dine_in" className="flex items-center gap-2">
+              <UtensilsCrossed className="h-4 w-4" />
+              Dine-in ({filteredOrders.filter(o => o.order_type === 'dine_in').length})
+            </TabsTrigger>
+            <TabsTrigger value="takeaway" className="flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              Takeaway ({filteredOrders.filter(o => o.order_type === 'takeaway').length})
+            </TabsTrigger>
+          </TabsList>
+
+          <CustomerOrdersFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onQuickFilter={handleQuickFilter}
+            activeQuickFilter={activeQuickFilter}
+            sortDirection={sortDirection}
+            onSortChange={setSortDirection}
+          />
+        </div>
+
+        {/* Filtered Results Count */}
+        {filteredOrders.length !== orders.length && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Showing {filteredOrders.length} of {orders.length} orders
+          </p>
+        )}
 
         <TabsContent value="all" className="mt-6">
           {filteredOrders.length === 0 ? (
