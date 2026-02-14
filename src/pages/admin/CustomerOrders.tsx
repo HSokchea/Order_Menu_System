@@ -306,7 +306,10 @@ const CustomerOrders = () => {
       setFilters(defaultFilters);
     } else {
       setActiveQuickFilter(type);
-      const newFilters = { ...defaultFilters };
+      const newFilters = {
+        ...defaultFilters,
+        statusContains: { ...defaultFilters.statusContains },
+      };
       if (type === 'waiting') {
         newFilters.statusContains.pending = true;
       } else if (type === 'inProgress') {
