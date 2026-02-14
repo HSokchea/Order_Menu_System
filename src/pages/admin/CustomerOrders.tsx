@@ -65,20 +65,20 @@ const FILTER_STORAGE_KEY = 'customerOrdersFilters';
 function loadPersistedFilters(): {
   filters: OrderFilters;
   activeTab: 'all' | 'dine_in' | 'takeaway';
-  activeQuickFilter: string | null;
+  activeQuickFilter: '' | 'waiting' | 'inProgress' | 'ready';
   sortDirection: SortDirection;
 } {
   try {
     const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Restore Date objects for custom range
       if (parsed.filters?.customDateFrom) parsed.filters.customDateFrom = new Date(parsed.filters.customDateFrom);
       if (parsed.filters?.customDateTo) parsed.filters.customDateTo = new Date(parsed.filters.customDateTo);
+      parsed.activeQuickFilter = parsed.activeQuickFilter || '';
       return parsed;
     }
   } catch {}
-  return { filters: defaultFilters, activeTab: 'all', activeQuickFilter: null, sortDirection: 'desc' };
+  return { filters: defaultFilters, activeTab: 'all', activeQuickFilter: '', sortDirection: 'desc' };
 }
 
 const CustomerOrders = () => {
@@ -90,7 +90,7 @@ const CustomerOrders = () => {
   const persisted = useMemo(() => loadPersistedFilters(), []);
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>(persisted.activeTab);
   const [filters, setFilters] = useState<OrderFilters>(persisted.filters);
-  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(persisted.activeQuickFilter);
+  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'waiting' | 'inProgress' | 'ready'>(persisted.activeQuickFilter || '');
   const [sortDirection, setSortDirection] = useState<SortDirection>(persisted.sortDirection);
 
   // Persist filter state to sessionStorage
@@ -302,7 +302,7 @@ const CustomerOrders = () => {
   const handleQuickFilter = (type: 'waiting' | 'inProgress' | 'ready') => {
     if (activeQuickFilter === type) {
       // Toggle off
-      setActiveQuickFilter(null);
+      setActiveQuickFilter('');
       setFilters(defaultFilters);
     } else {
       setActiveQuickFilter(type);
@@ -321,7 +321,7 @@ const CustomerOrders = () => {
   // Handle filter changes - clear quick filter when manually changing filters
   const handleFiltersChange = (newFilters: OrderFilters) => {
     setFilters(newFilters);
-    setActiveQuickFilter(null);
+    setActiveQuickFilter('');
   };
 
   // Group dine-in orders by table
