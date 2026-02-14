@@ -7,17 +7,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Clock,
   DollarSign,
   Filter,
   Hash,
   Layers,
+  ChevronDown,
+  X,
   CalendarIcon,
   RotateCcw,
+  ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  SlidersHorizontal,
+  SlidersHorizontal
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -28,16 +32,25 @@ export type ItemCountOperator = 'none' | 'gte' | 'lte';
 export type RoundsFilter = 'all' | 'single' | 'multiple';
 
 export interface OrderFilters {
+  // Time filter
   timePreset: TimePreset;
   customDateFrom?: Date;
   customDateTo?: Date;
+
+  // Amount filter
   amountOperator: AmountOperator;
   amountValue?: number;
   amountMin?: number;
   amountMax?: number;
+
+  // Item count filter
   itemCountOperator: ItemCountOperator;
   itemCountValue?: number;
+
+  // Rounds filter
   roundsFilter: RoundsFilter;
+
+  // Item status filter (show orders containing items with these statuses)
   statusContains: {
     pending: boolean;
     preparing: boolean;
@@ -65,7 +78,7 @@ interface CustomerOrdersFiltersProps {
   filters: OrderFilters;
   onFiltersChange: (filters: OrderFilters) => void;
   onQuickFilter: (type: 'waiting' | 'inProgress' | 'ready') => void;
-  activeQuickFilter: string | null;
+  activeQuickFilter: '' | 'waiting' | 'inProgress' | 'ready';
   sortDirection: SortDirection;
   onSortChange: (direction: SortDirection) => void;
 }
@@ -99,6 +112,7 @@ export function CustomerOrdersFilters({
 
   const getActiveFilterCount = (): number => {
     let count = 0;
+    if (filters.timePreset !== 'today') count++;
     if (filters.amountOperator !== 'none') count++;
     if (filters.itemCountOperator !== 'none') count++;
     if (filters.roundsFilter !== 'all') count++;
@@ -124,32 +138,28 @@ export function CustomerOrdersFilters({
 
   return (
     <div className="space-y-3">
-      {/* Row 1: Status quick filters */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider mr-1">Status</span>
-        {([
-          { key: 'waiting' as const, label: 'Waiting', icon: Clock },
-          { key: 'inProgress' as const, label: 'In Progress', icon: Layers },
-          { key: 'ready' as const, label: 'Ready', icon: Hash },
-        ]).map(({ key, label, icon: Icon }) => (
-          <Button
-            key={key}
-            variant={activeQuickFilter === key ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => onQuickFilter(key)}
-            className={cn(
-              "h-8 gap-1.5 text-xs font-medium rounded-full px-3",
-              activeQuickFilter === key && "shadow-sm"
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            {label}
-          </Button>
-        ))}
-      </div>
+        <Select
+          value={activeQuickFilter || ""}
+          onValueChange={v => onQuickFilter(v as 'waiting' | 'inProgress' | 'ready')}
+        >
+          <SelectTrigger className="w-[160px] h-8 text-xs">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="waiting">
+              <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Waiting</span>
+            </SelectItem>
+            <SelectItem value="inProgress">
+              <span className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" /> In Progress</span>
+            </SelectItem>
+            <SelectItem value="ready">
+              <span className="flex items-center gap-2"><Hash className="h-3.5 w-3.5" /> Ready</span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
-      {/* Row 2: Time + Sort + Advanced — all secondary controls */}
-      <div className="flex items-center gap-2 flex-wrap">
         {/* Time select */}
         <Select
           value={filters.timePreset}
