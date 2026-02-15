@@ -7,24 +7,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Clock,
   DollarSign,
   Filter,
   Hash,
   Layers,
-  ChevronDown,
-  X,
   CalendarIcon,
   RotateCcw,
-  ArrowUpDown,
   ArrowUp,
   ArrowDown,
   SlidersHorizontal,
   Package,
   UtensilsCrossed,
-  Store
+  Store,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -82,8 +79,8 @@ export type OrderTypeTab = 'all' | 'dine_in' | 'takeaway';
 interface CustomerOrdersFiltersProps {
   filters: OrderFilters;
   onFiltersChange: (filters: OrderFilters) => void;
-  onQuickFilter: (type: 'pending' | 'preparing' | 'ready') => void;
-  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready';
+  onQuickFilter: (type: 'pending' | 'preparing' | 'ready' | 'rejected') => void;
+  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready' | 'rejected';
   sortDirection: SortDirection;
   onSortChange: (direction: SortDirection) => void;
   orderType: OrderTypeTab;
@@ -151,7 +148,7 @@ export function CustomerOrdersFilters({
     <div className="flex items-center gap-2 flex-wrap">
       {/* Order Type */}
       <Select value={orderType} onValueChange={(v) => onOrderTypeChange(v as OrderTypeTab)}>
-        <SelectTrigger className="w-[160px] h-8 text-xs">
+        <SelectTrigger className="w-[150px] h-8 text-xs hover:text-foreground hover:bg-accent">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -169,9 +166,9 @@ export function CustomerOrdersFilters({
 
         <Select
           value={activeQuickFilter || "all"}
-          onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'preparing' | 'ready')}
+          onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'preparing' | 'ready' | 'rejected') }
         >
-          <SelectTrigger className="w-[140px] h-8 text-xs">
+          <SelectTrigger className="w-[140px] h-8 text-xs hover:bg-accent hover:text-foreground">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -185,6 +182,9 @@ export function CustomerOrdersFilters({
             <SelectItem value="ready">
               <span className="flex items-center gap-2"><Hash className="h-3.5 w-3.5" /> Ready</span>
             </SelectItem>
+              <SelectItem value="rejected">
+                <span className="flex items-center gap-2"><X className="h-3.5 w-3.5" /> Rejected</span>
+              </SelectItem>
           </SelectContent>
         </Select>
 
@@ -193,7 +193,7 @@ export function CustomerOrdersFilters({
           value={filters.timePreset}
           onValueChange={(v) => updateFilter('timePreset', v as TimePreset)}
         >
-          <SelectTrigger className="w-[150px] h-8 text-xs">
+          <SelectTrigger className="w-[150px] h-8 text-xs hover:bg-accent hover:text-foreground">
             <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
             <SelectValue placeholder="Time" />
           </SelectTrigger>

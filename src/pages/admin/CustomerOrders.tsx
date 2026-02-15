@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { toast } from 'sonner';
@@ -65,7 +64,7 @@ const FILTER_STORAGE_KEY = 'customerOrdersFilters';
 function loadPersistedFilters(): {
   filters: OrderFilters;
   activeTab: 'all' | 'dine_in' | 'takeaway';
-  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready';
+  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready' | 'rejected';
   sortDirection: SortDirection;
 } {
   try {
@@ -90,7 +89,7 @@ const CustomerOrders = () => {
   const persisted = useMemo(() => loadPersistedFilters(), []);
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>(persisted.activeTab);
   const [filters, setFilters] = useState<OrderFilters>(persisted.filters);
-  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'pending' | 'preparing' | 'ready'>(persisted.activeQuickFilter || '');
+  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'pending' | 'preparing' | 'ready' | 'rejected'>(persisted.activeQuickFilter || '');
   const [sortDirection, setSortDirection] = useState<SortDirection>(persisted.sortDirection);
 
   // Persist filter state to sessionStorage
@@ -299,7 +298,7 @@ const CustomerOrders = () => {
   }, [orders, activeTab, filters, sortDirection]);
 
   // Handle quick filter clicks
-  const handleQuickFilter = (type: 'pending' | 'preparing' | 'ready') => {
+  const handleQuickFilter = (type: 'pending' | 'preparing' | 'ready' | 'rejected') => {
     if (activeQuickFilter === type) {
       // Toggle off
       setActiveQuickFilter('');
@@ -501,7 +500,7 @@ const CustomerOrders = () => {
 
 // Empty State Component
 const EmptyState = ({ message = "No active orders" }: { message?: string }) => (
-  <Card>
+  <Card className='border-none bg-transparent shadow-none'>
     <CardContent className="flex flex-col items-center justify-center py-12">
       <CheckCircle className="h-12 w-12 text-muted-foreground mb-4" />
       <p className="text-lg font-medium">{message}</p>
