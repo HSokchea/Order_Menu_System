@@ -414,17 +414,17 @@ const CustomerOrders = () => {
       {/* Tabs + Filters in one row */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <TabsList>
-            <TabsTrigger value="all" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
+          <TabsList className="h-8">
+            <TabsTrigger value="all" className="flex items-center gap-2 h-6">
+              <Package className="h-3 w-3" />
               All ({filteredOrders.length})
             </TabsTrigger>
-            <TabsTrigger value="dine_in" className="flex items-center gap-2">
-              <UtensilsCrossed className="h-4 w-4" />
+            <TabsTrigger value="dine_in" className="flex items-center gap-2 h-6">
+              <UtensilsCrossed className="h-3 w-3" />
               Dine-in ({filteredOrders.filter(o => o.order_type === 'dine_in').length})
             </TabsTrigger>
-            <TabsTrigger value="takeaway" className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
+            <TabsTrigger value="takeaway" className="flex items-center gap-2 h-6">
+              <Store className="h-3 w-3" />
               Takeaway ({filteredOrders.filter(o => o.order_type === 'takeaway').length})
             </TabsTrigger>
           </TabsList>

@@ -143,7 +143,7 @@ export function CustomerOrdersFilters({
           value={activeQuickFilter || "all"}
           onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'preparing' | 'ready')}
         >
-          <SelectTrigger className="w-[160px] h-8 text-xs">
+          <SelectTrigger className="w-[140px] h-8 text-xs">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -188,7 +188,7 @@ export function CustomerOrdersFilters({
                   : 'Pick dates'}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0" align="center">
               <Calendar
                 mode="range"
                 defaultMonth={tempDateRange.from || new Date()}
