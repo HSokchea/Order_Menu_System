@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Printer, Download, CreditCard, MoreHorizontal} from 'lucide-react';
+import { Printer, Download, CreditCard, MoreHorizontal, X } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -13,6 +13,7 @@ interface ReceiptActionsProps {
   isProcessing?: boolean;
   onCompletePayment?: () => void;
   showPayButton?: boolean;
+  onClose?: () => void;
 }
 
 export const ReceiptActions = ({
@@ -22,13 +23,14 @@ export const ReceiptActions = ({
   isProcessing = false,
   onCompletePayment,
   showPayButton = true,
+  onClose,
 }: ReceiptActionsProps) => {
   const handlePrint = () => {
     if (!receiptRef.current) return;
-    
+
     const printContent = receiptRef.current.innerHTML;
     const printWindow = window.open('', '_blank');
-    
+
     if (!printWindow) {
       toast.error('Could not open print window. Please allow popups.');
       return;
@@ -58,6 +60,23 @@ export const ReceiptActions = ({
               color: black;
             }
             .text-center { text-align: center; }
+            .receipt-logo-container {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              margin-bottom: 8px;
+            }
+            .receipt-logo {
+              display: block;
+              margin-left: auto;
+              margin-right: auto;
+              border-radius: 9999px;
+              object-fit: cover;
+              border: 1px solid #e5e7eb;
+              background: #fff;
+              height: 48px;
+              width: 48px;
+            }
             .text-muted-foreground { color: #666; }
             .font-bold { font-weight: bold; }
             .font-semibold { font-weight: 600; }
@@ -100,7 +119,7 @@ export const ReceiptActions = ({
 
     printWindow.document.close();
     printWindow.focus();
-    
+
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
@@ -121,7 +140,7 @@ export const ReceiptActions = ({
 
       const imgWidth = 80; // 80mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -141,11 +160,16 @@ export const ReceiptActions = ({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="custom" size="custom" className='pb-2' aria-label="More actions">
-          <MoreHorizontal className="h-4 w-4" />
+      <div className='flex gap-0'>
+        <DropdownMenuTrigger asChild>
+          <Button variant="custom" size="custom" className='mb-2 p-2 hover:bg-gray-100' aria-label="More actions">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <Button variant="custom" size="custom" className='mb-2 p-2 hover:bg-gray-100' aria-label="Close receipt" onClick={onClose}>
+          <X className="h-4 w-4" />
         </Button>
-      </DropdownMenuTrigger>
+      </div>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handlePrint}>
           <Printer className="h-4 w-4 mr-2" /> Print

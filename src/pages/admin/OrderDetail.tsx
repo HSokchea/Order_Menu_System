@@ -541,7 +541,7 @@ const OrderDetail = () => {
           </Card>
 
           {/* Actions */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               className="flex-1 gap-2 text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive"
               size="sm"
@@ -632,14 +632,15 @@ const OrderDetail = () => {
 
       {/* Receipt Dialog */}
       <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader className="px-6 pt-6 pb-0 flex flex-row items-center justify-between">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0" hideCloseButton>
+          <DialogHeader className="px-6 pt-3 pb-0 flex flex-row items-center justify-between">
             <DialogTitle className="text-base">Receipt Preview</DialogTitle>
             <ReceiptActions
               receiptRef={receiptRef as React.RefObject<HTMLDivElement>}
               sessionId={order.id}
               isPaid={false}
               showPayButton={false}
+              onClose={() => setReceiptOpen(false)}
             />
           </DialogHeader>
           <div className="px-2 pb-4">

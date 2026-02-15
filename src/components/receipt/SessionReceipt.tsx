@@ -1,11 +1,11 @@
 import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import { Check } from 'lucide-react';
-import { 
-  numberToWordsEnglish, 
-  numberToWordsKhmer, 
-  convertUSDtoKHR, 
-  formatKHR 
+import {
+  numberToWordsEnglish,
+  numberToWordsKhmer,
+  convertUSDtoKHR,
+  formatKHR
 } from '@/lib/amountInWords';
 
 interface OrderItem {
@@ -126,6 +126,7 @@ const getAllItems = (orders: SessionOrder[]): Array<OrderItem & { orderId: strin
 
 export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
   ({ session, isPrintMode = false }, ref) => {
+    console.log('Rendering SessionReceipt with session:', session);
     const totalBill = getSessionTotal(session);
     const taxRate = session.default_tax_percentage || 0;
     const serviceChargeRate = session.service_charge_percentage || 0;
@@ -133,13 +134,13 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
     const serviceChargeAmount = totalBill * (serviceChargeRate / 100);
     const grandTotal = totalBill + taxAmount + serviceChargeAmount;
     const currency = 'USD'; // Base currency - always USD for storage
-    
+
     // CRITICAL: Use frozen exchange rate for paid sessions, current rate for unpaid
     // This ensures historical accuracy - paid receipts never change
     const exchangeRate = session.status === 'paid' && session.exchange_rate_at_payment
       ? session.exchange_rate_at_payment
       : session.exchange_rate_usd_to_khr || 4100;
-    
+
     // Calculate KHR amounts (display only - never stored)
     const grandTotalKHR = convertUSDtoKHR(grandTotal, exchangeRate);
     const formatPrice = (amount: number) => {
@@ -178,6 +179,16 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
       >
         {/* ========== HEADER ========== */}
         <div className="text-center mb-5 print:mb-3">
+          {session.restaurant_logo_url && (
+            <div className="receipt-logo-container flex justify-center mb-2">
+              <img
+                src={session.restaurant_logo_url}
+                alt="Restaurant Logo"
+                className={`receipt-logo mx-auto ${isPrintMode ? 'h-12 w-12' : 'h-16 w-16'} rounded-full object-cover border border-gray-200 bg-white`}
+                style={{ maxHeight: isPrintMode ? 48 : 64, maxWidth: isPrintMode ? 48 : 64 }}
+              />
+            </div>
+          )}
           <h1
             className={`font-bold ${isPrintMode ? 'text-base' : 'text-xl'} print:text-base tracking-tight`}
             style={{ color: '#111' }}
@@ -189,7 +200,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
           {session.receipt_header_text && (
             <p
               className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px] mt-1`}
-              style={{ color: '#666' }}
+              style={{ color: '#111' }}
             >
               {session.receipt_header_text}
             </p>
@@ -197,7 +208,7 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
 
           {addressLine && (
             <p
-              className={`${isPrintMode ? 'text-[10px]' : 'text-sm'} print:text-[10px] mt-1`}
+              className={`${isPrintMode ? 'text-[10px]' : 'text-xs'} print:text-[10px] mt-1`}
               style={{ color: '#666' }}
             >
               {addressLine}
@@ -353,35 +364,35 @@ export const SessionReceipt = forwardRef<HTMLDivElement, SessionReceiptProps>(
               <span>{formatPrice(serviceChargeAmount)}</span>
             </div>
           )}
-          
+
           {/* Exchange Rate Info */}
           <div className="flex justify-between" style={{ color: '#888' }}>
             <span className={`${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`}>
               Rate: 1 USD = {exchangeRate} KHR
             </span>
           </div>
-          
+
           {/* Total Divider */}
           <div className="border-t pt-2 mt-2 print:pt-1 print:mt-1" style={{ borderColor: '#E5E7EB' }}>
             {/* USD Total */}
-            <div 
-              className={`flex justify-between font-bold ${isPrintMode ? 'text-sm' : 'text-lg'} print:text-sm`}
+            <div
+              className={`flex justify-between font-bold ${isPrintMode ? 'text-sm' : 'text-md'} print:text-sm`}
               style={{ color: '#111' }}
             >
               <span>Total</span>
               <span>{formatPrice(grandTotal)}</span>
             </div>
-            
+
             {/* KHR Total */}
-            <div 
-              className={`flex justify-between font-bold ${isPrintMode ? 'text-sm' : 'text-lg'} print:text-sm mt-1`}
+            <div
+              className={`flex justify-between font-bold ${isPrintMode ? 'text-sm' : 'text-md'} print:text-sm mt-1`}
               style={{ color: '#111' }}
             >
               <span>សរុប</span>
               <span>{formatKHR(grandTotalKHR)}</span>
             </div>
           </div>
-          
+
           {/* Amount in Words */}
           {/* <div className={`mt-3 pt-2 border-t print:mt-2 print:pt-1 ${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`} style={{ borderColor: '#E5E7EB', color: '#888' }}>
             <p className="mb-1">{numberToWordsEnglish(grandTotal, 'USD')}</p>
@@ -483,7 +494,7 @@ const ItemRow = ({ item, formatPrice, isPrintMode }: ItemRowProps) => {
               className={`flex justify-between ${isPrintMode ? 'text-[9px]' : 'text-xs'} print:text-[9px]`}
               style={{ color: '#666' }}
             >
-              <span>+ {opt.value}</span>
+              <span>{opt.group}: {opt.value}</span>
               {opt.price > 0 && (
                 <span>{formatPrice(opt.price)}</span>
               )}

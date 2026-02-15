@@ -12,7 +12,8 @@ import {
   CreditCard,
   Package,
   LogOut,
-  LucideIcon
+  LucideIcon,
+  ChevronsUpDownIcon
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -258,6 +259,7 @@ export function AdminSidebar() {
                   </p>
                 </div>
               )}
+              <ChevronsUpDownIcon className="h-4 w-4 text-muted-foreground" />
             </div>
           </PopoverTrigger>
           <PopoverContent
