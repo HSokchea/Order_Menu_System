@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,12 +28,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   StoredOrderItem,
   groupItemsIntoRounds,
   groupRoundItems,
   calculateOrderTotal
 } from '@/types/order';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { SessionReceipt, ReceiptSession } from '@/components/receipt/SessionReceipt';
+import { ReceiptActions } from '@/components/receipt/ReceiptActions';
 
 interface OrderData {
   id: string;
@@ -60,6 +68,9 @@ const OrderDetail = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [confirmPaidOpen, setConfirmPaidOpen] = useState(false);
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
+  const [receiptSession, setReceiptSession] = useState<ReceiptSession | null>(null);
 
   const fetchOrder = async () => {
     if (!orderId || !restaurant?.id) return;
@@ -252,6 +263,69 @@ const OrderDetail = () => {
   // Generate order short ID from last 4 digits of created_at timestamp
   const match = order.created_at.match(/\.(\d+)/);
   const shortId = `#${match[1].slice(-4)}`;
+
+  // Build ReceiptSession from order data for receipt display
+  const buildReceiptSession = async (): Promise<ReceiptSession> => {
+    // Fetch full restaurant details for the receipt
+    const { data: rest } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('id', order.shop_id)
+      .single();
+
+    return {
+      session_id: order.id,
+      table_id: order.table_id || '',
+      table_number: order.table_number || 'N/A',
+      restaurant_id: order.shop_id,
+      restaurant_name: rest?.name || restaurant?.name || '',
+      restaurant_phone: rest?.phone || null,
+      restaurant_address: rest?.address || null,
+      restaurant_city: rest?.city || null,
+      restaurant_country: rest?.country || null,
+      restaurant_logo_url: rest?.logo_url || null,
+      restaurant_vat_tin: rest?.vat_tin || null,
+      default_tax_percentage: rest?.default_tax_percentage || 0,
+      service_charge_percentage: rest?.service_charge_percentage || 0,
+      exchange_rate_usd_to_khr: rest?.exchange_rate_usd_to_khr || 4100,
+      receipt_header_text: rest?.receipt_header_text || null,
+      receipt_footer_text: rest?.receipt_footer_text || null,
+      currency: rest?.currency || 'USD',
+      status: 'open',
+      started_at: order.created_at,
+      ended_at: null,
+      total_amount: subtotal,
+      order_type: order.order_type,
+      invoice_number: null,
+      cashier_name: null,
+      orders: [{
+        id: order.id,
+        total_usd: subtotal,
+        status: order.status,
+        created_at: order.created_at,
+        customer_notes: order.customer_notes,
+        items: order.items
+          .filter(i => i.status !== 'rejected')
+          .map(i => ({
+            id: i.item_id,
+            quantity: 1,
+            price_usd: i.price,
+            notes: i.options && i.options.length > 0
+              ? JSON.stringify({ selectedOptions: i.options.map(o => ({ group: o.groupName, value: o.label, price: o.price })) })
+              : null,
+            menu_item_name: i.name,
+          })),
+      }],
+    };
+  };
+
+
+  const handleOpenReceipt = async () => {
+    const session = await buildReceiptSession();
+    setReceiptSession(session);
+    setReceiptOpen(true);
+  };
+
 
   return (
     <div className="space-y-6">
@@ -494,6 +568,7 @@ const OrderDetail = () => {
               variant="outline"
               className="flex-1 gap-2 text-blue-500 border-blue-500 hover:bg-blue-500/10 hover:text-blue-500"
               size="sm"
+              onClick={handleOpenReceipt}
             >
               <Printer className="h-4 w-4" />
               Print Receipt
@@ -554,6 +629,29 @@ const OrderDetail = () => {
         onConfirm={cancelOrder}
         loading={updating}
       />
+
+      {/* Receipt Dialog */}
+      <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6 pb-0 flex flex-row items-center justify-between">
+            <DialogTitle className="text-base">Receipt Preview</DialogTitle>
+            <ReceiptActions
+              receiptRef={receiptRef as React.RefObject<HTMLDivElement>}
+              sessionId={order.id}
+              isPaid={false}
+              showPayButton={false}
+            />
+          </DialogHeader>
+          <div className="px-2 pb-4">
+            {receiptSession && (
+              <SessionReceipt
+                ref={receiptRef}
+                session={receiptSession}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
