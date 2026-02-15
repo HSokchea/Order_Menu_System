@@ -13,7 +13,7 @@ import {
   Store,
   DollarSign
 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StoredOrderItem, groupItemsIntoRounds } from '@/types/order';
 import OrderCard from '@/components/admin/orders/OrderCard';
 import { 
@@ -411,43 +411,46 @@ const CustomerOrders = () => {
         </Card>
       </div>
 
-      {/* Tabs + Filters in one row */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <TabsList className="h-8">
-            <TabsTrigger value="all" className="flex items-center gap-2 h-6">
-              <Package className="h-3 w-3" />
-              All ({filteredOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="dine_in" className="flex items-center gap-2 h-6">
-              <UtensilsCrossed className="h-3 w-3" />
-              Dine-in ({filteredOrders.filter(o => o.order_type === 'dine_in').length})
-            </TabsTrigger>
-            <TabsTrigger value="takeaway" className="flex items-center gap-2 h-6">
-              <Store className="h-3 w-3" />
-              Takeaway ({filteredOrders.filter(o => o.order_type === 'takeaway').length})
-            </TabsTrigger>
-          </TabsList>
+      {/* Order Type Select + Filters in one row */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <Select value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <SelectTrigger className="w-[180px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <span className="flex items-center gap-2"><Package className="h-3.5 w-3.5" /> All ({filteredOrders.length})</span>
+            </SelectItem>
+            <SelectItem value="dine_in">
+              <span className="flex items-center gap-2"><UtensilsCrossed className="h-3.5 w-3.5" /> Dine-in ({filteredOrders.filter(o => o.order_type === 'dine_in').length})</span>
+            </SelectItem>
+            <SelectItem value="takeaway">
+              <span className="flex items-center gap-2"><Store className="h-3.5 w-3.5" /> Takeaway ({filteredOrders.filter(o => o.order_type === 'takeaway').length})</span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
-          <CustomerOrdersFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onQuickFilter={handleQuickFilter}
-            activeQuickFilter={activeQuickFilter}
-            sortDirection={sortDirection}
-            onSortChange={setSortDirection}
-          />
-        </div>
+        <CustomerOrdersFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onQuickFilter={handleQuickFilter}
+          activeQuickFilter={activeQuickFilter}
+          sortDirection={sortDirection}
+          onSortChange={setSortDirection}
+        />
+      </div>
 
-        {/* Filtered Results Count */}
-        {filteredOrders.length !== orders.length && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Showing {filteredOrders.length} of {orders.length} orders
-          </p>
-        )}
+      {/* Filtered Results Count */}
+      {filteredOrders.length !== orders.length && (
+        <p className="text-sm text-muted-foreground mt-2">
+          Showing {filteredOrders.length} of {orders.length} orders
+        </p>
+      )}
 
-        <TabsContent value="all" className="mt-6">
-          {filteredOrders.length === 0 ? (
+      {/* Order Content */}
+      <div className="mt-6">
+        {activeTab === 'all' && (
+          filteredOrders.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -459,11 +462,11 @@ const CustomerOrders = () => {
                 />
               ))}
             </div>
-          )}
-        </TabsContent>
+          )
+        )}
 
-        <TabsContent value="dine_in" className="mt-6">
-          {filteredOrders.filter(o => o.order_type === 'dine_in').length === 0 ? (
+        {activeTab === 'dine_in' && (
+          filteredOrders.filter(o => o.order_type === 'dine_in').length === 0 ? (
             <EmptyState message="No dine-in orders match filters" />
           ) : (
             <div className="space-y-6">
@@ -485,11 +488,11 @@ const CustomerOrders = () => {
                 </div>
               ))}
             </div>
-          )}
-        </TabsContent>
+          )
+        )}
 
-        <TabsContent value="takeaway" className="mt-6">
-          {takeawayOrders.length === 0 ? (
+        {activeTab === 'takeaway' && (
+          takeawayOrders.length === 0 ? (
             <EmptyState message="No takeaway orders match filters" />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -501,9 +504,9 @@ const CustomerOrders = () => {
                 />
               ))}
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+          )
+        )}
+      </div>
     </div>
   );
 };
