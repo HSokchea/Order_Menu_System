@@ -21,7 +21,10 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Package,
+  UtensilsCrossed,
+  Store
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -74,6 +77,8 @@ export const defaultFilters: OrderFilters = {
 
 export type SortDirection = 'desc' | 'asc';
 
+export type OrderTypeTab = 'all' | 'dine_in' | 'takeaway';
+
 interface CustomerOrdersFiltersProps {
   filters: OrderFilters;
   onFiltersChange: (filters: OrderFilters) => void;
@@ -81,6 +86,9 @@ interface CustomerOrdersFiltersProps {
   activeQuickFilter: '' | 'pending' | 'preparing' | 'ready';
   sortDirection: SortDirection;
   onSortChange: (direction: SortDirection) => void;
+  orderType: OrderTypeTab;
+  onOrderTypeChange: (type: OrderTypeTab) => void;
+  orderCounts: { all: number; dine_in: number; takeaway: number };
 }
 
 export function CustomerOrdersFilters({
@@ -90,6 +98,9 @@ export function CustomerOrdersFilters({
   activeQuickFilter,
   sortDirection,
   onSortChange,
+  orderType,
+  onOrderTypeChange,
+  orderCounts,
 }: CustomerOrdersFiltersProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -137,8 +148,25 @@ export function CustomerOrdersFilters({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* Order Type */}
+      <Select value={orderType} onValueChange={(v) => onOrderTypeChange(v as OrderTypeTab)}>
+        <SelectTrigger className="w-[160px] h-8 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">
+            <span className="flex items-center gap-2"><Package className="h-3.5 w-3.5" /> All ({orderCounts.all})</span>
+          </SelectItem>
+          <SelectItem value="dine_in">
+            <span className="flex items-center gap-2"><UtensilsCrossed className="h-3.5 w-3.5" /> Dine-in ({orderCounts.dine_in})</span>
+          </SelectItem>
+          <SelectItem value="takeaway">
+            <span className="flex items-center gap-2"><Store className="h-3.5 w-3.5" /> Takeaway ({orderCounts.takeaway})</span>
+          </SelectItem>
+        </SelectContent>
+      </Select>
+
         <Select
           value={activeQuickFilter || "all"}
           onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'preparing' | 'ready')}
@@ -377,6 +405,5 @@ export function CustomerOrdersFilters({
           </Button>
         )}
       </div>
-    </div>
   );
 }
