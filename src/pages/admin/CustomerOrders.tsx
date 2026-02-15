@@ -13,7 +13,7 @@ import {
   Store,
   DollarSign
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { StoredOrderItem, groupItemsIntoRounds } from '@/types/order';
 import OrderCard from '@/components/admin/orders/OrderCard';
 import { 
@@ -411,34 +411,22 @@ const CustomerOrders = () => {
         </Card>
       </div>
 
-      {/* Order Type Select + Filters in one row */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Select value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <SelectTrigger className="w-[180px] h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              <span className="flex items-center gap-2"><Package className="h-3.5 w-3.5" /> All ({filteredOrders.length})</span>
-            </SelectItem>
-            <SelectItem value="dine_in">
-              <span className="flex items-center gap-2"><UtensilsCrossed className="h-3.5 w-3.5" /> Dine-in ({filteredOrders.filter(o => o.order_type === 'dine_in').length})</span>
-            </SelectItem>
-            <SelectItem value="takeaway">
-              <span className="flex items-center gap-2"><Store className="h-3.5 w-3.5" /> Takeaway ({filteredOrders.filter(o => o.order_type === 'takeaway').length})</span>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <CustomerOrdersFilters
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onQuickFilter={handleQuickFilter}
-          activeQuickFilter={activeQuickFilter}
-          sortDirection={sortDirection}
-          onSortChange={setSortDirection}
-        />
-      </div>
+      {/* Filters toolbar */}
+      <CustomerOrdersFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onQuickFilter={handleQuickFilter}
+        activeQuickFilter={activeQuickFilter}
+        sortDirection={sortDirection}
+        onSortChange={setSortDirection}
+        orderType={activeTab}
+        onOrderTypeChange={setActiveTab}
+        orderCounts={{
+          all: filteredOrders.length,
+          dine_in: filteredOrders.filter(o => o.order_type === 'dine_in').length,
+          takeaway: filteredOrders.filter(o => o.order_type === 'takeaway').length,
+        }}
+      />
 
       {/* Filtered Results Count */}
       {filteredOrders.length !== orders.length && (
