@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Loader2, Store, DollarSign, Receipt, Settings2, AlertTriangle, Upload, X, ImageIcon } from 'lucide-react';
+import { GeoRestrictionSettings, GeoSettings } from '@/components/admin/GeoRestrictionSettings';
 
 interface RestaurantSettings {
   id: string;
@@ -33,6 +34,10 @@ interface RestaurantSettings {
   show_service_charge_on_receipt: boolean;
   allow_multiple_orders_per_table: boolean;
   auto_close_session_after_payment: boolean;
+  geo_enabled: boolean;
+  geo_latitude: number | null;
+  geo_longitude: number | null;
+  geo_radius_meters: number;
 }
 
 const CURRENCIES = [
@@ -87,7 +92,11 @@ export default function Settings() {
           show_tax_on_receipt,
           show_service_charge_on_receipt,
           allow_multiple_orders_per_table,
-          auto_close_session_after_payment
+          auto_close_session_after_payment,
+          geo_enabled,
+          geo_latitude,
+          geo_longitude,
+          geo_radius_meters
         `)
         .eq('owner_id', user.id)
         .single();
@@ -117,6 +126,10 @@ export default function Settings() {
         show_service_charge_on_receipt: restaurant.show_service_charge_on_receipt ?? true,
         allow_multiple_orders_per_table: restaurant.allow_multiple_orders_per_table ?? true,
         auto_close_session_after_payment: restaurant.auto_close_session_after_payment ?? true,
+        geo_enabled: restaurant.geo_enabled ?? false,
+        geo_latitude: restaurant.geo_latitude ? Number(restaurant.geo_latitude) : null,
+        geo_longitude: restaurant.geo_longitude ? Number(restaurant.geo_longitude) : null,
+        geo_radius_meters: Number(restaurant.geo_radius_meters) || 100,
       });
       setOriginalCurrency(restaurant.currency || 'USD');
     } catch (err: any) {
@@ -156,6 +169,13 @@ export default function Settings() {
     console.log('Settings update:', settings);
     setSaving(true);
     try {
+      // Validate geo settings
+      if (settings.geo_enabled && (settings.geo_latitude === null || settings.geo_longitude === null)) {
+        toast.error('Please set a location on the map before enabling geo restriction');
+        setSaving(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('restaurants')
         .update({
@@ -177,7 +197,11 @@ export default function Settings() {
           show_service_charge_on_receipt: settings.show_service_charge_on_receipt,
           allow_multiple_orders_per_table: settings.allow_multiple_orders_per_table,
           auto_close_session_after_payment: settings.auto_close_session_after_payment,
-        })
+          geo_enabled: settings.geo_enabled,
+          geo_latitude: settings.geo_latitude,
+          geo_longitude: settings.geo_longitude,
+          geo_radius_meters: settings.geo_radius_meters,
+        } as any)
         .eq('id', settings.id);
       if (error) throw error;
 
@@ -675,6 +699,17 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Geo Restriction Settings */}
+      <GeoRestrictionSettings
+        settings={{
+          geo_enabled: settings.geo_enabled,
+          geo_latitude: settings.geo_latitude,
+          geo_longitude: settings.geo_longitude,
+          geo_radius_meters: settings.geo_radius_meters,
+        }}
+        onChange={(geo) => setSettings({ ...settings, ...geo })}
+      />
 
       {/* Save Button */}
       <div className="flex justify-end">
