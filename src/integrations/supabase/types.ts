@@ -410,6 +410,10 @@ export type Database = {
           default_order_type: string | null
           default_tax_percentage: number | null
           exchange_rate_usd_to_khr: number | null
+          geo_enabled: boolean | null
+          geo_latitude: number | null
+          geo_longitude: number | null
+          geo_radius_meters: number | null
           id: string
           is_onboarded: boolean | null
           logo_url: string | null
@@ -438,6 +442,10 @@ export type Database = {
           default_order_type?: string | null
           default_tax_percentage?: number | null
           exchange_rate_usd_to_khr?: number | null
+          geo_enabled?: boolean | null
+          geo_latitude?: number | null
+          geo_longitude?: number | null
+          geo_radius_meters?: number | null
           id?: string
           is_onboarded?: boolean | null
           logo_url?: string | null
@@ -466,6 +474,10 @@ export type Database = {
           default_order_type?: string | null
           default_tax_percentage?: number | null
           exchange_rate_usd_to_khr?: number | null
+          geo_enabled?: boolean | null
+          geo_latitude?: number | null
+          geo_longitude?: number | null
+          geo_radius_meters?: number | null
           id?: string
           is_onboarded?: boolean | null
           logo_url?: string | null
@@ -1146,6 +1158,15 @@ export type Database = {
           total_amount: number
         }[]
       }
+      get_shop_geo_config: {
+        Args: { p_shop_id: string }
+        Returns: {
+          geo_enabled: boolean
+          geo_latitude: number
+          geo_longitude: number
+          geo_radius_meters: number
+        }[]
+      }
       get_shop_menu_items: {
         Args: { p_shop_id: string }
         Returns: {
@@ -1213,6 +1234,14 @@ export type Database = {
       user_owns_restaurant: {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
+      }
+      validate_customer_geo: {
+        Args: {
+          p_shop_id: string
+          p_user_latitude: number
+          p_user_longitude: number
+        }
+        Returns: Json
       }
     }
     Enums: {
