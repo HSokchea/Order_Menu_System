@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import MultiSelect from 'react-select';
+
 
 export type TimePreset = 'last15min' | 'last30min' | 'today' | 'custom';
 export type AmountOperator = 'none' | 'gt' | 'lt' | 'between';
