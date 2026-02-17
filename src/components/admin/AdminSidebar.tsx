@@ -70,25 +70,11 @@ const navigationItems: NavigationItem[] = [
     permissions: [PERMISSIONS.MENU_VIEW, PERMISSIONS.MENU_MANAGE],
   },
   {
-    title: "Table Orders",
-    url: "/admin/order-dashboard",
-    icon: ClipboardList,
-    description: "Monitor dine-in orders",
-    permissions: [PERMISSIONS.ORDERS_VIEW],
-  },
-  {
     title: "QR Orders",
     url: "/admin/customer-orders",
     icon: Package,
     description: "QR menu orders",
     permissions: [PERMISSIONS.ORDERS_VIEW],
-  },
-  {
-    title: "Table Sessions",
-    url: "/admin/table-sessions",
-    icon: CreditCard,
-    description: "Manage dining sessions",
-    permissions: [PERMISSIONS.TABLES_VIEW, PERMISSIONS.BILLING_VIEW, PERMISSIONS.BILLING_COLLECT],
   },
   {
     title: "Generate QR",

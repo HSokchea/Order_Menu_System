@@ -174,20 +174,6 @@ export const getPermissionBasedDashboard = (hasPermissionFn: (key: string) => bo
   if (hasPermissionFn(PERMISSIONS.REPORTS_VIEW) || hasPermissionFn(PERMISSIONS.DASHBOARD_VIEW)) {
     return '/admin';
   }
-  // Billing focused for users with billing permissions
-  if (hasPermissionFn(PERMISSIONS.BILLING_COLLECT)) {
-    return '/admin/table-sessions';
-  }
-  // Kitchen screen for users with order status update permission
-  if (hasPermissionFn(PERMISSIONS.ORDERS_UPDATE_STATUS)) {
-    return '/admin/order-dashboard';
-  }
-  // Order view for users with order permission
-  if (hasPermissionFn(PERMISSIONS.ORDERS_VIEW)) {
-    return '/admin/order-dashboard';
-  }
-  // Default fallback
-  return '/admin/order-dashboard';
 };
 
 export const useUserProfile = () => {

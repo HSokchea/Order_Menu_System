@@ -278,12 +278,6 @@ export function CustomerOrdersFilters({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold">Advanced Filters</h4>
-              {activeCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={resetFilters} className="h-7 gap-1 text-xs text-muted-foreground">
-                  <RotateCcw className="h-3 w-3" />
-                  Reset all
-                </Button>
-              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

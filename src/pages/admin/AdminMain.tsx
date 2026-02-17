@@ -7,11 +7,9 @@ import { RoleDashboard } from "@/components/admin/RoleDashboard";
 import { Loader2 } from "lucide-react";
 import Categories from "./Categories";
 import MenuItems from "./MenuItems";
-import OrderDashboard from "./OrderDashboard";
 import CustomerOrders from "./CustomerOrders";
 import OrderDetail from "./OrderDetail";
 import QRGenerator from "./QRGenerator";
-import TableSessions from "./TableSessions";
 import Settings from "./Settings";
 import RolesPermissions from "./RolesPermissions";
 
@@ -24,12 +22,8 @@ const getPageInfo = (pathname: string) => {
       return { title: "Categories", description: "Manage menu categories" };
     case "/admin/menu-items":
       return { title: "Menu Items", description: "Add and manage your menu items" };
-    case "/admin/order-dashboard":
-      return { title: "Order Dashboard", description: "Monitor dine-in table orders" };
     case "/admin/customer-orders":
       return { title: "Customer Orders", description: "QR menu orders (dine-in & takeaway)" };
-    case "/admin/table-sessions":
-      return { title: "Table Sessions", description: "Manage dining sessions and billing" };
     case "/admin/settings":
       return { title: "Settings", description: "Shop profile and configuration" };
     case "/admin/roles":
@@ -110,16 +104,6 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* Orders - requires order permissions */}
-        <Route path="order-dashboard" element={
-          <PermissionGuard 
-            permissions={[PERMISSIONS.ORDERS_VIEW]} 
-            fallback={<AccessDenied message="You don't have permission to view orders." />}
-          >
-            <OrderDashboard />
-          </PermissionGuard>
-        } />
-        
         {/* Customer Orders (QR Menu) - requires order permissions */}
         <Route path="customer-orders" element={
           <PermissionGuard 
@@ -135,15 +119,6 @@ export default function AdminMain() {
             fallback={<AccessDenied message="You don't have permission to view orders." />}
           >
             <OrderDetail />
-          </PermissionGuard>
-        } />
-        {/* Table Sessions - requires billing or table permissions */}
-        <Route path="table-sessions" element={
-          <PermissionGuard 
-            permissions={[PERMISSIONS.TABLES_VIEW, PERMISSIONS.BILLING_VIEW, PERMISSIONS.BILLING_COLLECT]} 
-            fallback={<AccessDenied message="You don't have permission to view table sessions." />}
-          >
-            <TableSessions />
           </PermissionGuard>
         } />
         
