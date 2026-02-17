@@ -70,8 +70,8 @@ export function GeoRestrictionSettings({ settings, onChange }: GeoRestrictionSet
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-primary" />
-          <CardTitle>Location & Access Control</CardTitle>
+          <MapPin className="h-4 w-4 text-primary" />
+          <CardTitle className='text-lg font-medium'>Location & Access Control</CardTitle>
         </div>
         <CardDescription>
           Restrict customer access based on their physical location

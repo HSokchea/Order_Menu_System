@@ -11,8 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Loader2, Store, DollarSign, Receipt, Settings2, AlertTriangle, Upload, X, ImageIcon } from 'lucide-react';
+import { Loader2, Store, DollarSign, Receipt, Settings2, AlertTriangle, Upload, X, ImageIcon, Camera, Download, Trash2 } from 'lucide-react';
 import { GeoRestrictionSettings, GeoSettings } from '@/components/admin/GeoRestrictionSettings';
+import Cropper from 'react-easy-crop';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface RestaurantSettings {
   id: string;
@@ -61,11 +65,31 @@ export default function Settings() {
   const [pendingCurrencyChange, setPendingCurrencyChange] = useState<string | null>(null);
   const [originalCurrency, setOriginalCurrency] = useState<string>('USD');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // base64 or url
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [cameraDialogOpen, setCameraDialogOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
     fetchSettings();
     checkActiveSessions();
-  }, [user]);
+    if (cameraDialogOpen && videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [user, cameraDialogOpen, cameraStream]);
+
+  // useEffect(() => {
+  //   if (cameraDialogOpen && videoRef.current && cameraStream) {
+  //     videoRef.current.srcObject = cameraStream;
+  //   }
+  // }, [cameraDialogOpen, cameraStream]);
 
   const fetchSettings = async () => {
     if (!user) return;
@@ -283,6 +307,29 @@ export default function Settings() {
     );
   }
 
+  // Utility to crop image
+  async function getCroppedImg(imageSrc: string, crop: any): Promise<string> {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise(resolve => { image.onload = resolve; });
+    const canvas = document.createElement('canvas');
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    const ctx = canvas.getContext('2d');
+    ctx?.drawImage(
+      image,
+      crop.x, crop.y, crop.width, crop.height,
+      0, 0, crop.width, crop.height
+    );
+    return canvas.toDataURL('image/png');
+  }
+  function dataURLtoFile(dataurl: string, filename: string) {
+    const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)![1],
+      bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+    return new File([u8arr], filename, { type: mime });
+  }
+
   if (!settings) {
     return (
       <div className="text-center py-12">
@@ -306,8 +353,8 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            <CardTitle>Shop Profile</CardTitle>
+            <Store className="h-4 w-4 text-primary" />
+            <CardTitle className='text-lg font-medium'>Shop Profile</CardTitle>
           </div>
           <CardDescription>Basic information about your restaurant</CardDescription>
         </CardHeader>
@@ -315,72 +362,152 @@ export default function Settings() {
           {/* Logo */}
           <div className="space-y-2">
             <div className="space-y-4">
-              {/* Image display at top */}
               <div className="flex justify-center">
-                {settings.logo_url ? (
-                  <div className="relative rounded-full border-2 border-dashed border-border">
-                    <img
-                      src={settings.logo_url}
-                      alt="Logo"
-                      className="h-48 w-48 rounded-full object-cover border"
-                    />
-                  </div>
-                ) : (
-                  <div className="h-48 w-48 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center bg-muted/20">
-                    <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
-                    <span className="text-sm text-muted-foreground">No logo</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Buttons at bottom */}
-              <div className="flex justify-center gap-3">
-                {settings.logo_url && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleRemoveLogo}
-                    className="gap-1 rounded-full"
+                <div className="relative group">
+                  {/* Profile Image or Placeholder */}
+                  <div
+                    className="rounded-full border-2 border-dashed border-border overflow-hidden cursor-pointer"
+                    style={{ width: 192, height: 192 }}
+                    onClick={() => settings.logo_url && setPreviewDialogOpen(true)}
                   >
-                    <X className="h-4 w-4" />
-                    Remove Logo
-                  </Button>
-                )}
+                    {settings.logo_url ? (
+                      <img
+                        src={settings.logo_url}
+                        alt="Logo"
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-muted/20">
+                        <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">No logo</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Camera Icon Overlay */}
+                  <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="absolute bottom-2 right-2 bg-white rounded-full p-2 shadow group-hover:scale-110 transition"
+                        onClick={e => { e.stopPropagation(); setPopoverOpen(true); }}
+                      >
+                        <Camera className="h-5 w-5 text-primary" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-full p-2">
+                      <button
+                        className="text-sm font-regular flex items-center gap-2 w-full px-2 py-1 hover:bg-muted rounded"
+                        onClick={() => {
+                          setPopoverOpen(false);
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        <ImageIcon className="h-4 w-4" /> Upload from file
+                      </button>
+                      <button
+                        className="text-sm font-regular flex items-center gap-2 w-full px-2 py-1 hover:bg-muted rounded"
+                        onClick={async () => {
+                          setPopoverOpen(false);
+                          setCameraDialogOpen(true);
+                          // Start camera
+                          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                          setCameraStream(stream);
+                        }}
+                      >
+                        <Camera className="h-4 w-4" /> Take a photo
+                      </button>
+                    </PopoverContent>
+                  </Popover>
 
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="gap-1 rounded-full"
-                >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : settings.logo_url ? (
-                    <>
-                      <Upload className="h-4 w-4" />
-                      Change Logo
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4" />
-                      Upload Logo
-                    </>
-                  )}
-                </Button>
+                  <Dialog open={cropDialogOpen} onOpenChange={setCropDialogOpen}>
+                    <DialogContent className="max-w-xs">
+                      <div className="relative w-64 h-64 bg-black">
+                        {selectedImage && (
+                          <Cropper
+                            image={selectedImage}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={1}
+                            onCropChange={setCrop}
+                            onZoomChange={setZoom}
+                            onCropComplete={(_, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+                          />
+                        )}
+                      </div>
+                      <div className="flex justify-end gap-2 mt-2">
+                        <Button variant="outline" size="sm" onClick={() => setCropDialogOpen(false)}>Cancel</Button>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            // Crop the image and upload
+                            if (selectedImage && croppedAreaPixels) {
+                              const cropped = await getCroppedImg(selectedImage, croppedAreaPixels);
+                              // Call your upload handler here
+                              handleLogoUpload(dataURLtoFile(cropped, 'logo.png'));
+                              setCropDialogOpen(false);
+                            }
+                          }}
+                        >Save</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
+                  <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+                    <DialogContent className="max-w-xs flex flex-col items-center">
+                      <img src={settings.logo_url!} alt="Logo Preview" className="w-48 h-48 rounded-full object-cover border mb-4" />
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            // Download image
+                            const link = document.createElement('a');
+                            link.href = settings.logo_url!;
+                            link.download = 'logo.png';
+                            link.click();
+                          }}
+                        >
+                          <Download className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => setConfirmDeleteOpen(true)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  <ConfirmDialog
+                    open={confirmDeleteOpen}
+                    onOpenChange={setConfirmDeleteOpen}
+                    title="Remove Logo"
+                    description="Are you sure you want to remove the logo?"
+                    confirmLabel="Remove"
+                    variant="destructive"
+                    onConfirm={handleRemoveLogo}
+                  />
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = ev => {
+                          setSelectedImage(ev.target?.result as string);
+                          setCropDialogOpen(true);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -443,8 +570,8 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            <CardTitle>Financial Settings</CardTitle>
+            <DollarSign className="h-4 w-4 text-primary" />
+            <CardTitle className='text-lg font-medium'>Financial Settings</CardTitle>
           </div>
           <CardDescription>
             Currency display and tax configuration. All monetary data is stored in base currency (USD).
@@ -601,8 +728,8 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-primary" />
-            <CardTitle>Receipt Settings</CardTitle>
+            <Receipt className="h-4 w-4 text-primary" />
+            <CardTitle className='text-lg font-medium'>Receipt Settings</CardTitle>
           </div>
           <CardDescription>Customize how receipts appear to customers</CardDescription>
         </CardHeader>
@@ -664,8 +791,8 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Settings2 className="h-5 w-5 text-primary" />
-            <CardTitle>Operation Settings</CardTitle>
+            <Settings2 className="h-4 w-4 text-primary" />
+            <CardTitle className='text-lg font-medium'>Operation Settings</CardTitle>
           </div>
           <CardDescription>Configure how your restaurant operates</CardDescription>
         </CardHeader>
@@ -713,7 +840,7 @@ export default function Settings() {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} size="lg">
+        <Button onClick={handleSave} disabled={saving} size="sm">
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Save Settings
         </Button>

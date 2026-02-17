@@ -197,7 +197,7 @@ export function AdminSidebar() {
         {/* Navigation */}
         <SidebarGroup className="flex-1 p-0 m-0 overflow-y-auto">
           <SidebarGroupContent className="p-0 m-0">
-            <SidebarMenu className="p-0 m-0">
+            <SidebarMenu className="px-2 m-0">
               {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title} className="p-0 m-0">
                   <SidebarMenuButton asChild className="h-auto p-0">
