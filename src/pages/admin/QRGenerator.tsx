@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Download, Copy, ExternalLink, QrCode, Store, UtensilsCrossed, Plus, Trash2 } from 'lucide-react';
+import { Download, Copy, ExternalLink, QrCode, Store, UtensilsCrossed, Plus, Trash2, MapPin } from 'lucide-react';
 import QRCode from 'qrcode';
 import { QRTableCard } from '@/components/admin/QRTableCard';
 import { downloadQRCard, type PaperSize } from '@/lib/qrCardDownloader';
@@ -27,6 +28,8 @@ interface RestaurantData {
   id: string;
   name: string;
   logo_url: string | null;
+  geo_latitude: number | null;
+  geo_longitude: number | null;
 }
 
 interface TableData {
@@ -35,6 +38,7 @@ interface TableData {
 }
 
 const QRGenerator = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [restaurant, setRestaurant] = useState<RestaurantData | null>(null);
   const [tables, setTables] = useState<TableData[]>([]);
@@ -61,7 +65,7 @@ const QRGenerator = () => {
 
     const { data: restaurantData } = await supabase
       .from('restaurants')
-      .select('id, name, logo_url')
+      .select('id, name, logo_url, geo_latitude, geo_longitude')
       .eq('owner_id', user.id)
       .single();
 
@@ -256,6 +260,30 @@ const QRGenerator = () => {
             <p className="text-muted-foreground">No restaurant found. Please complete onboarding first.</p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Block QR generation if location not configured
+  const locationConfigured = restaurant.geo_latitude !== null && restaurant.geo_longitude !== null;
+
+  if (!locationConfigured) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center gap-6">
+        <div className="rounded-full bg-destructive/10 p-4">
+          <MapPin className="h-10 w-10 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-xl font-bold">Shop Location Required</h1>
+          <p className="text-muted-foreground max-w-sm">
+            You must configure your shop location before generating QR codes.
+            This ensures customers can only order when they are near your shop.
+          </p>
+        </div>
+        <Button onClick={() => navigate('/admin/settings')} className="gap-2">
+          <MapPin className="h-4 w-4" />
+          Set Shop Location
+        </Button>
       </div>
     );
   }

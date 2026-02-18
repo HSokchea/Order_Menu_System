@@ -1161,7 +1161,6 @@ export type Database = {
       get_shop_geo_config: {
         Args: { p_shop_id: string }
         Returns: {
-          geo_enabled: boolean
           geo_latitude: number
           geo_longitude: number
           geo_radius_meters: number
