@@ -13,6 +13,7 @@ type GeoState =
   | { status: 'allowed' }
   | { status: 'denied_permission' }
   | { status: 'denied_outside'; distance: number; radius: number }
+  | { status: 'shop_not_configured' }
   | { status: 'error'; message: string };
 
 export function GeoGate({ shopId, children }: GeoGateProps) {
@@ -22,20 +23,21 @@ export function GeoGate({ shopId, children }: GeoGateProps) {
     setState({ status: 'loading' });
 
     try {
-      // Step 1: Check if geo is enabled for this shop
+      // Step 1: Get shop geo config
       const { data: geoConfig, error: geoErr } = await supabase.rpc('get_shop_geo_config', {
         p_shop_id: shopId,
       });
 
       if (geoErr || !geoConfig || geoConfig.length === 0) {
-        // If we can't fetch config, allow access (fail-open for now)
-        setState({ status: 'allowed' });
+        setState({ status: 'shop_not_configured' });
         return;
       }
 
       const config = geoConfig[0];
-      if (!config.geo_enabled) {
-        setState({ status: 'allowed' });
+
+      // If shop has no coordinates, block access
+      if (!config.geo_latitude || !config.geo_longitude) {
+        setState({ status: 'shop_not_configured' });
         return;
       }
 
@@ -72,6 +74,8 @@ export function GeoGate({ shopId, children }: GeoGateProps) {
       const validation = result as any;
       if (validation.allowed) {
         setState({ status: 'allowed' });
+      } else if (validation.reason === 'shop_not_configured') {
+        setState({ status: 'shop_not_configured' });
       } else {
         setState({
           status: 'denied_outside',
@@ -99,6 +103,22 @@ export function GeoGate({ shopId, children }: GeoGateProps) {
 
   if (state.status === 'allowed') {
     return <>{children}</>;
+  }
+
+  if (state.status === 'shop_not_configured') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center gap-6">
+        <div className="rounded-full bg-destructive/10 p-4">
+          <ShieldAlert className="h-10 w-10 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-xl font-bold">Shop Location Not Configured</h1>
+          <p className="text-muted-foreground max-w-sm">
+            This shop has not configured its location yet. Please contact the shop owner.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (state.status === 'denied_permission') {

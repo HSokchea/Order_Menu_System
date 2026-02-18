@@ -38,7 +38,6 @@ interface RestaurantSettings {
   show_service_charge_on_receipt: boolean;
   allow_multiple_orders_per_table: boolean;
   auto_close_session_after_payment: boolean;
-  geo_enabled: boolean;
   geo_latitude: number | null;
   geo_longitude: number | null;
   geo_radius_meters: number;
@@ -117,7 +116,6 @@ export default function Settings() {
           show_service_charge_on_receipt,
           allow_multiple_orders_per_table,
           auto_close_session_after_payment,
-          geo_enabled,
           geo_latitude,
           geo_longitude,
           geo_radius_meters
@@ -150,7 +148,6 @@ export default function Settings() {
         show_service_charge_on_receipt: restaurant.show_service_charge_on_receipt ?? true,
         allow_multiple_orders_per_table: restaurant.allow_multiple_orders_per_table ?? true,
         auto_close_session_after_payment: restaurant.auto_close_session_after_payment ?? true,
-        geo_enabled: restaurant.geo_enabled ?? false,
         geo_latitude: restaurant.geo_latitude ? Number(restaurant.geo_latitude) : null,
         geo_longitude: restaurant.geo_longitude ? Number(restaurant.geo_longitude) : null,
         geo_radius_meters: Number(restaurant.geo_radius_meters) || 100,
@@ -194,8 +191,8 @@ export default function Settings() {
     setSaving(true);
     try {
       // Validate geo settings
-      if (settings.geo_enabled && (settings.geo_latitude === null || settings.geo_longitude === null)) {
-        toast.error('Please set a location on the map before enabling geo restriction');
+      if (settings.geo_latitude === null || settings.geo_longitude === null) {
+        toast.error('Please set your shop location on the map before saving');
         setSaving(false);
         return;
       }
@@ -221,7 +218,6 @@ export default function Settings() {
           show_service_charge_on_receipt: settings.show_service_charge_on_receipt,
           allow_multiple_orders_per_table: settings.allow_multiple_orders_per_table,
           auto_close_session_after_payment: settings.auto_close_session_after_payment,
-          geo_enabled: settings.geo_enabled,
           geo_latitude: settings.geo_latitude,
           geo_longitude: settings.geo_longitude,
           geo_radius_meters: settings.geo_radius_meters,
@@ -827,10 +823,9 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Geo Restriction Settings */}
+      {/* Shop Location Settings (Mandatory) */}
       <GeoRestrictionSettings
         settings={{
-          geo_enabled: settings.geo_enabled,
           geo_latitude: settings.geo_latitude,
           geo_longitude: settings.geo_longitude,
           geo_radius_meters: settings.geo_radius_meters,
