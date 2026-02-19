@@ -103,7 +103,7 @@ export function GeoRestrictionSettings({ settings, onChange }: GeoRestrictionSet
             ⚠️ You must set a location before QR codes can be generated.
           </div>
         )}
-      </CardContent>
+      </CardContent> 
     </Card>
   );
 }

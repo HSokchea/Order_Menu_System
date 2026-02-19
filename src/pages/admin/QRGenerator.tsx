@@ -519,14 +519,6 @@ const QRGenerator = () => {
                       </div>
                     </div>
 
-                    {/* Menu URL */}
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-sm font-medium mb-2">Table Menu URL</p>
-                      <code className="text-xs bg-background px-2 py-1 rounded border block overflow-x-auto">
-                        {getTableMenuUrl(selectedTable.id)}
-                      </code>
-                    </div>
-
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-3 justify-center">
                       <Button variant="outline" onClick={() => copyUrl(getTableMenuUrl(selectedTable.id))}>

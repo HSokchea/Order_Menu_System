@@ -449,32 +449,79 @@ export default function Settings() {
                   </Dialog>
 
                   <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-                    <DialogContent className="max-w-xs flex flex-col items-center">
-                      <img src={settings.logo_url!} alt="Logo Preview" className="w-48 h-48 rounded-full object-cover border mb-4" />
-                      <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => {
-                            // Download image
-                            const link = document.createElement('a');
-                            link.href = settings.logo_url!;
-                            link.download = 'logo.png';
-                            link.click();
-                          }}
-                        >
-                          <Download className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => setConfirmDeleteOpen(true)}
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
+                    <DialogContent
+                      className="p-0 bg-black/90 shadow-none border-none flex items-center justify-center"
+                      style={{
+                        maxWidth: '100vw',
+                        maxHeight: '100vh',
+                        width: '100vw',
+                        height: '100vh',
+                        background: 'rgba(0,0,0,0.92)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Button
+                        className="absolute top-6 right-6 z-20 bg-black/60 hover:bg-black/20 rounded-full"
+                        onClick={() => setPreviewDialogOpen(false)}
+                        variant="custom"
+                      >
+                        <X className="h-8 w-8 text-white" />
+                      </Button>
+                      <div className="relative flex items-center justify-center w-full h-full">
+                        <img
+                          src={settings.logo_url!}
+                          alt="Logo Preview"
+                          className="max-w-[90vw] max-h-[80vh] rounded-lg object-contain shadow-lg"
+                          style={{ background: 'white' }}
+                        />
+                        <div className="absolute top-6 right-20 flex gap-3 z-20">
+                          <Button
+                            variant="custom"
+                            size="icon"
+                            className="bg-black/60 hover:bg-black/80 text-white"
+                            onClick={async () => {
+                              if (!settings.logo_url) return;
+                              try {
+                                // Get file extension from URL or default to png
+                                const url = settings.logo_url;
+                                const extMatch = url.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i);
+                                const ext = extMatch ? extMatch[1] : 'png';
+                                const filename = `logo.${ext}`;
+
+                                // Fetch as blob for best compatibility
+                                const response = await fetch(url, { mode: 'cors' });
+                                const blob = await response.blob();
+                                const blobUrl = window.URL.createObjectURL(blob);
+
+                                const link = document.createElement('a');
+                                link.href = blobUrl;
+                                link.download = filename;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(blobUrl);
+                              } catch (err) {
+                                toast.error('Failed to download image');
+                              }
+                            }}
+                          >
+                            <Download className="h-8 w-8" />
+                          </Button>
+                          <Button
+                            variant="custom"
+                            size="icon"
+                            className="bg-black/60 hover:bg-black/80 text-white"
+                            onClick={() => setConfirmDeleteOpen(true)}
+                          >
+                            <Trash2 className="h-8 w-8" />
+                          </Button>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
+
                   <ConfirmDialog
                     open={confirmDeleteOpen}
                     onOpenChange={setConfirmDeleteOpen}
