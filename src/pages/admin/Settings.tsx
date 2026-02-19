@@ -79,16 +79,13 @@ export default function Settings() {
   useEffect(() => {
     fetchSettings();
     checkActiveSessions();
+  }, [user]);
+
+  useEffect(() => {
     if (cameraDialogOpen && videoRef.current && cameraStream) {
       videoRef.current.srcObject = cameraStream;
     }
-  }, [user, cameraDialogOpen, cameraStream]);
-
-  // useEffect(() => {
-  //   if (cameraDialogOpen && videoRef.current && cameraStream) {
-  //     videoRef.current.srcObject = cameraStream;
-  //   }
-  // }, [cameraDialogOpen, cameraStream]);
+  }, [cameraDialogOpen, cameraStream]);
 
   const fetchSettings = async () => {
     if (!user) return;
@@ -291,8 +288,45 @@ export default function Settings() {
     }
   };
 
-  const handleRemoveLogo = () => {
+  const handleRemoveLogo = async () => {
+    if (!settings) return;
+    // Delete from storage if it's a Supabase URL
+    if (settings.logo_url) {
+      try {
+        const url = settings.logo_url;
+        const bucketPath = url.split('/menu-images/')[1];
+        if (bucketPath) {
+          await supabase.storage.from('menu-images').remove([decodeURIComponent(bucketPath)]);
+        }
+      } catch (err) {
+        console.error('Failed to delete logo from storage:', err);
+      }
+    }
     setSettings(prev => prev ? { ...prev, logo_url: null } : null);
+    setPreviewDialogOpen(false);
+    setConfirmDeleteOpen(false);
+    toast.success('Logo removed');
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setCameraDialogOpen(false);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx?.drawImage(videoRef.current, 0, 0);
+    const dataUrl = canvas.toDataURL('image/png');
+    stopCamera();
+    setSelectedImage(dataUrl);
+    setCropDialogOpen(true);
   };
 
   if (loading) {
@@ -404,10 +438,13 @@ export default function Settings() {
                         className="text-sm font-regular flex items-center gap-2 w-full px-2 py-1 hover:bg-muted rounded"
                         onClick={async () => {
                           setPopoverOpen(false);
-                          setCameraDialogOpen(true);
-                          // Start camera
-                          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                          setCameraStream(stream);
+                          try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                            setCameraStream(stream);
+                            setCameraDialogOpen(true);
+                          } catch (err) {
+                            toast.error('Could not access camera. Please check permissions.');
+                          }
                         }}
                       >
                         <Camera className="h-4 w-4" /> Take a photo
@@ -531,6 +568,31 @@ export default function Settings() {
                     variant="destructive"
                     onConfirm={handleRemoveLogo}
                   />
+
+                  {/* Camera Dialog */}
+                  <Dialog open={cameraDialogOpen} onOpenChange={(open) => { if (!open) stopCamera(); }}>
+                    <DialogContent className="max-w-sm">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-foreground">Take a Photo</h3>
+                        <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden">
+                          <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={stopCamera}>Cancel</Button>
+                          <Button size="sm" onClick={capturePhoto}>
+                            <Camera className="h-4 w-4 mr-2" />
+                            Capture
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
 
                   {/* Hidden file input */}
                   <input
