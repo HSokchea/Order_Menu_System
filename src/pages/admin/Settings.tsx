@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Loader2, Store, DollarSign, Receipt, Settings2, AlertTriangle, Upload, X, ImageIcon, Camera, Download, Trash2 } from 'lucide-react';
-import { GeoRestrictionSettings, GeoSettings } from '@/components/admin/GeoRestrictionSettings';
+import { WiFiRestrictionSettings, WiFiSettings } from '@/components/admin/WiFiRestrictionSettings';
 import Cropper from 'react-easy-crop';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -38,9 +38,7 @@ interface RestaurantSettings {
   show_service_charge_on_receipt: boolean;
   allow_multiple_orders_per_table: boolean;
   auto_close_session_after_payment: boolean;
-  geo_latitude: number | null;
-  geo_longitude: number | null;
-  geo_radius_meters: number;
+  allowed_public_ips: string | null;
 }
 
 const CURRENCIES = [
@@ -113,9 +111,7 @@ export default function Settings() {
           show_service_charge_on_receipt,
           allow_multiple_orders_per_table,
           auto_close_session_after_payment,
-          geo_latitude,
-          geo_longitude,
-          geo_radius_meters
+          allowed_public_ips
         `)
         .eq('owner_id', user.id)
         .single();
@@ -145,9 +141,7 @@ export default function Settings() {
         show_service_charge_on_receipt: restaurant.show_service_charge_on_receipt ?? true,
         allow_multiple_orders_per_table: restaurant.allow_multiple_orders_per_table ?? true,
         auto_close_session_after_payment: restaurant.auto_close_session_after_payment ?? true,
-        geo_latitude: restaurant.geo_latitude ? Number(restaurant.geo_latitude) : null,
-        geo_longitude: restaurant.geo_longitude ? Number(restaurant.geo_longitude) : null,
-        geo_radius_meters: Number(restaurant.geo_radius_meters) || 100,
+        allowed_public_ips: restaurant.allowed_public_ips || null,
       });
       setOriginalCurrency(restaurant.currency || 'USD');
     } catch (err: any) {
@@ -187,9 +181,9 @@ export default function Settings() {
     console.log('Settings update:', settings);
     setSaving(true);
     try {
-      // Validate geo settings
-      if (settings.geo_latitude === null || settings.geo_longitude === null) {
-        toast.error('Please set your shop location on the map before saving');
+      // Validate WiFi IP settings
+      if (!settings.allowed_public_ips || settings.allowed_public_ips.trim() === '') {
+        toast.error('Please set at least one allowed public IP address before saving');
         setSaving(false);
         return;
       }
@@ -215,9 +209,7 @@ export default function Settings() {
           show_service_charge_on_receipt: settings.show_service_charge_on_receipt,
           allow_multiple_orders_per_table: settings.allow_multiple_orders_per_table,
           auto_close_session_after_payment: settings.auto_close_session_after_payment,
-          geo_latitude: settings.geo_latitude,
-          geo_longitude: settings.geo_longitude,
-          geo_radius_meters: settings.geo_radius_meters,
+          allowed_public_ips: settings.allowed_public_ips,
         } as any)
         .eq('id', settings.id);
       if (error) throw error;
@@ -931,14 +923,12 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Shop Location Settings (Mandatory) */}
-      <GeoRestrictionSettings
+      {/* WiFi Access Restriction Settings (Mandatory) */}
+      <WiFiRestrictionSettings
         settings={{
-          geo_latitude: settings.geo_latitude,
-          geo_longitude: settings.geo_longitude,
-          geo_radius_meters: settings.geo_radius_meters,
+          allowed_public_ips: settings.allowed_public_ips,
         }}
-        onChange={(geo) => setSettings({ ...settings, ...geo })}
+        onChange={(wifi) => setSettings({ ...settings, ...wifi })}
       />
 
       {/* Save Button */}

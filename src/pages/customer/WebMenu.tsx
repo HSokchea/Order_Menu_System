@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useLocalCart, LocalCartItem } from "@/hooks/useLocalCart";
 import ItemDetailSheet, { ItemOptions, SizeOption } from "@/components/customer/ItemDetailSheet";
 import { SelectedOption } from "@/hooks/useCart";
-import { GeoGate } from "@/components/customer/GeoGate";
+import { WiFiGate } from "@/components/customer/WiFiGate";
 
 interface MenuItem {
   id: string;
@@ -252,7 +252,7 @@ const WebMenu = () => {
   const totalItems = getTotalItems();
 
   return (
-    <GeoGate shopId={shopId!}>
+    <WiFiGate shopId={shopId!}>
       <div className="min-h-screen">
         {/* Top Navigation */}
         <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md">
@@ -546,7 +546,7 @@ const WebMenu = () => {
           onAddToCart={handleAddToCartWithOptions}
         />
       </div>
-    </GeoGate>
+    </WiFiGate>
   );
 };
 
