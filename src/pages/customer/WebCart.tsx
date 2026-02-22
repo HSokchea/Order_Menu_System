@@ -106,17 +106,20 @@ const WebCart = () => {
         throw new Error(updateError.message);
       }
 
-      // Step 3: Place the order (moves to history with status='placed')
-      const { data: placeData, error: placeError } = await supabase.rpc('place_device_order', {
-        p_order_id: orderId,
-        p_device_id: deviceId,
+      // Step 3: Place the order via secure edge function (validates WiFi IP)
+      const { data: placeData, error: placeError } = await supabase.functions.invoke('place-order-secure', {
+        body: {
+          order_id: orderId,
+          device_id: deviceId,
+          shop_id: shopId,
+        },
       });
 
       if (placeError) {
         throw new Error(placeError.message);
       }
 
-      const placeResponse = placeData as { success: boolean; error?: string };
+      const placeResponse = placeData as { success: boolean; error?: string; reason?: string };
 
       if (!placeResponse.success) {
         throw new Error(placeResponse.error || 'Failed to place order');
