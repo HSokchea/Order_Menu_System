@@ -232,7 +232,7 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
     await fetchOrCreateOrder();
   }, [fetchOrCreateOrder]);
 
-  // Place order (without payment) - keeps data in tb_order_temporary
+  // Place order (with backend IP validation via edge function)
   const placeOrder = useCallback(async () => {
     if (!order || !deviceId) {
       return { success: false, error: 'No active order' };
@@ -243,19 +243,22 @@ export const useDeviceOrder = (shopId?: string, tableId?: string | null): UseDev
     }
 
     try {
-      const { data, error: placeError } = await supabase.rpc('place_device_order', {
-        p_order_id: order.id,
-        p_device_id: deviceId,
+      // Use the secure edge function that validates IP before placing
+      const { data, error: invokeError } = await supabase.functions.invoke('place-order-secure', {
+        body: {
+          order_id: order.id,
+          device_id: deviceId,
+          shop_id: order.shop_id,
+        },
       });
 
-      if (placeError) {
-        return { success: false, error: placeError.message };
+      if (invokeError) {
+        return { success: false, error: invokeError.message };
       }
 
-      const response = data as { success: boolean; order_id?: string; error?: string; message?: string };
-      
+      const response = data as { success: boolean; order_id?: string; error?: string; reason?: string };
+
       if (response.success) {
-        // Refresh to get the expanded items (order stays in tb_order_temporary)
         await refreshOrder();
       }
 

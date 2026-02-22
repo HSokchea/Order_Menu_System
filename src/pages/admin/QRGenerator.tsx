@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Download, Copy, ExternalLink, QrCode, Store, UtensilsCrossed, Plus, Trash2, MapPin } from 'lucide-react';
+import { Download, Copy, ExternalLink, QrCode, Store, UtensilsCrossed, Plus, Trash2, Wifi } from 'lucide-react';
 import QRCode from 'qrcode';
 import { QRTableCard } from '@/components/admin/QRTableCard';
 import { downloadQRCard, type PaperSize } from '@/lib/qrCardDownloader';
@@ -28,8 +28,7 @@ interface RestaurantData {
   id: string;
   name: string;
   logo_url: string | null;
-  geo_latitude: number | null;
-  geo_longitude: number | null;
+  allowed_public_ips: string | null;
 }
 
 interface TableData {
@@ -65,7 +64,7 @@ const QRGenerator = () => {
 
     const { data: restaurantData } = await supabase
       .from('restaurants')
-      .select('id, name, logo_url, geo_latitude, geo_longitude')
+      .select('id, name, logo_url, allowed_public_ips')
       .eq('owner_id', user.id)
       .single();
 
@@ -264,25 +263,25 @@ const QRGenerator = () => {
     );
   }
 
-  // Block QR generation if location not configured
-  const locationConfigured = restaurant.geo_latitude !== null && restaurant.geo_longitude !== null;
+  // Block QR generation if WiFi IP not configured
+  const ipConfigured = restaurant.allowed_public_ips && restaurant.allowed_public_ips.trim() !== '';
 
-  if (!locationConfigured) {
+  if (!ipConfigured) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center gap-6">
         <div className="rounded-full bg-destructive/10 p-4">
-          <MapPin className="h-10 w-10 text-destructive" />
+          <Wifi className="h-10 w-10 text-destructive" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-xl font-bold">Shop Location Required</h1>
+          <h1 className="text-xl font-bold">WiFi Access Not Configured</h1>
           <p className="text-muted-foreground max-w-sm">
-            You must configure your shop location before generating QR codes.
-            This ensures customers can only order when they are near your shop.
+            You must configure your shop's WiFi public IP before generating QR codes.
+            This ensures customers can only order when connected to your WiFi.
           </p>
         </div>
         <Button onClick={() => navigate('/admin/settings')} className="gap-2">
-          <MapPin className="h-4 w-4" />
-          Set Shop Location
+          <Wifi className="h-4 w-4" />
+          Configure WiFi Access
         </Button>
       </div>
     );

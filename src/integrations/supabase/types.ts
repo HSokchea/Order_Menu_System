@@ -400,6 +400,7 @@ export type Database = {
         Row: {
           address: string | null
           allow_multiple_orders_per_table: boolean | null
+          allowed_public_ips: string | null
           auto_close_session_after_payment: boolean | null
           business_type: string | null
           city: string | null
@@ -432,6 +433,7 @@ export type Database = {
         Insert: {
           address?: string | null
           allow_multiple_orders_per_table?: boolean | null
+          allowed_public_ips?: string | null
           auto_close_session_after_payment?: boolean | null
           business_type?: string | null
           city?: string | null
@@ -464,6 +466,7 @@ export type Database = {
         Update: {
           address?: string | null
           allow_multiple_orders_per_table?: boolean | null
+          allowed_public_ips?: string | null
           auto_close_session_after_payment?: boolean | null
           business_type?: string | null
           city?: string | null
@@ -1156,6 +1159,12 @@ export type Database = {
           table_id: string
           table_number: string
           total_amount: number
+        }[]
+      }
+      get_shop_allowed_ips: {
+        Args: { p_shop_id: string }
+        Returns: {
+          allowed_public_ips: string
         }[]
       }
       get_shop_geo_config: {
