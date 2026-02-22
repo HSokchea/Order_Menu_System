@@ -67,7 +67,7 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
     const initialSelections: Record<string, string | string[]> = {};
     options.forEach(group => {
       if (group.type === 'single') {
-        const defaultValue = group.values.find(v => v.default)?.label || 
+        const defaultValue = group.values.find(v => v.default)?.label ||
           (group.required ? group.values[0]?.label : '');
         if (defaultValue) {
           initialSelections[group.name] = defaultValue;
@@ -381,15 +381,23 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
       <div className="flex flex-col h-full">
         <div className="overflow-y-auto flex-1">
           <ImageSection className="w-full aspect-video" />
-          
+
           <div className="p-4 pb-2 text-left">
-            <h2 className="text-xl font-semibold leading-none tracking-tight">{item.name}</h2>
-            {item.description && (
-              <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-            )}
-            <div className="mt-2">
-              <PriceDisplay />
+            <div className="flex items-start justify-between">
+              <h2 className="text-xl font-semibold leading-none tracking-tight">
+                {item.name}
+              </h2>
+
+              <div className="ml-2">
+                <PriceDisplay />
+              </div>
             </div>
+
+            {item.description && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {item.description}
+              </p>
+            )}
           </div>
 
           <div className="px-4 pb-4 space-y-4">
@@ -428,7 +436,7 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
               {item.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
               )}
-              
+
               {/* Price */}
               <PriceDisplay />
 

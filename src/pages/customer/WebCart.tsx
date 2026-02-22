@@ -40,7 +40,7 @@ const WebCart = () => {
     updateNotes,
     clearCart,
   } = useLocalCart(shopId, tableId);
-
+  console.log('Cart items:', items);
   const { deviceId, isLoaded: deviceIdLoaded } = useDeviceId();
 
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
@@ -117,7 +117,7 @@ const WebCart = () => {
       }
 
       const placeResponse = placeData as { success: boolean; error?: string };
-      
+
       if (!placeResponse.success) {
         throw new Error(placeResponse.error || 'Failed to place order');
       }
@@ -152,31 +152,40 @@ const WebCart = () => {
   return (
     <div className="min-h-screen bg-muted/20">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+      <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md py-1">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" asChild className="mr-2">
+          <div className="flex items-center justify-between relative">
+            {/* Left section - Back button */}
+            <div className="flex items-center flex-1">
+              <Button variant="ghost" className='rounded-full w-8 h-8 mr-2'>
                 <Link to={tableId ? `/menu/${shopId}?table_id=${tableId}` : `/menu/${shopId}`}>
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-              <div>
-                <h1 className="text-xl font-bold text-primary">Your Cart</h1>
-              </div>
+
+              {/* Title inline on lg+ screens */}
+              <h4 className="hidden lg:block text-lg font-bold text-secondary-foreground">Your Cart</h4>
             </div>
+
+            {/* Title centered absolutely on mobile/tablet */}
+            <h4 className="lg:hidden absolute left-1/2 -translate-x-1/2 text-lg font-bold text-secondary-foreground pointer-events-none">
+              Your Cart
+            </h4>
+
+            {/* Right section - Empty for spacing */}
+            <div className="flex-1"></div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-0 md:px-4 lg:px-8 py-6">
         {items.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
-              <p className="text-muted-foreground mb-4">Add some items from the menu</p>
-              <Button asChild>
+          <Card className="border-none shadow-none bg-transparent">
+            <CardContent className="text-center py-12">
+              <ShoppingCart className="h-16 w-16 mx-auto mb-2 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">No Items Available</h2>
+              <p className="text-muted-foreground mb-2">Place an order to view your items.</p>
+              <Button variant='secondary' asChild size='custom' className='rounded-full px-3 py-2'>
                 <Link
                   to={
                     tableId
@@ -184,19 +193,21 @@ const WebCart = () => {
                       : `/menu/${shopId}`
                   }
                 >
-                  Browse Menu
+                  Back to Menu
                 </Link>
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-4 items-start">
+
+            {/* Left Column — Items */}
             <Card className="border-none shadow-none bg-transparent">
-              <CardHeader className="pt-0">
-                <CardTitle className="text-lg font-semibold">Cart Items</CardTitle>
+              <CardHeader className="py-0 pb-3">
+                <CardTitle className="text-lg font-semibold">Item</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {items.map((item) => {
                     const optionsTotal = item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0;
                     const itemTotal = (item.price_usd + optionsTotal) * item.quantity;
@@ -204,13 +215,41 @@ const WebCart = () => {
                     return (
                       <div
                         key={item.id}
-                        className="p-3 rounded-lg border border-border"
+                        className="p-3 rounded-2xl bg-white border border-muted shadow-sm"
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold">{item.name}</h3>
+                        <div className="flex gap-3">
 
-                            {/* Selected Options */}
+                          {/* Image */}
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-20 h-20 object-cover rounded-xl shrink-0"
+                          />
+
+                          {/* Middle Content */}
+                          <div className="flex-1 min-w-0">
+
+                            {/* Top Row */}
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h6 className="font-medium text-sm">{item.name}</h6>
+                                <p className="text-xs text-secondary-foreground/90 font-medium">
+                                  ${(item.price_usd + optionsTotal).toFixed(2)}
+                                </p>
+                              </div>
+
+                              {/* Delete */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="h-8 w-8 p-0 rounded-full text-muted-foreground"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            {/* Options */}
                             {item.options && item.options.length > 0 && (
                               <div className="mt-1 space-y-0.5">
                                 {item.options.map((opt, idx) => (
@@ -218,7 +257,9 @@ const WebCart = () => {
                                     {opt.groupName}: {opt.label}
                                     {opt.price !== 0 && (
                                       <span className={opt.price > 0 ? '' : 'text-green-600'}>
-                                        {' '}({opt.price > 0 ? '+' : ''}{opt.price.toFixed(2)})
+                                        {' '}
+                                        ({opt.price > 0 ? '+' : ''}
+                                        {opt.price.toFixed(2)})
                                       </span>
                                     )}
                                   </p>
@@ -226,46 +267,38 @@ const WebCart = () => {
                               </div>
                             )}
 
-                            <p className="text-sm text-muted-foreground mt-1">
-                              ${(item.price_usd + optionsTotal).toFixed(2)} each
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 bg-white rounded-full border border-input bg-background px-2 py-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                                className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="text-sm font-semibold min-w-[20px] text-center">
-                                {item.quantity}
+                            {/* Quantity */}
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex items-center gap-3 bg-muted rounded-full px-1 py-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                  className="h-6 w-6 p-0 rounded-full hover:bg-muted-foreground/10"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+
+                                <span className="text-sm font-semibold min-w-[20px] text-center">
+                                  {item.quantity}
+                                </span>
+
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                  className="h-6 w-6 p-0 rounded-full bg-transparent hover:bg-muted-foreground/10"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+
+                              {/* Item Total */}
+                              <span className="font-medium text-sm">
+                                ${itemTotal.toFixed(2)}
                               </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                                className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
                             </div>
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="h-9 w-9 p-3 rounded-full text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
                           </div>
-                        </div>
-
-                        <div className="text-right mt-2">
-                          <span className="font-semibold">${itemTotal.toFixed(2)}</span>
                         </div>
                       </div>
                     );
@@ -274,12 +307,12 @@ const WebCart = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-none bg-transparent">
-              <CardHeader className="pt-0">
-                <CardTitle className="text-lg font-semibold">Special Instructions</CardTitle>
+            {/* Note — not sticky, scrolls with page on sm/md */}
+            <Card className="border-none shadow-none bg-transparent lg:hidden">
+              <CardHeader className="py-0 pb-3">
+                <CardTitle className="text-lg font-semibold">Note</CardTitle>
               </CardHeader>
               <CardContent>
-                <Label htmlFor="notes">Notes (optional)</Label>
                 <Textarea
                   id="notes"
                   placeholder="Any special requests or allergies..."
@@ -289,8 +322,8 @@ const WebCart = () => {
                     if (plainText.length <= 500) {
                       updateNotes(plainText);
                     }
-                  }}
-                  className="mt-2 resize-none"
+                  }} 
+                  className="resize bg-white border border-muted shadow-sm rounded-2xl"
                   rows={3}
                   maxLength={500}
                 />
@@ -302,23 +335,64 @@ const WebCart = () => {
               </CardContent>
             </Card>
 
-            <Card className="px-4 border-none shadow-none p-0 bg-transparent">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-center text-lg font-semibold mb-4">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={() => setShowConfirmDialog(true)}
-                  disabled={isProcessing || items.length === 0}
-                >
-                  <Send className="h-5 w-5 mr-2" />
-                  Place Order
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Right Column — sticky bottom on sm/md, sticky top on lg */}
+            <div className="
+  flex flex-col gap-4
+  fixed bottom-0 left-0 right-0 z-50 bg-background p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]
+  lg:static lg:z-auto lg:bg-transparent lg:p-0 lg:shadow-none
+  lg:sticky lg:top-20 lg:self-start
+">
+              {/* Note — only visible on lg inside the right column */}
+              <Card className="border-none shadow-none bg-transparent hidden lg:block">
+                <CardHeader className="py-0 pb-3">
+                  <CardTitle className="text-lg font-semibold">Note</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    id="notes"
+                    placeholder="Any special requests or allergies..."
+                    value={notes}
+                    onChange={(e) => {
+                      const plainText = e.target.value.replace(/<[^>]*>/g, '');
+                      if (plainText.length <= 500) {
+                        updateNotes(plainText);
+                      }
+                    }}
+                    className="resize-none bg-white border border-muted shadow-sm rounded-2xl"
+                    rows={3}
+                    maxLength={500}
+                  />
+                  <div className="flex justify-end mt-1">
+                    <span className={`text-xs ${notes.length >= 450 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {notes.length} / 500
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Total + Place Order — always visible */}
+              <Card className="border-none shadow-none bg-transparent">
+                <CardContent className="p-0 lg:p-6">
+                  <div className="flex justify-between items-center text-sm font-semibold mb-4">
+                    <span>Total</span>
+                    <span className="font-semibold text-sm text-primary">${total.toFixed(2)}</span>
+                  </div>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => setShowConfirmDialog(true)}
+                    disabled={isProcessing || items.length === 0}
+                  >
+                    <Send className="h-5 w-5 mr-2" />
+                    Place Order
+                  </Button>
+                </CardContent>
+              </Card>
+
+            </div>
+
+            {/* Spacer so items aren't hidden behind fixed bottom bar on sm/md */}
+            <div className="h-24 lg:hidden" />
           </div>
         )}
       </main>

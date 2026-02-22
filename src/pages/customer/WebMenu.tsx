@@ -82,7 +82,6 @@ const WebMenu = () => {
         toast.error("Shop not found. The QR code may be invalid.");
         return;
       }
-
       setShop(shopData);
 
       // Fetch menu categories using secure RPC
@@ -196,13 +195,12 @@ const WebMenu = () => {
     const cartItem: LocalCartItem = {
       id: `${item.id}-${Date.now()}`,
       menu_item_id: item.id,
+      image_url: item.image_url,
       name: item.name,
       quantity: 1,
       price_usd: item.price_usd,
     };
-
     addItem(cartItem);
-    toast.success(`${item.name} added to cart`);
   };
 
   // Handle quick remove - LOCAL ONLY, no backend call
@@ -225,12 +223,13 @@ const WebMenu = () => {
     const cartItem: LocalCartItem = {
       id: `${item.id}-${Date.now()}`,
       menu_item_id: item.id,
+      image_url: item.image_url,
       name: item.name,
       quantity,
       price_usd: basePrice,
-      options: selectedOptions?.filter((o) => o.groupName !== "Size"),
+      options: selectedOptions?.filter((o) => o.groupName),
     };
-
+    console.log("Adding to cart:", cartItem);
     addItem(cartItem);
     toast.success(`${quantity}x ${item.name} added to cart`);
   };
@@ -254,299 +253,299 @@ const WebMenu = () => {
 
   return (
     <GeoGate shopId={shopId!}>
-    <div className="min-h-screen">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          {!isSearchExpanded ? (
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-shrink-0 flex items-center gap-3">
-                {shop.logo_url && (
-                  <img src={shop.logo_url} alt={shop.name} className="h-10 w-10 rounded-full object-cover" />
-                )}
-                <h4 className="text-2xl font-bold text-primary">{shop.name}</h4>
-              </div>
+      <div className="min-h-screen">
+        {/* Top Navigation */}
+        <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md">
+          <div className="container mx-auto px-4 py-3">
+            {!isSearchExpanded ? (
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-shrink-0 flex items-center gap-3">
+                  {shop.logo_url && shop.logo_url.trim() !== "" && (
+                    <img src={shop.logo_url} alt={shop.name} className="h-10 w-10 rounded-full object-cover" />
+                  )}
+                  <h4 className="text-lg font-bold text-primary">{shop.name}</h4>
+                </div>
 
-              {/* Desktop Search Field */}
-              <div className="hidden md:flex flex-1 justify-center">
-                <div className="relative max-w-lg w-full">
+                {/* Desktop Search Field */}
+                <div className="hidden md:flex flex-1 justify-center">
+                  <div className="relative max-w-lg w-full">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search menu items..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-8 rounded-full"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Icons */}
+                <div className="flex items-center gap-0 ml-auto md:ml-0">
+                  {/* Mobile Search Icon */}
+                  <Button variant="ghost" size="sm" onClick={handleSearchExpand} className="h-8 w-8 p-0 rounded-full hover:bg-gray-100 md:hidden">
+                    <Search className="h-4 w-4" />
+                  </Button>
+
+                  {/* Active Order Button */}
+                  <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0 rounded-full hover:bg-gray-100">
+                    <Link
+                      to={
+                        tableId
+                          ? `/menu/${shopId}/order?table_id=${tableId}`
+                          : `/menu/${shopId}/order`
+                      }
+                      className="flex items-center justify-center"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                    </Link>
+                  </Button>
+
+                  {/* Bill Button */}
+                  <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0 rounded-full hover:bg-gray-100">
+                    <Link
+                      to={
+                        tableId
+                          ? `/menu/${shopId}/bill?table_id=${tableId}`
+                          : `/menu/${shopId}/bill`
+                      }
+                      className="flex items-center justify-center"
+                    >
+                      <Receipt className="h-4 w-4" />
+                    </Link>
+                  </Button>
+
+                  {/* Cart Icon */}
+                  <Button variant="ghost" size="sm" asChild className="relative h-8 w-8 p-0 rounded-full hover:bg-gray-100">
+                    <Link
+                      to={
+                        tableId
+                          ? `/menu/${shopId}/cart?table_id=${tableId}`
+                          : `/menu/${shopId}/cart`
+                      }
+                      className="flex items-center justify-center"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      {totalItems > 0 && (
+                        <span className="absolute -top-1.5 -right-0.5 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {totalItems > 9 ? "9+" : totalItems}
+                        </span>
+                      )}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* Mobile Search expanded view */
+              <div className="flex items-center gap-3 animate-fade-in md:hidden">
+                <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search menu items..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-8"
+                    className="pl-9 pr-8 rounded-full"
                   />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
-                    >
-                      ×
-                    </button>
-                  )}
                 </div>
-              </div>
-
-              {/* Icons */}
-              <div className="flex items-center gap-2 ml-auto md:ml-0">
-                {/* Mobile Search Icon */}
-                <Button variant="outline" size="sm" onClick={handleSearchExpand} className="h-9 w-9 p-0 md:hidden">
-                  <Search className="h-4 w-4" />
-                </Button>
-
-                {/* Active Order Button */}
-                <Button variant="outline" size="sm" asChild className="h-9 w-9 p-0">
-                  <Link 
-                    to={
-                      tableId
-                        ? `/menu/${shopId}/order?table_id=${tableId}`
-                        : `/menu/${shopId}/order`
-                    }
-                    className="flex items-center justify-center"
-                  >
-                    <ClipboardList className="h-4 w-4" />
-                  </Link>
-                </Button>
-
-                {/* Bill Button */}
-                <Button variant="outline" size="sm" asChild className="h-9 w-9 p-0">
-                  <Link 
-                    to={
-                      tableId
-                        ? `/menu/${shopId}/bill?table_id=${tableId}`
-                        : `/menu/${shopId}/bill`
-                    }
-                    className="flex items-center justify-center"
-                  >
-                    <Receipt className="h-4 w-4" />
-                  </Link>
-                </Button>
-
-                {/* Cart Icon */}
-                <Button variant="outline" size="sm" asChild className="relative h-9 w-9 p-0">
-                  <Link 
-                    to={
-                      tableId
-                        ? `/menu/${shopId}/cart?table_id=${tableId}`
-                        : `/menu/${shopId}/cart`
-                    }
-                    className="flex items-center justify-center"
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                    {totalItems > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {totalItems}
-                      </span>
-                    )}
-                  </Link>
+                <Button variant="outline" size="sm" onClick={handleSearchClose} className="h-10 w-10 p-0 rounded-full flex-shrink-0">
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-          ) : (
-            /* Mobile Search expanded view */
-            <div className="flex items-center gap-3 animate-fade-in md:hidden">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search menu items..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-8"
-                />
-              </div>
-              <Button variant="outline" size="sm" onClick={handleSearchClose} className="h-10 w-10 p-0 flex-shrink-0">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Category Pills */}
-      <div className="sticky top-[61px] z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md">
-        <div className={`container mx-auto pr-0 py-3 transition-all ${isScrolled ? "pl-0" : "pl-4"}`}>
-          <div ref={scrollRef} onScroll={handleScroll} className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {(searchQuery ? categories.filter((cat) => cat.menu_items.length > 0) : filteredCategories).map(
-              (category) => (
-                <Button
-                  key={category.id}
-                  variant={activeCategory === category.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setActiveCategory(category.id)}
-                  className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-regular transition-all"
-                >
-                  {category.name}
-                </Button>
-              ),
             )}
           </div>
-        </div>
-      </div>
+        </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-2 py-2 pb-24">
-        <div className="space-y-8">
-          {filteredCategories.find((cat) => cat.id === activeCategory)?.menu_items &&
-          filteredCategories.find((cat) => cat.id === activeCategory)!.menu_items.length > 0 ? (
-            <div className="grid grid-cols-2 md:flex lg:flex gap-2 md:gap-4 lg:gap-6 justify-start">
-              {filteredCategories
-                .filter((cat) => cat.menu_items.length > 0)
-                .find((cat) => cat.id === activeCategory)
-                ?.menu_items.map((item) => {
-                  const itemCount = getItemCount(item.id);
-                  const hasOptions = item.options?.options && item.options.options.length > 0;
-
-                  // Get display price
-                  const displayPrice = (() => {
-                    if (item.size_enabled && item.sizes && item.sizes.length > 0) {
-                      const defaultSize = item.sizes.find((s) => s.default);
-                      return defaultSize ? defaultSize.price : item.sizes[0].price;
-                    }
-                    return item.price_usd;
-                  })();
-
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => handleItemClick(item)}
-                      className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer ${!item.is_available ? "opacity-50" : ""}`}
-                    >
-                      {/* Product Image */}
-                      <div className="relative h-48 w-48 aspect-square bg-muted rounded-2xl">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className="w-full h-full object-cover rounded-2xl"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-2xl">
-                            <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
-                          </div>
-                        )}
-
-                        {/* Add Button Overlay */}
-                        <div className="absolute bottom-3 right-3">
-                          {itemCount > 0 && !hasOptions ? (
-                            <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-2 py-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => handleQuickRemove(e, item.id)}
-                                className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="text-sm font-semibold min-w-[20px] text-center">{itemCount}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleQuickAdd(item);
-                                }}
-                                disabled={!item.is_available}
-                                className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleItemClick(item);
-                              }}
-                              disabled={!item.is_available}
-                              variant="outline"
-                              size="sm"
-                              className="h-9 w-9 p-0 rounded-full shadow-sm"
-                            >
-                              <Plus className="h-5 w-5" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Card Content */}
-                      <div className="p-3">
-                        <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">
-                          {item.name}
-                        </h6>
-                        <div className="flex items-center justify-between">
-                          <span className="text-primary font-bold text-base md:text-lg">
-                            ${displayPrice.toFixed(2)}
-                          </span>
-                          {!item.is_available && (
-                            <Badge variant="secondary" className="text-xs">
-                              Unavailable
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* Category Pills */}
+        <div className="sticky top-[58px] z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md">
+          <div className={`container mx-auto pr-0 py-3 transition-all ${isScrolled ? "pl-0" : "pl-4"}`}>
+            <div ref={scrollRef} onScroll={handleScroll} className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {(searchQuery ? categories.filter((cat) => cat.menu_items.length > 0) : filteredCategories).map(
+                (category) => (
+                  <Button
+                    key={category.id}
+                    variant={activeCategory === category.id ? "highlight" : "secondary"}
+                    size="custom"
+                    onClick={() => setActiveCategory(category.id)}
+                    className="whitespace-nowrap rounded-full text-sm font-regular transition-all h-8 px-3"
+                  >
+                    {category.name}
+                  </Button>
+                ),
+              )}
             </div>
-          ) : (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
-              <Search className="h-10 w-10 text-muted-foreground mb-3" />
-              <p className="text-muted-foreground text-sm">
-                {searchQuery
-                  ? `No items found matching "${searchQuery}" in this category.`
-                  : "No items in this category."}
-              </p>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Fixed Cart Button */}
-      {totalItems > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4 z-40">
-          <div className="flex gap-3 items-end relative md:justify-center left-0 right-0">
-            <Button
-              variant="custom"
-              className="h-10 bg-white text-white rounded-full shadow-lg flex items-center justify-center w-10"
-              onClick={() => {
-                clearCart();
-                toast.success("Cart cleared");
-              }}
-            >
-              <X className="h-5 w-5 text-muted-foreground" />
-            </Button>
-
-            <Button
-              variant="custom"
-              className="h-10 bg-primary text-white text-sm font-semibold rounded-full shadow-lg flex-1 md:w-1/2 md:flex-none"
-              size="sm"
-              asChild
-            >
-              <Link 
-                to={
-                  tableId
-                    ? `/menu/${shopId}/cart?table_id=${tableId}`
-                    : `/menu/${shopId}/cart`
-                }
-                className="flex items-center justify-center"
-               >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                View Cart ({totalItems}) – ${total.toFixed(2)}
-              </Link>
-            </Button>
           </div>
         </div>
-      )}
 
-      {/* Item Detail Sheet */}
-      <ItemDetailSheet
-        item={selectedItem}
-        open={isItemSheetOpen}
-        onOpenChange={setIsItemSheetOpen}
-        onAddToCart={handleAddToCartWithOptions}
-      />
-    </div>
+        {/* Main Content */}
+        <main className="container mx-auto px-2 py-2 pb-24 overflow-hidden">
+          <div className="space-y-8">
+            {filteredCategories.find((cat) => cat.id === activeCategory)?.menu_items &&
+              filteredCategories.find((cat) => cat.id === activeCategory)!.menu_items.length > 0 ? (
+              <div className="grid grid-cols-2 md:flex lg:flex gap-2 md:gap-4 lg:gap-6 justify-start">
+                {filteredCategories
+                  .filter((cat) => cat.menu_items.length > 0)
+                  .find((cat) => cat.id === activeCategory)
+                  ?.menu_items.map((item) => {
+                    const itemCount = getItemCount(item.id);
+                    const hasOptions = item.options?.options && item.options.options.length > 0;
+
+                    // Get display price
+                    const displayPrice = (() => {
+                      if (item.size_enabled && item.sizes && item.sizes.length > 0) {
+                        const defaultSize = item.sizes.find((s) => s.default);
+                        return defaultSize ? defaultSize.price : item.sizes[0].price;
+                      }
+                      return item.price_usd;
+                    })();
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleItemClick(item)}
+                        className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer ${!item.is_available ? "opacity-50" : ""}`}
+                      >
+                        {/* Product Image */}
+                        <div className="relative h-48 w-48 aspect-square bg-muted rounded-2xl">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className="w-full h-full object-cover rounded-2xl"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/80 rounded-2xl">
+                              <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
+                            </div>
+                          )}
+
+                          {/* Add Button Overlay */}
+                          <div className="absolute bottom-3 right-3">
+                            {itemCount > 0 && !hasOptions ? (
+                              <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-1 py-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => handleQuickRemove(e, item.id)}
+                                  className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <span className="text-sm font-semibold min-w-[20px] text-center">{itemCount}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuickAdd(item);
+                                  }}
+                                  disabled={!item.is_available}
+                                  className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleItemClick(item);
+                                }}
+                                disabled={!item.is_available}
+                                variant="outline"
+                                size="sm"
+                                className="h-9 w-9 p-0 rounded-full shadow-sm"
+                              >
+                                <Plus className="h-5 w-5" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="p-3">
+                          <h6 className="font-medium text-card-foreground text-sm md:text-base line-clamp-2 mb-1">
+                            {item.name}
+                          </h6>
+                          <div className="flex items-center justify-between">
+                            <span className="text-primary font-bold text-base md:text-lg">
+                              ${displayPrice.toFixed(2)}
+                            </span>
+                            {!item.is_available && (
+                              <Badge variant="secondary" className="text-xs">
+                                Unavailable
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+                <Search className="h-10 w-10 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground text-sm">
+                  {searchQuery
+                    ? `No items found matching "${searchQuery}" in this category.`
+                    : "No items in this category."}
+                </p>
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Fixed Cart Button */}
+        {totalItems > 0 && (
+          <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-transparent dark:from-background dark:to-transparent p-4 pt-8 pb-4 z-40">
+            <div className="flex gap-3 items-end relative md:justify-center left-0 right-0">
+              <Button
+                variant="custom"
+                className="h-10 bg-secondary-foreground rounded-full flex items-center justify-center w-10"
+                onClick={() => {
+                  clearCart();
+                  toast.success("Cart cleared");
+                }}
+              >
+                <X className="h-5 w-5 text-white" />
+              </Button>
+
+              <Button
+                variant="custom"
+                className="h-10 bg-secondary-foreground text-white text-sm font-semibold rounded-full shadow-lg flex-1 md:w-1/2 md:flex-none"
+                size="sm"
+                asChild
+              >
+                <Link
+                  to={
+                    tableId
+                      ? `/menu/${shopId}/cart?table_id=${tableId}`
+                      : `/menu/${shopId}/cart`
+                  }
+                  className="flex items-center justify-center"
+                >
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  View Cart ({totalItems}) – ${total.toFixed(2)}
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Item Detail Sheet */}
+        <ItemDetailSheet
+          item={selectedItem}
+          open={isItemSheetOpen}
+          onOpenChange={setIsItemSheetOpen}
+          onAddToCart={handleAddToCartWithOptions}
+        />
+      </div>
     </GeoGate>
   );
 };

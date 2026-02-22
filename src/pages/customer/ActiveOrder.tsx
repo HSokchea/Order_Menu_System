@@ -77,29 +77,54 @@ const ActiveOrder = () => {
   if (!order) {
     return (
       <div className="min-h-screen bg-muted/20">
-        <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+        <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md py-1">
           <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" asChild>
-                <Link to={menuUrl}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Link>
-              </Button>
-              <h1 className="text-xl font-bold text-primary">Order Status</h1>
+            <div className="flex items-center justify-between relative">
+
+              {/* Left section */}
+              <div className="flex items-center flex-1 gap-2">
+                <Button variant="ghost" className="rounded-full w-8 h-8" asChild>
+                  <Link to={menuUrl}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Link>
+                </Button>
+
+                {/* Title + shop (inline on lg+) */}
+                <div className="hidden lg:block">
+                  <h4 className="text-lg font-bold text-secondary-foreground">
+                    Order Status
+                  </h4>
+                  {shop && (
+                    <p className="text-xs text-muted-foreground leading-tight">
+                      {shop.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Center title (mobile/tablet) */}
+              <div className="lg:hidden absolute left-1/2 -translate-x-1/2 text-center pointer-events-none">
+                <h4 className="text-lg font-bold text-secondary-foreground">
+                  Order Status
+                </h4>
+                {shop && (
+                  <p className="text-xs text-muted-foreground leading-tight">
+                    {shop.name}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </header>
 
         <main className="container mx-auto px-4 py-8">
-          <Card>
+          <Card className="border-none shadow-none bg-transparent">
             <CardContent className="text-center py-12">
-              <Clock className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-xl font-semibold mb-2">No Active Order</h2>
-              <p className="text-muted-foreground mb-6">
-                {error || "You don't have any active orders at the moment."}
-              </p>
-              <Button asChild>
-                <Link to={menuUrl}>Browse Menu</Link>
+              <Clock className="h-16 w-16 mx-auto mb-2 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">No Active Order</h2>
+              <p className="text-muted-foreground mb-2">You don't have any active orders at the moment.</p>
+              <Button variant='secondary' asChild size='custom' className='rounded-full px-3 py-2'>
+                <Link to={menuUrl}>Back to Menu</Link>
               </Button>
             </CardContent>
           </Card>
@@ -132,27 +157,57 @@ const ActiveOrder = () => {
   return (
     <div className="min-h-screen bg-muted/20">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+      <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md py-1">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" asChild>
+          <div className="flex items-center justify-between relative">
+
+            {/* Left section */}
+            <div className="flex items-center flex-1 gap-2">
+              <Button variant="ghost" className="rounded-full w-8 h-8" asChild>
                 <Link to={menuUrl}>
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-              <div>
-                <h1 className="text-xl font-bold text-primary">Order Status</h1>
-                {shop && <p className="text-sm text-muted-foreground">{shop.name}</p>}
+
+              {/* Title + shop (inline on lg+) */}
+              <div className="hidden lg:block">
+                <h4 className="text-lg font-bold text-secondary-foreground">
+                  Order Status
+                </h4>
+                {shop && (
+                  <p className="text-xs text-muted-foreground leading-tight">
+                    {shop.name}
+                  </p>
+                )}
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={refetch}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+
+            {/* Center title (mobile/tablet) */}
+            <div className="lg:hidden absolute left-1/2 -translate-x-1/2 text-center pointer-events-none">
+              <h4 className="text-lg font-bold text-secondary-foreground">
+                Order Status
+              </h4>
+              {shop && (
+                <p className="text-xs text-muted-foreground leading-tight">
+                  {shop.name}
+                </p>
+              )}
+            </div>
+
+            {/* Right section */}
+            <div className="flex items-center justify-end flex-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refetch}
+                className="rounded-full w-8 h-8 p-0"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
-
       <main className="container mx-auto px-4 py-6 space-y-4">
         {/* Order Status Card */}
         <Card>
@@ -165,7 +220,7 @@ const ActiveOrder = () => {
                 {status.label}
               </Badge>
               <p className="text-muted-foreground">{status.description}</p>
-              
+
               {/* Order Type & Table */}
               <div className="flex items-center gap-2 mt-4">
                 {order.order_type === 'dine_in' ? (
@@ -198,8 +253,8 @@ const ActiveOrder = () => {
             <div className="space-y-4">
               {/* Ready Items */}
               {readyItems.length > 0 && (
-                <ItemSection 
-                  title="Ready" 
+                <ItemSection
+                  title="Ready"
                   icon={<CheckCircle2 className="h-4 w-4 text-green-600" />}
                   items={readyItems}
                   statusClass="text-green-600"
@@ -208,8 +263,8 @@ const ActiveOrder = () => {
 
               {/* Preparing Items */}
               {preparingItems.length > 0 && (
-                <ItemSection 
-                  title="Preparing" 
+                <ItemSection
+                  title="Preparing"
                   icon={<ChefHat className="h-4 w-4 text-orange-600" />}
                   items={preparingItems}
                   statusClass="text-orange-600"
@@ -218,8 +273,8 @@ const ActiveOrder = () => {
 
               {/* Pending Items */}
               {pendingItems.length > 0 && (
-                <ItemSection 
-                  title="Pending" 
+                <ItemSection
+                  title="Pending"
                   icon={<Clock className="h-4 w-4 text-muted-foreground" />}
                   items={pendingItems}
                   statusClass="text-muted-foreground"
@@ -228,8 +283,8 @@ const ActiveOrder = () => {
 
               {/* Rejected Items - with strikethrough */}
               {rejectedItems.length > 0 && (
-                <ItemSection 
-                  title="Rejected" 
+                <ItemSection
+                  title="Rejected"
                   icon={<XCircle className="h-4 w-4 text-red-500" />}
                   items={rejectedItems}
                   statusClass="text-red-500 line-through"
@@ -238,23 +293,23 @@ const ActiveOrder = () => {
               )}
             </div>
 
-              {/* Special Requests per Round */}
-              {specialRequests.length > 0 && (
-                <>
-                  <Separator className="my-4" />
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium">Special Instructions</p>
-                    {specialRequests.map((req) => (
-                      <div key={req.roundNumber} className="bg-muted/50 rounded-lg p-3">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                          Round {req.roundNumber}
-                        </p>
-                        <p className="text-sm text-muted-foreground italic">"{req.note}"</p>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+            {/* Special Requests per Round */}
+            {specialRequests.length > 0 && (
+              <>
+                <Separator className="my-4" />
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Special Instructions</p>
+                  {specialRequests.map((req) => (
+                    <div key={req.roundNumber} className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                        Round {req.roundNumber}
+                      </p>
+                      <p className="text-sm text-muted-foreground italic">"{req.note}"</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -270,7 +325,7 @@ const ActiveOrder = () => {
                 * Total excludes rejected items
               </p>
             )}
-            
+
             <div className="space-y-2">
               <Button variant="outline" className="w-full" asChild>
                 <Link to={billUrl}>

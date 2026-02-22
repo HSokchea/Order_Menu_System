@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 export interface LocalCartItem {
   id: string;
   menu_item_id: string;
+  image_url: string;
   name: string;
   quantity: number;
   price_usd: number;

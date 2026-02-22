@@ -28,29 +28,40 @@ const Bill = () => {
   if (!order) {
     return (
       <div className="min-h-screen bg-muted/20">
-        <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
+        <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md py-1">
           <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" asChild>
-                <Link to={menuUrl}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Link>
-              </Button>
-              <h1 className="text-xl font-bold text-primary">Bill</h1>
+            <div className="flex items-center justify-between relative">
+              {/* Left section - Back button */}
+              <div className="flex items-center flex-1">
+                <Button variant="ghost" className='rounded-full w-8 h-8 mr-2'>
+                  <Link to={menuUrl}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Link>
+                </Button>
+
+                {/* Title inline on lg+ screens */}
+                <h4 className="hidden lg:block text-lg font-bold text-secondary-foreground">Bill</h4>
+              </div>
+
+              {/* Title centered absolutely on mobile/tablet */}
+              <h4 className="lg:hidden absolute left-1/2 -translate-x-1/2 text-lg font-bold text-secondary-foreground pointer-events-none">
+                Bill
+              </h4>
+
+              {/* Right section - Empty for spacing */}
+              <div className="flex-1"></div>
             </div>
           </div>
         </header>
 
         <main className="container mx-auto px-4 py-8">
-          <Card>
+          <Card className="border-none shadow-none bg-transparent">
             <CardContent className="text-center py-12">
-              <Receipt className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-xl font-semibold mb-2">No Bill Available</h2>
-              <p className="text-muted-foreground mb-6">
-                {error || "Place an order to view your bill."}
-              </p>
-              <Button asChild>
-                <Link to={menuUrl}>Browse Menu</Link>
+              <Receipt className="h-16 w-16 mx-auto mb-2 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">No Bill Available</h2>
+              <p className="text-muted-foreground mb-2">Place an order to view your bill.</p>
+              <Button variant='secondary' asChild size='custom' className='rounded-full px-3 py-2'>
+                <Link to={menuUrl}>Back to Menu</Link>
               </Button>
             </CardContent>
           </Card>
@@ -175,7 +186,7 @@ const Bill = () => {
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
-              
+
               {/* Future: Tax, Service Charge, etc. can be added here */}
 
               <Separator className="my-2" />
@@ -184,7 +195,7 @@ const Bill = () => {
                 <span>Total</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
-              
+
               <p className="text-xs text-center text-muted-foreground mt-2">
                 {shop?.currency || 'USD'}
               </p>

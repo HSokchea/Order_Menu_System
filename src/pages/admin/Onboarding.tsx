@@ -249,7 +249,6 @@ const Onboarding = () => {
                 ) : (
                   <div className="w-32 h-32 border-2 border-dashed border-border rounded-full flex flex-col items-center justify-center bg-muted/20">
                     <ImageIcon className="h-8 w-8 text-muted-foreground mb-1" />
-                    <p className="text-xs text-muted-foreground">No logo</p>
                   </div>
                 )}
                 <Button

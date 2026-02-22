@@ -305,7 +305,7 @@ export default function Settings() {
     setSettings(prev => prev ? { ...prev, logo_url: null } : null);
     setPreviewDialogOpen(false);
     setConfirmDeleteOpen(false);
-    toast.success('Logo removed');
+    toast.success('Logo has been removed successfully.');
   };
 
   const stopCamera = () => {
@@ -409,7 +409,6 @@ export default function Settings() {
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-muted/20">
                         <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
-                        <span className="text-sm text-muted-foreground">No logo</span>
                       </div>
                     )}
                   </div>
