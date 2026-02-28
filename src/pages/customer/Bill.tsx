@@ -88,14 +88,13 @@ const Bill = () => {
       <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" className="rounded-full w-8 h-8" asChild>
               <Link to={orderUrl}>
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
             <div>
-              <h1 className="text-xl font-bold text-primary">Bill</h1>
-              {shop && <p className="text-sm text-muted-foreground">{shop.name}</p>}
+              <h1 className="text-xl font-bold text-secondary-foreground">Bill</h1>
             </div>
           </div>
         </div>

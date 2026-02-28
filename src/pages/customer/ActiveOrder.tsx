@@ -94,11 +94,6 @@ const ActiveOrder = () => {
                   <h4 className="text-lg font-bold text-secondary-foreground">
                     Order Status
                   </h4>
-                  {shop && (
-                    <p className="text-xs text-muted-foreground leading-tight">
-                      {shop.name}
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -107,11 +102,6 @@ const ActiveOrder = () => {
                 <h4 className="text-lg font-bold text-secondary-foreground">
                   Order Status
                 </h4>
-                {shop && (
-                  <p className="text-xs text-muted-foreground leading-tight">
-                    {shop.name}
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -174,11 +164,6 @@ const ActiveOrder = () => {
                 <h4 className="text-lg font-bold text-secondary-foreground">
                   Order Status
                 </h4>
-                {shop && (
-                  <p className="text-xs text-muted-foreground leading-tight">
-                    {shop.name}
-                  </p>
-                )}
               </div>
             </div>
 
@@ -187,11 +172,6 @@ const ActiveOrder = () => {
               <h4 className="text-lg font-bold text-secondary-foreground">
                 Order Status
               </h4>
-              {shop && (
-                <p className="text-xs text-muted-foreground leading-tight">
-                  {shop.name}
-                </p>
-              )}
             </div>
 
             {/* Right section */}

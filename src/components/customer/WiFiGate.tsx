@@ -85,7 +85,7 @@ export function WiFiGate({ shopId, children }: WiFiGateProps) {
           <Wifi className="h-10 w-10 text-destructive" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-xl font-bold">Connect to Shop WiFi</h1>
+          <h1 className="text-xl font-bold">Connect to Shop WiFi First</h1>
           <p className="text-muted-foreground max-w-sm">
             You must connect to the shop's WiFi network to access the ordering page.
           </p>
