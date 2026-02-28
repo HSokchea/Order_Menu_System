@@ -388,7 +388,7 @@ const WebMenu = () => {
           <div className="space-y-8">
             {filteredCategories.find((cat) => cat.id === activeCategory)?.menu_items &&
               filteredCategories.find((cat) => cat.id === activeCategory)!.menu_items.length > 0 ? (
-              <div className="grid grid-cols-2 md:flex lg:flex gap-2 md:gap-4 lg:gap-6 justify-start">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4 lg:gap-6">
                 {filteredCategories
                   .filter((cat) => cat.menu_items.length > 0)
                   .find((cat) => cat.id === activeCategory)
