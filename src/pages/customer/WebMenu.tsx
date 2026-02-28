@@ -227,7 +227,7 @@ const WebMenu = () => {
       name: item.name,
       quantity,
       price_usd: basePrice,
-      options: selectedOptions?.filter((o) => o.groupName),
+      options: selectedOptions?.filter((o) => o.groupName !== 'Size'),
     };
     console.log("Adding to cart:", cartItem);
     addItem(cartItem);
