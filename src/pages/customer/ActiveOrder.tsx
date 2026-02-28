@@ -133,6 +133,10 @@ const ActiveOrder = () => {
   const groupedItems = groupOrderItems(order.items);
   const total = calculateOrderTotal(order.items);
 
+   // Generate order short ID from last 4 digits of created_at timestamp
+  const match = order.created_at.match(/\.(\d+)/);
+  const shortId = `#${match[1].slice(-4)}`;
+
   // Group by item status for visual sections
   const pendingItems = groupedItems.filter(g => g.status === 'pending');
   const preparingItems = groupedItems.filter(g => g.status === 'preparing');
@@ -208,11 +212,13 @@ const ActiveOrder = () => {
                     <Utensils className="h-4 w-4" />
                     <span>Dine In</span>
                     {order.table_number && <span>• Table {order.table_number}</span>}
+                    <span>• Order {shortId}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <ShoppingBag className="h-4 w-4" />
                     <span>Takeaway</span>
+                    <span>• Order {shortId}</span>
                   </div>
                 )}
               </div>
