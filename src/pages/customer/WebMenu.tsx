@@ -412,7 +412,7 @@ const WebMenu = () => {
                         className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer ${!item.is_available ? "opacity-50" : ""}`}
                       >
                         {/* Product Image */}
-                        <div className="relative h-48 w-48 aspect-square bg-muted rounded-2xl">
+                        <div className="relative w-full aspect-square bg-muted rounded-2xl">
                           {item.image_url ? (
                             <img
                               src={item.image_url}
