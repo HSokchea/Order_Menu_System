@@ -151,7 +151,7 @@ const ActiveOrder = () => {
       <StickyHeader
         menuUrl={menuUrl}
         title={`Order ${shortId}`}
-        subtitle={`${orderTypeLabel} • ${format(new Date(order.created_at), 'h:mm a')}`}
+        subtitle={`${orderTypeLabel} • ${format(new Date(order.created_at), 'MMM d, yyyy • h:mm a')}`}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
         onCopy={() => copyOrderId(order.id)}
@@ -198,7 +198,7 @@ const ActiveOrder = () => {
       </main>
 
       {/* ── Sticky Bottom Summary Bar ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_-4px_hsl(var(--foreground)/0.06)]">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg">
         <div className="mx-auto max-w-2xl px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-muted-foreground">Total ({rounds.length} round{rounds.length !== 1 ? 's' : ''})</span>
@@ -242,7 +242,7 @@ interface StickyHeaderProps {
 
 const StickyHeader = ({ menuUrl, title, subtitle, onRefresh, isRefreshing, onCopy, copied }: StickyHeaderProps) => (
   <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
-    <div className="mx-auto max-w-2xl px-4 py-3">
+    <div className="container mx-auto px-4 py-2">
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 -ml-2" asChild>
           <Link to={menuUrl}>
@@ -319,7 +319,7 @@ const OrderRoundSection = forwardRef<HTMLDivElement, OrderRoundSectionProps>(
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-foreground">Round {round.roundNumber}</span>
               <span className="text-xs text-muted-foreground">
-                {format(new Date(round.timestamp), 'h:mm a')}
+                {format(new Date(round.timestamp), 'MMM d, yyyy • h:mm a')}
               </span>
             </div>
           </div>
