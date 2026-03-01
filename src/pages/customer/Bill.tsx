@@ -2,10 +2,11 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Receipt, Utensils, ShoppingBag } from 'lucide-react';
+import { Receipt, Utensils, ShoppingBag } from 'lucide-react';
 import { useActiveOrder } from '@/hooks/useActiveOrder';
 import { groupOrderItems, calculateOrderTotal, groupItemsIntoRounds } from '@/types/order';
 import { format } from 'date-fns';
+import StickyHeader from '@/components/customer/StickyHeader';
 
 const Bill = () => {
   const { shopId } = useParams();
@@ -28,31 +29,7 @@ const Bill = () => {
   if (!order) {
     return (
       <div className="min-h-screen bg-muted/20">
-        <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md py-1">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between relative">
-              {/* Left section - Back button */}
-              <div className="flex items-center flex-1">
-                <Button variant="ghost" className='rounded-full w-8 h-8 mr-2'>
-                  <Link to={menuUrl}>
-                    <ArrowLeft className="h-4 w-4" />
-                  </Link>
-                </Button>
-
-                {/* Title inline on lg+ screens */}
-                <h4 className="hidden lg:block text-lg font-bold text-secondary-foreground">Bill</h4>
-              </div>
-
-              {/* Title centered absolutely on mobile/tablet */}
-              <h4 className="lg:hidden absolute left-1/2 -translate-x-1/2 text-lg font-bold text-secondary-foreground pointer-events-none">
-                Bill
-              </h4>
-
-              {/* Right section - Empty for spacing */}
-              <div className="flex-1"></div>
-            </div>
-          </div>
-        </header>
+        <StickyHeader backUrl={menuUrl} title="Bill" />
 
         <main className="container mx-auto px-4 py-8">
           <Card className="border-none shadow-none bg-transparent">
@@ -84,21 +61,7 @@ const Bill = () => {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" className="rounded-full w-8 h-8" asChild>
-              <Link to={orderUrl}>
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold text-secondary-foreground">Bill</h1>
-            </div>
-          </div>
-        </div>
-      </header>
+      <StickyHeader backUrl={orderUrl} title="Bill" />
 
       <main className="container mx-auto px-4 py-6">
         {/* Receipt Style Card */}
@@ -185,8 +148,6 @@ const Bill = () => {
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
-
-              {/* Future: Tax, Service Charge, etc. can be added here */}
 
               <Separator className="my-2" />
 

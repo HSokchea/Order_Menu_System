@@ -2,7 +2,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  ArrowLeft, RefreshCw, Clock, ChefHat, CheckCircle2, XCircle,
+  RefreshCw, Clock, ChefHat, CheckCircle2, XCircle,
   Copy, Check, Receipt, Plus, ChevronDown, ChevronUp, MessageSquare,
 } from 'lucide-react';
 import { useActiveOrder } from '@/hooks/useActiveOrder';
@@ -11,8 +11,9 @@ import { computeRoundStatus, computeGlobalStatus } from '@/types/roundStatus';
 import type { GroupedOrderItem, OrderRound } from '@/types/order';
 import type { RoundStatus } from '@/types/roundStatus';
 import { format } from 'date-fns';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
+import StickyHeader from '@/components/customer/StickyHeader';
 
 // ── Horizontal Timeline Steps ───────────────────────────────────
 const ROUND_TIMELINE = [
@@ -87,7 +88,6 @@ const ActiveOrder = () => {
     const toCollapse = new Set<number>();
     rounds.forEach((r, idx) => {
       const status = computeRoundStatus(r.items);
-      // Collapse if not the first in the reversed array (latest) and completed/rejected
       if (idx > 0 && (status === 'ready' || status === 'completed' || status === 'rejected')) {
         toCollapse.add(r.roundNumber);
       }
@@ -121,7 +121,7 @@ const ActiveOrder = () => {
   if (!order) {
     return (
       <div className="min-h-screen bg-background">
-        <StickyHeader menuUrl={menuUrl} onRefresh={handleRefresh} isRefreshing={isRefreshing} />
+        <StickyHeader backUrl={menuUrl} title="Track Order" />
         <main className="mx-auto max-w-2xl px-4 py-16 text-center">
           <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
             <Clock className="h-7 w-7 text-muted-foreground" />
@@ -149,24 +149,27 @@ const ActiveOrder = () => {
     <div className="min-h-screen bg-background pb-28">
       {/* ── Sticky Header ── */}
       <StickyHeader
-        menuUrl={menuUrl}
-        title={`Order ${shortId}`}
-        subtitle={`${orderTypeLabel} • ${format(new Date(order.created_at), 'MMM d, yyyy • h:mm a')}`}
+        backUrl={menuUrl}
+        title="Track Order"
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
-        onCopy={() => copyOrderId(order.id)}
-        copied={copied}
       />
 
       <main className="mx-auto max-w-2xl px-4 py-5 space-y-4">
-        {/* ── Global Status & Auto-updating ── */}
+        {/* ── Order Info Card ── */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
-            </span>
-            <span className="text-xs text-muted-foreground">Auto-updating</span>
+          <div>
+            <button onClick={() => copyOrderId(order.id)} className="inline-flex items-center gap-1.5 group">
+              <h2 className="text-lg font-semibold text-foreground">Order {shortId}</h2>
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-success flex-shrink-0" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              )}
+            </button>
+            <p className="text-sm text-muted-foreground">
+              {orderTypeLabel} • {format(new Date(order.created_at), 'MMM d, yyyy • h:mm a')}
+            </p>
           </div>
           <span className={cn(
             'text-xs font-medium px-2.5 py-1 rounded-full',
@@ -176,6 +179,15 @@ const ActiveOrder = () => {
           )}>
             {globalStatus}
           </span>
+        </div>
+
+        {/* ── Auto-updating indicator ── */}
+        <div className="flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+          </span>
+          <span className="text-xs text-muted-foreground">Auto-updating</span>
         </div>
 
         {/* ── Round Sections ── */}
@@ -229,56 +241,7 @@ const ActiveOrder = () => {
   );
 };
 
-// ── Sticky Header ───────────────────────────────────────────────
-interface StickyHeaderProps {
-  menuUrl: string;
-  title?: string;
-  subtitle?: string;
-  onRefresh: () => void;
-  isRefreshing: boolean;
-  onCopy?: () => void;
-  copied?: boolean;
-}
-
-const StickyHeader = ({ menuUrl, title, subtitle, onRefresh, isRefreshing, onCopy, copied }: StickyHeaderProps) => (
-  <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
-    <div className="container mx-auto px-4 py-2">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 -ml-2" asChild>
-          <Link to={menuUrl}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-
-        {title ? (
-          <div className="text-center flex-1 min-w-0">
-            <button onClick={onCopy} className="inline-flex items-center gap-1.5 group">
-              <h1 className="text-base font-semibold text-foreground truncate">{title}</h1>
-              {copied ? (
-                <Check className="h-3 w-3 text-success flex-shrink-0" />
-              ) : (
-                <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-              )}
-            </button>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-          </div>
-        ) : (
-          <div className="flex-1 text-center">
-            <h1 className="text-base font-semibold text-foreground">Order Status</h1>
-          </div>
-        )}
-
-        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 -mr-2" onClick={onRefresh}>
-          <RefreshCw className={cn('h-4 w-4 transition-transform', isRefreshing && 'animate-spin')} />
-        </Button>
-      </div>
-    </div>
-  </header>
-);
-
 // ── Order Round Section ─────────────────────────────────────────
-import { forwardRef } from 'react';
-
 interface OrderRoundSectionProps {
   round: OrderRound;
   isCollapsed: boolean;
@@ -293,7 +256,6 @@ const OrderRoundSection = forwardRef<HTMLDivElement, OrderRoundSectionProps>(
     const isReady = roundStatus === 'ready' || roundStatus === 'completed';
     const groupedItems = groupOrderItems(round.items);
 
-    // Group items by status for display
     const itemsByStatus = {
       ready: groupedItems.filter(g => g.status === 'ready'),
       preparing: groupedItems.filter(g => g.status === 'preparing'),
@@ -310,7 +272,6 @@ const OrderRoundSection = forwardRef<HTMLDivElement, OrderRoundSectionProps>(
           isRejected && 'opacity-75',
         )}
       >
-        {/* Round Header — always visible */}
         <button
           onClick={onToggle}
           className="w-full flex items-center justify-between px-4 py-3.5 text-left"
@@ -348,16 +309,13 @@ const OrderRoundSection = forwardRef<HTMLDivElement, OrderRoundSectionProps>(
           </div>
         </button>
 
-        {/* Collapsible Content */}
         <div className={cn(
           'transition-all duration-300',
           isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100',
         )}>
           <div className="px-4 pb-4 space-y-4">
-            {/* Horizontal Timeline */}
             {!isRejected && <RoundTimeline status={roundStatus} />}
 
-            {/* Rejected message */}
             {isRejected && (
               <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-destructive/5">
                 <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
@@ -365,10 +323,8 @@ const OrderRoundSection = forwardRef<HTMLDivElement, OrderRoundSectionProps>(
               </div>
             )}
 
-            {/* Items grouped by status */}
             <RoundItems itemsByStatus={itemsByStatus} />
 
-            {/* Special Request */}
             {round.specialRequest && (
               <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-muted/40">
                 <MessageSquare className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
@@ -396,7 +352,6 @@ const RoundTimeline = ({ status }: { status: RoundStatus }) => {
 
         return (
           <div key={step.key} className="flex items-center flex-1">
-            {/* Step */}
             <div className="flex flex-col items-center flex-1">
               <div className={cn(
                 'w-5 h-5 rounded-full flex items-center justify-center transition-all duration-500',
@@ -418,7 +373,6 @@ const RoundTimeline = ({ status }: { status: RoundStatus }) => {
               </span>
             </div>
 
-            {/* Connector */}
             {!isLast && (
               <div className={cn(
                 'h-0.5 flex-1 -mx-1 transition-colors duration-500',
