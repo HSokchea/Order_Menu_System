@@ -202,13 +202,7 @@ export function groupItemsIntoRounds(items: StoredOrderItem[], _specialNotes?: s
   }
 
   // Reverse to show most recent round first (descending order)
-  const reversedRounds = rounds.reverse();
-  
-  // Re-number rounds so the most recent is Round 1 display-wise but keep logical numbering
-  // Actually, keep original round numbers but reverse the array order
-  return reversedRounds;
-
-  return rounds;
+  return rounds.reverse();
 }
 
 // Group items within a round for display (by name + options + status)
