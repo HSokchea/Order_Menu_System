@@ -156,32 +156,10 @@ const WebCart = () => {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/95 dark:bg-background/95 backdrop-blur-md py-1">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between relative">
-            {/* Left section - Back button */}
-            <div className="flex items-center flex-1">
-              <Button variant="ghost" className='rounded-full w-8 h-8 mr-2'>
-                <Link to={tableId ? `/menu/${shopId}?table_id=${tableId}` : `/menu/${shopId}`}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Link>
-              </Button>
-
-              {/* Title inline on lg+ screens */}
-              <h4 className="hidden lg:block text-lg font-bold text-secondary-foreground">Your Cart</h4>
-            </div>
-
-            {/* Title centered absolutely on mobile/tablet */}
-            <h4 className="lg:hidden absolute left-1/2 -translate-x-1/2 text-lg font-bold text-secondary-foreground pointer-events-none">
-              Your Cart
-            </h4>
-
-            {/* Right section - Empty for spacing */}
-            <div className="flex-1"></div>
-          </div>
-        </div>
-      </header>
+      <StickyHeader
+        backUrl={tableId ? `/menu/${shopId}?table_id=${tableId}` : `/menu/${shopId}`}
+        title="Your Cart"
+      />
 
       <main className="container mx-auto px-0 md:px-4 lg:px-8 py-6">
         {items.length === 0 ? (
