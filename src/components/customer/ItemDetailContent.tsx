@@ -345,7 +345,7 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
           size="icon"
           onClick={() => setQuantity(Math.max(1, quantity - 1))}
           disabled={quantity <= 1}
-          className="h-10 w-10 rounded-full"
+          className="h-8 w-8 rounded-full"
         >
           <Minus className="h-4 w-4" />
         </Button>
@@ -356,7 +356,7 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
           variant="outline"
           size="icon"
           onClick={() => setQuantity(quantity + 1)}
-          className="h-10 w-10 rounded-full"
+          className="h-8 w-8 rounded-full"
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -366,11 +366,12 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
 
   const AddToCartButton = () => (
     <Button
-      className="w-full h-12 text-base font-semibold"
+      className="w-full text-sm font-semibold"
+      size='sm'
       onClick={handleAddToCart}
       disabled={!isValid}
     >
-      <ShoppingCart className="h-5 w-5 mr-2" />
+      <ShoppingCart className="h-4 w-4 mr-2" />
       Add to Cart – ${totalPrice.toFixed(2)}
     </Button>
   );
@@ -449,7 +450,7 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
           </ScrollArea>
 
           {/* Footer */}
-          <div className="border-t bg-background p-4 space-y-4 shrink-0">
+          <div className="border-t bg-background p-4 space-y-2 shrink-0">
             <QuantitySelector />
             <AddToCartButton />
           </div>

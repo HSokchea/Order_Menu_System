@@ -383,11 +383,11 @@ const WebCart = () => {
                   </div>
                   <Button
                     className="w-full"
-                    size="lg"
+                    size="sm"
                     onClick={() => setShowConfirmDialog(true)}
                     disabled={isProcessing || items.length === 0}
                   >
-                    <Send className="h-5 w-5 mr-2" />
+                    <Send className="h-4 w-4 mr-2" />
                     Place Order
                   </Button>
                 </CardContent>

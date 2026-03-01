@@ -231,11 +231,11 @@ const ActiveOrder = () => {
           {/* Special Requests */}
           {specialRequests.length > 0 && (
             <div className="mt-6 space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Special Instructions</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Note</p>
               {specialRequests.map((req) => (
                 <div key={req.roundNumber} className="bg-muted/40 rounded-xl px-4 py-3">
                   <p className="text-xs font-medium text-muted-foreground mb-0.5">Round {req.roundNumber}</p>
-                  <p className="text-sm text-foreground italic">"{req.note}"</p>
+                  <p className="text-sm text-foreground">{req.note}</p>
                 </div>
               ))}
             </div>
@@ -256,13 +256,13 @@ const ActiveOrder = () => {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="flex-1 rounded-xl h-11" asChild>
+            <Button variant="ghost" size='sm' className="flex-1 rounded-xl bg-muted" asChild>
               <Link to={billUrl}>
                 <Receipt className="h-4 w-4 mr-1.5" />
                 View Bill
               </Link>
             </Button>
-            <Button className="flex-1 rounded-xl h-11" asChild>
+            <Button className="flex-1 rounded-xl" size='sm' asChild>
               <Link to={menuUrl}>
                 <Plus className="h-4 w-4 mr-1.5" />
                 Order More
