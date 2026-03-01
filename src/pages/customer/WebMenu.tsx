@@ -263,7 +263,7 @@ const WebMenu = () => {
                   {shop.logo_url && shop.logo_url.trim() !== "" && (
                     <img src={shop.logo_url} alt={shop.name} className="h-10 w-10 rounded-full object-cover" />
                   )}
-                  <h4 className="text-lg font-bold text-primary">{shop.name}</h4>
+                  <h4 className="text-lg font-bold text-secondary-foreground">{shop.name}</h4>
                 </div>
 
                 {/* Desktop Search Field */}

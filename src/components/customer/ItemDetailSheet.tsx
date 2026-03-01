@@ -36,7 +36,7 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh]">
-          <div className="mt-4 max-h-[calc(90vh-2rem)] overflow-hidden flex flex-col">
+          <div className="mt-4 flex flex-col overflow-y-auto max-h-[calc(90vh-2rem)]">
             <ItemDetailContent
               item={item}
               open={open}
@@ -53,7 +53,7 @@ const ItemDetailSheet = ({ item, open, onOpenChange, onAddToCart }: ItemDetailSh
   // Tablet/Desktop: Use Dialog (modal)
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
+      <DialogContent
         className="max-w-5xl max-h-[85vh] p-0 overflow-hidden flex flex-col gap-0"
         hideCloseButton={false}
       >

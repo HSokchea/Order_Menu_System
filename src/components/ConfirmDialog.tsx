@@ -14,13 +14,15 @@ interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description?: string;
+  description?: React.ReactNode; // string -> React.ReactNode
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: "destructive" | "default";
-  onConfirm: () => void;
+  variant?: "destructive" | "default" | "success"; // add "success"
+  onConfirm?: () => void; // make optional
   onCancel?: () => void;
   loading?: boolean;
+  confirmDisabled?: boolean; // add missing props
+  cancelDisabled?: boolean;
 }
 
 export function ConfirmDialog({
@@ -33,6 +35,8 @@ export function ConfirmDialog({
   variant = "default",
   onConfirm,
   onCancel,
+  confirmDisabled = false,
+  cancelDisabled = false,
   loading = false,
 }: ConfirmDialogProps) {
   const handleCancel = () => {
@@ -41,13 +45,13 @@ export function ConfirmDialog({
   };
 
   const handleConfirm = () => {
-    onConfirm();
+    onConfirm?.();
   };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-xl border-border/50 shadow-xl backdrop-blur-sm bg-background/95 max-w-sm">
-        <AlertDialogHeader>
+      <AlertDialogContent className="rounded-xl border-border/50 shadow-xl backdrop-blur-sm bg-background/95 max-w-sm pb-[env(safe-area-inset-bottom)]">
+        <AlertDialogHeader className="text-left">
           <AlertDialogTitle className="text-lg font-semibold text-foreground">
             {title}
           </AlertDialogTitle>
@@ -57,25 +61,31 @@ export function ConfirmDialog({
             </AlertDialogDescription>
           )}
         </AlertDialogHeader>
-        <AlertDialogFooter className="gap-2 sm:gap-2">
-          <AlertDialogCancel
-            onClick={handleCancel}
-            disabled={loading}
-            className="border-border hover:bg-muted"
-          >
-            {cancelLabel}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            disabled={loading}
-            className={cn(
-              variant === "destructive" &&
+
+        <div className="flex flex-row gap-2 mt-4">
+          {cancelLabel && (
+            <AlertDialogCancel
+              onClick={handleCancel}
+              disabled={cancelDisabled}
+              className="flex-1 m-0 border-border hover:bg-muted"
+            >
+              {cancelLabel}
+            </AlertDialogCancel>
+          )}
+          {confirmLabel && (
+            <AlertDialogAction
+              onClick={handleConfirm}
+              disabled={confirmDisabled}
+              className={cn(
+                "flex-1",
+                variant === "destructive" &&
                 "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            )}
-          >
-            {loading ? "Processing..." : confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+              )}
+            >
+              {confirmLabel}
+            </AlertDialogAction>
+          )}
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );
