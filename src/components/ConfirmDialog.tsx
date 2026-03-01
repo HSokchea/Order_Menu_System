@@ -50,7 +50,7 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-xl border-border/50 shadow-xl backdrop-blur-sm bg-background/95 max-w-sm pb-[env(safe-area-inset-bottom)]">
+      <AlertDialogContent className="rounded-xl border-border/50 shadow-xl backdrop-blur-sm bg-background/95 max-w-[calc(100%-2rem)] sm:max-w-sm mx-auto pb-[env(safe-area-inset-bottom)]">
         <AlertDialogHeader className="text-left">
           <AlertDialogTitle className="text-lg font-semibold text-foreground">
             {title}
