@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 const WebCart = () => {
   const { shopId } = useParams();
@@ -325,7 +326,7 @@ const WebCart = () => {
                     if (plainText.length <= 500) {
                       updateNotes(plainText);
                     }
-                  }} 
+                  }}
                   className="resize bg-white border border-muted shadow-sm rounded-2xl"
                   rows={3}
                   maxLength={500}
@@ -401,34 +402,33 @@ const WebCart = () => {
       </main>
 
       {/* Order Confirmation Dialog */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
-          {!orderPlaced ? (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Order</AlertDialogTitle>
-                <AlertDialogDescription>
-                  You are about to place your order for ${total.toFixed(2)}.
-                  <br /><br />
-                  Once placed, your order will be sent to the kitchen.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handlePlaceOrder} disabled={isProcessing}>
-                  {isProcessing ? 'Placing Order...' : 'Confirm Order'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          ) : (
-            <div className="text-center py-8">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Order Placed!</h2>
-              <p className="text-muted-foreground">Redirecting to your order status...</p>
-            </div>
-          )}
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title={orderPlaced ? "Order Placed!" : "Confirm Order"}
+        description={
+          orderPlaced
+            ? (
+              <div className="text-center py-8">
+                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Order Placed!</h2>
+                <p className="text-muted-foreground">Redirecting to your order status...</p>
+              </div>
+            )
+            : (
+              <>
+                You are about to place your order for ${total.toFixed(2)}. <br />
+                Once placed, your order will be sent to the kitchen.
+              </>
+            )
+        }
+        confirmLabel={orderPlaced ? undefined : (isProcessing ? 'Placing Order...' : 'Confirm Order')}
+        cancelLabel={orderPlaced ? undefined : 'Cancel'}
+        variant={orderPlaced ? 'success' : 'default'}
+        onConfirm={orderPlaced ? undefined : handlePlaceOrder}
+        confirmDisabled={isProcessing || orderPlaced}
+        cancelDisabled={isProcessing || orderPlaced}
+      />
     </div>
   );
 };

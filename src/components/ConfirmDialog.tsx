@@ -50,8 +50,8 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-xl border-border/50 shadow-xl backdrop-blur-sm bg-background/95 w-[calc(100%-2rem)] max-w-sm pb-[env(safe-area-inset-bottom)]">
-        <AlertDialogHeader className="text-left">
+      <AlertDialogContent className="rounded-2xl shadow-xl backdrop-blur-sm bg-background/95 w-[calc(100%-2rem)] max-w-sm p-6 pb-safe">
+        <AlertDialogHeader>
           <AlertDialogTitle className="text-lg font-semibold text-foreground">
             {title}
           </AlertDialogTitle>
@@ -67,7 +67,6 @@ export function ConfirmDialog({
             <AlertDialogCancel
               onClick={handleCancel}
               disabled={cancelDisabled}
-              className="flex-1 m-0 border-border hover:bg-muted"
             >
               {cancelLabel}
             </AlertDialogCancel>
@@ -79,7 +78,7 @@ export function ConfirmDialog({
               className={cn(
                 "flex-1",
                 variant === "destructive" &&
-                "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                "bg-destructive text-destructive-foreground"
               )}
             >
               {confirmLabel}
