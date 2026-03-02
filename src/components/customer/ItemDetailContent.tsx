@@ -373,7 +373,7 @@ const ItemDetailContent = ({ item, open, onAddToCart, onClose, variant = 'mobile
     >
       <ShoppingCart className="h-4 w-4 mr-2" />
       Add to Cart – ${totalPrice.toFixed(2)}
-    </Button>
+    </Button> 
   );
 
   // Mobile Layout (vertical stack)

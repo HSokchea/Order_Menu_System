@@ -146,8 +146,7 @@ const ActiveOrder = () => {
     : 'Takeaway';
 
   return (
-    <div className="min-h-screen bg-background pb-28">
-      {/* ── Sticky Header ── */}
+    <div className="min-h-screen bg-background pb-28 lg:pb-0">
       <StickyHeader
         backUrl={menuUrl}
         title="Track Order"
@@ -155,62 +154,101 @@ const ActiveOrder = () => {
         isRefreshing={isRefreshing}
       />
 
-      <main className="mx-auto max-w-2xl px-4 py-5 space-y-4">
-        {/* ── Order Info Card ── */}
-        <div className="flex items-center justify-between">
-          <div>
-            <button onClick={() => copyOrderId(order.id)} className="inline-flex items-center gap-1.5 group">
-              <h2 className="text-lg font-semibold text-foreground">Order {shortId}</h2>
-              {copied ? (
-                <Check className="h-3.5 w-3.5 text-success flex-shrink-0" />
-              ) : (
-                <Copy className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-              )}
-            </button>
-            <p className="text-sm text-muted-foreground">
-              {orderTypeLabel} • {format(new Date(order.created_at), 'MMM d, yyyy • h:mm a')}
-            </p>
+      <main className="mx-auto max-w-2xl lg:max-w-5xl px-4 py-5 space-y-4">
+        {/* ── Order Info Card + Summary (side by side on large screen) ── */}
+        <div className="flex flex-col lg:flex-row lg:items-start lg:gap-8">
+
+          {/* Left: Order Info + Rounds */}
+          <div className="flex-1 space-y-4">
+            {/* ── Order Info Card ── */}
+            <div className="flex items-center justify-between">
+              <div>
+                <button onClick={() => copyOrderId(order.id)} className="inline-flex items-center gap-1.5 group">
+                  <h2 className="text-lg font-semibold text-foreground">Order {shortId}</h2>
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5 text-success flex-shrink-0" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  )}
+                </button>
+                <p className="text-sm text-muted-foreground">
+                  {orderTypeLabel} • {format(new Date(order.created_at), 'MMM d, yyyy • h:mm a')}
+                </p>
+              </div>
+              <span className={cn(
+                'text-xs font-medium px-2.5 py-1 rounded-full',
+                globalStatus === 'All Ready' && 'bg-success/10 text-success',
+                globalStatus === 'In Progress' && 'bg-primary/10 text-primary',
+                globalStatus === 'Cancelled' && 'bg-destructive/10 text-destructive',
+              )}>
+                {globalStatus}
+              </span>
+            </div>
+
+            {/* ── Auto-updating indicator ── */}
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+              </span>
+              <span className="text-xs text-muted-foreground">Auto-updating</span>
+            </div>
+
+            {/* ── Round Sections ── */}
+            {rounds.map((round) => (
+              <OrderRoundSection
+                key={round.roundNumber}
+                round={round}
+                isCollapsed={collapsedRounds.has(round.roundNumber)}
+                onToggle={() => toggleRound(round.roundNumber)}
+                isHighlighted={highlightRound === round.roundNumber}
+                ref={(el: HTMLDivElement | null) => {
+                  if (el) roundRefs.current.set(round.roundNumber, el);
+                }}
+              />
+            ))}
+
+            {rounds.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">No items in this order.</p>
+            )}
           </div>
-          <span className={cn(
-            'text-xs font-medium px-2.5 py-1 rounded-full',
-            globalStatus === 'All Ready' && 'bg-success/10 text-success',
-            globalStatus === 'In Progress' && 'bg-primary/10 text-primary',
-            globalStatus === 'Cancelled' && 'bg-destructive/10 text-destructive',
-          )}>
-            {globalStatus}
-          </span>
+
+          {/* Right: Summary Card (large screen only) */}
+          <div className="hidden lg:block w-72 shrink-0">
+            <div className="sticky top-20 rounded-2xl bg-muted/20 p-5 space-y-4 shadow-xs">
+              <h3 className="text-sm font-semibold text-foreground">Order Summary</h3>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Total ({rounds.length} round{rounds.length !== 1 ? 's' : ''})
+                </span>
+                <div className="text-right">
+                  <span className="text-lg font-semibold text-foreground">${total.toFixed(2)}</span>
+                  {rejectedCount > 0 && (
+                    <p className="text-[10px] text-muted-foreground">Excludes rejected items</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button variant="ghost" size="sm" className="w-full rounded-xl bg-muted" asChild>
+                  <Link to={billUrl}>
+                    <Receipt className="h-4 w-4 mr-1.5" />
+                    View Bill
+                  </Link>
+                </Button>
+                <Button className="w-full rounded-xl" size="sm" asChild>
+                  <Link to={menuUrl}>
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Order More
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* ── Auto-updating indicator ── */}
-        <div className="flex items-center gap-1.5">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
-          </span>
-          <span className="text-xs text-muted-foreground">Auto-updating</span>
-        </div>
-
-        {/* ── Round Sections ── */}
-        {rounds.map((round) => (
-          <OrderRoundSection
-            key={round.roundNumber}
-            round={round}
-            isCollapsed={collapsedRounds.has(round.roundNumber)}
-            onToggle={() => toggleRound(round.roundNumber)}
-            isHighlighted={highlightRound === round.roundNumber}
-            ref={(el: HTMLDivElement | null) => {
-              if (el) roundRefs.current.set(round.roundNumber, el);
-            }}
-          />
-        ))}
-
-        {rounds.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">No items in this order.</p>
-        )}
       </main>
 
-      {/* ── Sticky Bottom Summary Bar ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg">
+      {/* ── Sticky Bottom Summary Bar (mobile only) ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg lg:hidden">
         <div className="mx-auto max-w-2xl px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-muted-foreground">Total ({rounds.length} round{rounds.length !== 1 ? 's' : ''})</span>

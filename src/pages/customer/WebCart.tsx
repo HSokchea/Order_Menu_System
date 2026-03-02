@@ -10,16 +10,6 @@ import { toast } from 'sonner';
 import { useLocalCart } from '@/hooks/useLocalCart';
 import { useDeviceId } from '@/hooks/useDeviceId';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 const WebCart = () => {
@@ -161,7 +151,7 @@ const WebCart = () => {
         title="Your Cart"
       />
 
-      <main className="container mx-auto px-0 md:px-4 lg:px-8 py-6">
+      <main className="mx-auto max-w-2xl lg:max-w-5xl px-4 py-5 space-y-4">
         {items.length === 0 ? (
           <Card className="border-none shadow-none bg-transparent">
             <CardContent className="text-center py-12">
@@ -182,7 +172,7 @@ const WebCart = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-4 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-0 items-start">
 
             {/* Left Column — Items */}
             <Card className="border-none shadow-none bg-transparent">
