@@ -156,7 +156,7 @@ const ActiveOrder = () => {
 
       <main className="mx-auto max-w-2xl lg:max-w-5xl px-4 py-5 space-y-4">
         {/* ── Order Info Card + Summary (side by side on large screen) ── */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:gap-8">
+        <div className="flex flex-col lg:flex-row lg:gap-8">
 
           {/* Left: Order Info + Rounds */}
           <div className="flex-1 space-y-4">
