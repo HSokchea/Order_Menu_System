@@ -73,7 +73,25 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
           updated_at: response.order.updated_at,
           paid_at: response.order.paid_at || null,
         });
-        setShop(response.shop || null);
+        if (response.shop) {
+          setShop({
+            name: response.shop.name,
+            currency: response.shop.currency || 'USD',
+            logo_url: response.shop.logo_url || null,
+            address: response.shop.address || null,
+            city: response.shop.city || null,
+            country: response.shop.country || null,
+            phone: response.shop.phone || null,
+            vat_tin: response.shop.vat_tin || null,
+            default_tax_percentage: Number(response.shop.default_tax_percentage) || 0,
+            service_charge_percentage: Number(response.shop.service_charge_percentage) || 0,
+            exchange_rate_usd_to_khr: Number(response.shop.exchange_rate_usd_to_khr) || 4100,
+            receipt_header_text: response.shop.receipt_header_text || null,
+            receipt_footer_text: response.shop.receipt_footer_text || null,
+          });
+        } else {
+          setShop(null);
+        }
       } else {
         setOrder(null);
         setError(response.error || null);

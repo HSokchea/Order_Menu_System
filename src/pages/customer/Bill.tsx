@@ -1,200 +1,86 @@
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Receipt, Utensils, ShoppingBag } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 import { useActiveOrder } from '@/hooks/useActiveOrder';
-import { groupOrderItems, calculateOrderTotal, groupItemsIntoRounds } from '@/types/order';
-import { format } from 'date-fns';
+import { calculateOrderTotal } from '@/types/order';
 import StickyHeader from '@/components/customer/StickyHeader';
+import BillHeader from '@/components/bill/BillHeader';
+import BillOrderInfo from '@/components/bill/BillOrderInfo';
+import BillItemsSection from '@/components/bill/BillItemsSection';
+import BillSummary from '@/components/bill/BillSummary';
+import BillFooter from '@/components/bill/BillFooter';
 
 const Bill = () => {
   const { shopId } = useParams();
   const [searchParams] = useSearchParams();
   const tableId = searchParams.get('table_id');
 
-  const { order, shop, isLoading, error } = useActiveOrder(shopId);
+  const { order, shop, isLoading } = useActiveOrder(shopId);
 
   const menuUrl = tableId ? `/menu/${shopId}?table_id=${tableId}` : `/menu/${shopId}`;
   const orderUrl = tableId ? `/menu/${shopId}/order?table_id=${tableId}` : `/menu/${shopId}/order`;
 
+  const formatPrice = (amount: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(amount);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Loading...</p>
+        <p style={{ color: '#999' }}>Loading...</p>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-muted/20">
+      <div className="min-h-screen bg-white">
         <StickyHeader backUrl={menuUrl} title="Bill" />
-
-        <main className="container mx-auto px-4 py-8">
-          <Card className="border-none shadow-none bg-transparent">
-            <CardContent className="text-center py-12">
-              <Receipt className="h-16 w-16 mx-auto mb-2 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">No Bill Available</h2>
-              <p className="text-muted-foreground mb-2">Place an order to view your bill.</p>
-              <Button variant='secondary' asChild size='custom' className='rounded-full px-3 py-2'>
-                <Link to={menuUrl}>Back to Menu</Link>
-              </Button>
-            </CardContent>
-          </Card>
+        <main className="container mx-auto px-4 py-12 text-center">
+          <Receipt className="h-14 w-14 mx-auto mb-3" style={{ color: '#ccc' }} />
+          <h2 className="text-lg font-semibold" style={{ color: '#333' }}>No Bill Available</h2>
+          <p className="text-sm mb-4" style={{ color: '#999' }}>Place an order to view your bill.</p>
+          <Button variant="secondary" asChild size="sm" className="rounded-full px-4">
+            <Link to={menuUrl}>Back to Menu</Link>
+          </Button>
         </main>
       </div>
     );
   }
 
-  // Group items for display and calculate total (excluding rejected)
-  const groupedItems = groupOrderItems(order.items);
-  const activeItems = groupedItems.filter(g => g.status !== 'rejected');
-  const rejectedItems = groupedItems.filter(g => g.status === 'rejected');
   const subtotal = calculateOrderTotal(order.items);
-
-  // Get special requests per round
-  const rounds = groupItemsIntoRounds(order.items);
-  const specialRequests = rounds
-    .filter(r => r.specialRequest)
-    .map(r => ({ roundNumber: r.roundNumber, note: r.specialRequest! }));
+  const isPaid = order.status === 'paid';
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <StickyHeader backUrl={orderUrl} title="Bill" />
+    <div className="min-h-screen bg-white print:bg-white">
+      {/* Hide header when printing */}
+      <div className="print:hidden">
+        <StickyHeader backUrl={orderUrl} title="Bill" />
+      </div>
 
-      <main className="container mx-auto px-4 py-6">
-        {/* Receipt Style Card */}
-        <Card className="max-w-md mx-auto">
-          <CardHeader className="text-center border-b pb-4">
-            {shop && (
-              <div className="mb-2">
-                <h2 className="text-xl font-bold">{shop.name}</h2>
-              </div>
-            )}
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(order.created_at), 'MMMM d, yyyy • h:mm a')}
-            </p>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              {order.order_type === 'dine_in' ? (
-                <div className="flex items-center gap-1 text-sm">
-                  <Utensils className="h-4 w-4" />
-                  <span>Dine In</span>
-                  {order.table_number && <span>• Table {order.table_number}</span>}
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 text-sm">
-                  <ShoppingBag className="h-4 w-4" />
-                  <span>Takeaway</span>
-                </div>
-              )}
-            </div>
-          </CardHeader>
+      <main className="max-w-md mx-auto px-4 py-6 print:px-3 print:py-4 print:max-w-none print:mx-0">
+        <BillHeader shop={shop} />
+        <BillOrderInfo order={order} />
 
-          <CardContent className="pt-4">
-            {/* Active Items */}
-            <div className="space-y-3">
-              {activeItems.map((item, index) => {
-                const optionsTotal = item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0;
-                const itemTotal = (item.price + optionsTotal) * item.count;
+        <div className="border-t" style={{ borderColor: '#ddd' }} />
 
-                return (
-                  <div key={index} className="flex justify-between text-sm">
-                    <div className="flex-1">
-                      <span>{item.count} × {item.name}</span>
-                      {item.options && item.options.length > 0 && (
-                        <div className="text-xs text-muted-foreground ml-4">
-                          {item.options.map((opt, idx) => (
-                            <span key={idx}>
-                              {opt.label}
-                              {idx < item.options!.length - 1 && ', '}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <span>${itemTotal.toFixed(2)}</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Rejected Items (struck through) */}
-            {rejectedItems.length > 0 && (
-              <>
-                <Separator className="my-3" />
-                <div className="space-y-2 opacity-60">
-                  <p className="text-xs text-muted-foreground">Rejected Items:</p>
-                  {rejectedItems.map((item, index) => {
-                    const optionsTotal = item.options?.reduce((sum, opt) => sum + opt.price, 0) || 0;
-                    const itemTotal = (item.price + optionsTotal) * item.count;
-
-                    return (
-                      <div key={index} className="flex justify-between text-sm line-through text-muted-foreground">
-                        <span>{item.count} × {item.name}</span>
-                        <span>${itemTotal.toFixed(2)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
-            <Separator className="my-4" />
-
-            {/* Totals */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-
-              <Separator className="my-2" />
-
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                {shop?.currency || 'USD'}
-              </p>
-            </div>
-
-            {/* Special Requests per Round */}
-            {specialRequests.length > 0 && (
-              <>
-                <Separator className="my-4" />
-                <div className="text-sm space-y-2">
-                  <p className="font-medium">Notes</p>
-                  {specialRequests.map((req) => (
-                    <div key={req.roundNumber} className="bg-muted/50 rounded p-2">
-                      <p className="text-xs font-medium text-muted-foreground">Round {req.roundNumber}</p>
-                      <p className="text-muted-foreground italic">"{req.note}"</p>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            <Separator className="my-4" />
-
-            <p className="text-center text-sm text-muted-foreground">
-              Thank you for your order!
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <div className="max-w-md mx-auto mt-4 space-y-2">
-          <Button variant="outline" className="w-full" asChild>
-            <Link to={orderUrl}>Back to Order Status</Link>
-          </Button>
-          <Button variant="ghost" className="w-full" asChild>
-            <Link to={menuUrl}>Order More Items</Link>
-          </Button>
-        </div>
+        <BillItemsSection items={order.items} formatPrice={formatPrice} />
+        <BillSummary subtotal={subtotal} shop={shop} formatPrice={formatPrice} />
+        <BillFooter isPaid={isPaid} shop={shop} />
       </main>
+
+      {/* Actions — hidden in print */}
+      <div className="max-w-md mx-auto px-4 pb-8 space-y-2 print:hidden">
+        <Button variant="outline" className="w-full" asChild>
+          <Link to={orderUrl}>Back to Order Status</Link>
+        </Button>
+        <Button variant="ghost" className="w-full" asChild>
+          <Link to={menuUrl}>Order More Items</Link>
+        </Button>
+      </div>
     </div>
   );
 };

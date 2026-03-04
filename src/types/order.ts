@@ -54,6 +54,16 @@ export interface ShopInfo {
   name: string;
   currency: string;
   logo_url: string | null;
+  address?: string | null;
+  city?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  vat_tin?: string | null;
+  default_tax_percentage?: number;
+  service_charge_percentage?: number;
+  exchange_rate_usd_to_khr?: number;
+  receipt_header_text?: string | null;
+  receipt_footer_text?: string | null;
 }
 
 // Grouped items for display (group by name + options + status)
