@@ -134,3 +134,35 @@ All colors MUST be HSL.
     -webkit-line-clamp: 2;
   }
 }
+
+/* Print styles for receipt/bill */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 2mm;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 10px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Ensure no page breaks inside receipt blocks */
+  .max-w-md {
+    max-width: none !important;
+    margin: 0 !important;
+    width: 80mm !important;
+  }
+
+  /* Remove shadows, borders, backgrounds */
+  * {
+    box-shadow: none !important;
+  }
+}
