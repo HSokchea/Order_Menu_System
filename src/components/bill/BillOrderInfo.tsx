@@ -36,8 +36,6 @@ const BillOrderInfo = ({ order }: BillOrderInfoProps) => {
         <span style={{ color: '#888' }}>Order ID</span>
         <span>#{order.id.slice(0, 8).toUpperCase()}</span>
       </div>
-
-      <div className="border-t mt-3" style={{ borderColor: '#ddd' }} />
     </div>
   );
 };

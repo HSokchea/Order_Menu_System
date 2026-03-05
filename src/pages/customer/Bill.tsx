@@ -73,11 +73,21 @@ const Bill = () => {
       </main>
 
       {/* Actions — hidden in print */}
-      <div className="max-w-md mx-auto px-4 pb-8 space-y-2 print:hidden">
-        <Button variant="outline" className="w-full" asChild>
+      <div className="max-w-md mx-auto px-4 pb-8 flex gap-2 print:hidden">
+        <Button
+          className="flex-1 rounded-xl"
+          size="sm"
+          asChild
+        >
           <Link to={orderUrl}>Back to Order Status</Link>
         </Button>
-        <Button variant="ghost" className="w-full" asChild>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-1 rounded-xl bg-muted"
+          asChild
+        >
           <Link to={menuUrl}>Order More Items</Link>
         </Button>
       </div>

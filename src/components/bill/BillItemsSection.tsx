@@ -45,8 +45,9 @@ const BillItemsSection = ({ items, formatPrice }: BillItemsSectionProps) => {
       {/* Special request for single round */}
       {rounds.length === 1 && rounds[0].specialRequest && (
         <div className="mt-2 pl-2">
-          <p className="text-xs italic" style={{ color: '#888' }}>
-            - {rounds[0].specialRequest}
+          <p className="text-xs" style={{ color: '#888' }}>
+            <span className='font-medium text-base'>Note:</span>
+            <span>{rounds[0].specialRequest}</span>
           </p>
         </div>
       )}
@@ -94,11 +95,10 @@ const RoundBlock = ({
       </div>
 
       {/* Special request */}
-      {round.specialRequest && (
-        <div className="mt-1.5 pl-2">
-          <p className="text-xs italic" style={{ color: '#888' }}>
-            - {round.specialRequest}
-          </p>
+      {round.specialRequest?.trim() && (
+        <div className="mt-1.5 pl-2 text-xs" style={{ color: '#666' }}>
+          <span className="font-medium">Note:</span>{" "}
+          <span className="italic">{round.specialRequest}</span>
         </div>
       )}
 
