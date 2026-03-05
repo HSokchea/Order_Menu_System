@@ -15,10 +15,10 @@ interface StickyHeaderProps {
 }
 
 const StickyHeader = forwardRef<HTMLElement, StickyHeaderProps>(
-  ({ backUrl, title, onRefresh, isRefreshing, rightSlot }, ref) => (
+  ({ backUrl, title, onRefresh, isRefreshing, rightSlot, className }, ref) => (
     <header
       ref={ref}
-      className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50"
+      className={cn("sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50", className)}
     >
       <div className="container mx-auto px-4 py-2">
         <div className="flex items-center justify-between relative">

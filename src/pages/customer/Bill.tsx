@@ -56,10 +56,7 @@ const Bill = () => {
 
   return (
     <div className="min-h-screen bg-white print:bg-white">
-      {/* Hide header when printing */}
-      <div className="print:hidden">
-        <StickyHeader backUrl={orderUrl} title="Bill" />
-      </div>
+      <StickyHeader backUrl={orderUrl} title="Bill" className="print:hidden" />
 
       <main className="max-w-md mx-auto px-4 py-6 print:px-3 print:py-4 print:max-w-none print:mx-0">
         <BillHeader shop={shop} />
