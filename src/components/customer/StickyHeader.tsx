@@ -11,6 +11,7 @@ interface StickyHeaderProps {
   isRefreshing?: boolean;
   /** Optional right-side slot (e.g. refresh button is default if onRefresh provided) */
   rightSlot?: React.ReactNode;
+  className?: string;
 }
 
 const StickyHeader = forwardRef<HTMLElement, StickyHeaderProps>(
