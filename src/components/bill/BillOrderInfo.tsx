@@ -6,6 +6,8 @@ interface BillOrderInfoProps {
 }
 
 const BillOrderInfo = ({ order }: BillOrderInfoProps) => {
+  const match = order.created_at.match(/\.(\d+)/);
+  const shortId = match ? `#${match[1].slice(-4)}` : `#${order.id.slice(-4)}`;
   const formatOrderType = (type: string) => {
     switch (type) {
       case 'dine_in': return 'Dine In';
@@ -34,7 +36,7 @@ const BillOrderInfo = ({ order }: BillOrderInfoProps) => {
       </div>
       <div className="flex justify-between">
         <span style={{ color: '#888' }}>Order ID</span>
-        <span>#{order.id.slice(0, 8).toUpperCase()}</span>
+        <span>{shortId}</span>
       </div>
     </div>
   );

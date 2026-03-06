@@ -46,7 +46,7 @@ const BillItemsSection = ({ items, formatPrice }: BillItemsSectionProps) => {
       {rounds.length === 1 && rounds[0].specialRequest && (
         <div className="mt-2 pl-2">
           <p className="text-xs" style={{ color: '#888' }}>
-            <span className='font-medium text-base'>Note:</span>
+            <span className='text-base'>Note:</span>
             <span>{rounds[0].specialRequest}</span>
           </p>
         </div>
@@ -148,7 +148,7 @@ const ItemLine = ({
         <div className="pl-4 mt-0.5">
           {item.options.map((opt, idx) => (
             <div key={idx} className="flex justify-between text-xs" style={{ color: '#888' }}>
-              <span>- {opt.label}</span>
+              <span>- {opt.groupName}: {opt.label}</span>
               {opt.price > 0 && <span>+{formatPrice(opt.price)}</span>}
             </div>
           ))}
