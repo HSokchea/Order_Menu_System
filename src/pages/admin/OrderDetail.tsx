@@ -273,6 +273,35 @@ const OrderDetail = () => {
       .eq('id', order.shop_id)
       .single();
 
+    // Group items into rounds (same logic as Bill page) — reverse to get oldest first
+    const orderRounds = groupItemsIntoRounds(order.items, order.customer_notes).reverse();
+
+    // Convert each round into a SessionOrder for the receipt
+    const sessionOrders = orderRounds.map((round, idx) => {
+      const activeItems = round.items.filter(i => i.status !== 'rejected');
+      const roundTotal = activeItems.reduce((sum, i) => {
+        const optTotal = i.options?.reduce((s, o) => s + o.price, 0) || 0;
+        return sum + i.price + optTotal;
+      }, 0);
+
+      return {
+        id: `${order.id}-round-${idx + 1}`,
+        total_usd: roundTotal,
+        status: order.status,
+        created_at: round.timestamp,
+        customer_notes: round.specialRequest || null,
+        items: activeItems.map(i => ({
+          id: i.item_id,
+          quantity: 1,
+          price_usd: i.price,
+          notes: i.options && i.options.length > 0
+            ? JSON.stringify({ selectedOptions: i.options.map(o => ({ group: o.groupName, value: o.label, price: o.price })) })
+            : null,
+          menu_item_name: i.name,
+        })),
+      };
+    });
+
     return {
       session_id: order.id,
       table_id: order.table_id || '',
@@ -298,24 +327,7 @@ const OrderDetail = () => {
       order_type: order.order_type,
       invoice_number: null,
       cashier_name: null,
-      orders: [{
-        id: order.id,
-        total_usd: subtotal,
-        status: order.status,
-        created_at: order.created_at,
-        customer_notes: order.customer_notes,
-        items: order.items
-          .filter(i => i.status !== 'rejected')
-          .map(i => ({
-            id: i.item_id,
-            quantity: 1,
-            price_usd: i.price,
-            notes: i.options && i.options.length > 0
-              ? JSON.stringify({ selectedOptions: i.options.map(o => ({ group: o.groupName, value: o.label, price: o.price })) })
-              : null,
-            menu_item_name: i.name,
-          })),
-      }],
+      orders: sessionOrders,
     };
   };
 
