@@ -1,20 +1,23 @@
 import { format } from 'date-fns';
-import type { ReceiptSession, SessionOrder } from './SessionReceipt';
+import type { ReceiptSession, SessionOrder, OrderItem } from './SessionReceipt';
 
 interface ReceiptItemsSectionProps {
   session: ReceiptSession;
   formatPrice: (amount: number) => string;
 }
 
-interface ParsedOption {
-  group: string;
-  value: string;
-  price: number;
+// Group identical items (same name + notes/options) within an order
+interface GroupedReceiptItem {
+  menu_item_name: string;
+  quantity: number;
+  price_usd: number;
+  size?: string;
+  options: { group: string; value: string; price: number }[];
 }
 
 interface ParsedItemData {
   size?: string;
-  options: ParsedOption[];
+  options: { group: string; value: string; price: number }[];
 }
 
 const parseItemNotes = (notes: string | null): ParsedItemData => {
@@ -29,7 +32,7 @@ const parseItemNotes = (notes: string | null): ParsedItemData => {
 
     if (parsed.selectedOptions && Array.isArray(parsed.selectedOptions)) {
       const sizePattern = /^(S|M|L|XL|XXL|Small|Medium|Large|Extra Large)$/i;
-      result.options = parsed.selectedOptions.filter((opt: ParsedOption) => {
+      result.options = parsed.selectedOptions.filter((opt: any) => {
         if (opt.group?.toLowerCase() === 'size' || sizePattern.test(opt.value)) {
           if (!result.size) result.size = opt.value;
           return false;
@@ -42,6 +45,31 @@ const parseItemNotes = (notes: string | null): ParsedItemData => {
   } catch {
     return { options: [] };
   }
+};
+
+// Group items by name + notes key (same as Bill groups by name + options)
+const groupOrderItems = (items: OrderItem[]): GroupedReceiptItem[] => {
+  const groups = new Map<string, GroupedReceiptItem>();
+
+  for (const item of items) {
+    const { size, options } = parseItemNotes(item.notes);
+    const key = `${item.menu_item_name}|${item.notes || ''}`;
+
+    if (groups.has(key)) {
+      const group = groups.get(key)!;
+      group.quantity += item.quantity;
+    } else {
+      groups.set(key, {
+        menu_item_name: item.menu_item_name,
+        quantity: item.quantity,
+        price_usd: item.price_usd,
+        size,
+        options,
+      });
+    }
+  }
+
+  return Array.from(groups.values());
 };
 
 const ReceiptItemsSection = ({ session, formatPrice }: ReceiptItemsSectionProps) => {
@@ -66,11 +94,12 @@ const ReceiptItemsSection = ({ session, formatPrice }: ReceiptItemsSectionProps)
 
   // Single order — no round header
   const items = activeOrders.flatMap(o => o.items);
+  const grouped = groupOrderItems(items);
 
   return (
     <div className="my-4 space-y-2">
-      {items.map(item => (
-        <ItemLine key={item.id} item={item} formatPrice={formatPrice} />
+      {grouped.map((item, idx) => (
+        <ItemLine key={idx} item={item} formatPrice={formatPrice} />
       ))}
 
       {/* Special request for single order */}
@@ -84,7 +113,7 @@ const ReceiptItemsSection = ({ session, formatPrice }: ReceiptItemsSectionProps)
   );
 };
 
-// Order block with header, items, notes, and subtotal
+// Order block with header, grouped items, notes, and subtotal
 const OrderBlock = ({
   order,
   roundNumber,
@@ -96,6 +125,8 @@ const OrderBlock = ({
   formatPrice: (amount: number) => string;
   showHeader: boolean;
 }) => {
+  const grouped = groupOrderItems(order.items);
+
   return (
     <div>
       {showHeader && (
@@ -110,8 +141,8 @@ const OrderBlock = ({
       )}
 
       <div className="space-y-1.5">
-        {order.items.map(item => (
-          <ItemLine key={item.id} item={item} formatPrice={formatPrice} />
+        {grouped.map((item, idx) => (
+          <ItemLine key={idx} item={item} formatPrice={formatPrice} />
         ))}
       </div>
 
@@ -135,17 +166,17 @@ const OrderBlock = ({
   );
 };
 
-// Single item line
+// Single item line with grouped quantity display
 const ItemLine = ({
   item,
   formatPrice,
 }: {
-  item: { id: string; quantity: number; price_usd: number; notes: string | null; menu_item_name: string };
+  item: GroupedReceiptItem;
   formatPrice: (amount: number) => string;
 }) => {
-  const { size, options } = parseItemNotes(item.notes);
-  const itemTotal = item.price_usd * item.quantity;
-  const itemName = size ? `${item.menu_item_name} (${size})` : item.menu_item_name;
+  const optionsTotal = item.options.reduce((s, o) => s + o.price, 0);
+  const itemTotal = (item.price_usd + optionsTotal) * item.quantity;
+  const itemName = item.size ? `${item.menu_item_name} (${item.size})` : item.menu_item_name;
 
   return (
     <div className="text-sm">
@@ -153,9 +184,9 @@ const ItemLine = ({
         <span>{item.quantity} × {itemName}</span>
         <span className="tabular-nums">{formatPrice(itemTotal)}</span>
       </div>
-      {options.length > 0 && (
+      {item.options.length > 0 && (
         <div className="pl-4 mt-0.5">
-          {options.map((opt, idx) => (
+          {item.options.map((opt, idx) => (
             <div key={idx} className="flex justify-between text-xs" style={{ color: '#888' }}>
               <span>- {opt.group}: {opt.value}</span>
               {opt.price > 0 && <span>+{formatPrice(opt.price)}</span>}
