@@ -11,7 +11,7 @@ const ReceiptHeader = ({ session }: ReceiptHeaderProps) => {
   return (
     <div className="text-center mb-1">
       {session.restaurant_logo_url && (
-        <div className="receipt-logo-container flex justify-center mb-2">
+        <div className="receipt-logo flex justify-center mb-2">
           <img
             src={session.restaurant_logo_url}
             alt="Restaurant Logo"

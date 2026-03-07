@@ -60,12 +60,6 @@ export const ReceiptActions = ({
               color: black;
             }
             .text-center { text-align: center; }
-            .receipt-logo-container {
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              margin-bottom: 8px;
-            }
             .receipt-logo {
               display: block;
               margin-left: auto;
