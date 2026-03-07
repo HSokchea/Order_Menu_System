@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { Check } from 'lucide-react';
 import type { ReceiptSession } from './SessionReceipt';
 
 interface ReceiptFooterProps {
@@ -8,78 +9,39 @@ interface ReceiptFooterProps {
 const ReceiptFooter = ({ session }: ReceiptFooterProps) => {
   return (
     <>
-      {/* Payment status - all inline styles for html2canvas/PDF consistency */}
-      <div style={{
-        borderTop: '1px dashed #ccc',
-        marginTop: '16px',
-        paddingTop: '16px',
-        textAlign: 'center',
-      }}>
+      {/* Payment status */}
+      <div className="border-t" style={{ borderColor: '#ddd' }} />
+      <div className="text-center">
         {session.status === 'paid' ? (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-          }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontWeight: 600,
-              fontSize: '14px',
-              color: '#16a34a',
-            }}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 font-semibold text-base" style={{ color: '#16a34a' }}>
+              <Check className="h-4 w-4" strokeWidth={3} />
               <span>PAID</span>
             </div>
 
             {session.cashier_name && (
-              <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>
+              <p className="text-xs" style={{ color: '#666' }}>
                 Cashier: {session.cashier_name}
               </p>
             )}
 
             {session.ended_at && (
-              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
+              <p className="text-xs" style={{ color: '#999' }}>
                 {format(new Date(session.ended_at), 'MMM d, yyyy h:mm a')}
               </p>
             )}
           </div>
         ) : (
-          <span style={{
-            fontWeight: 600,
-            fontSize: '14px',
-            letterSpacing: '0.025em',
-            color: '#666',
-          }}>
+          <span className="font-semibold text-base tracking-wide" style={{ color: '#666' }}>
             UNPAID
           </span>
         )}
       </div>
 
       {/* Footer message */}
-      <div style={{
-        borderTop: '1px dashed #ccc',
-        marginTop: '16px',
-        paddingTop: '16px',
-        textAlign: 'center',
-      }}>
-        <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
-          {session.receipt_footer_text || 'Thank you for dining with us!'}
-        </p>
+      <div className="border-t mt-1 pt-4" style={{ borderColor: '#ddd' }} />
+      <div className="text-center text-xs space-y-0.5" style={{ color: '#999' }}>
+        <p>{session.receipt_footer_text || 'Thank you for dining with us!'}</p>
       </div>
     </>
   );
