@@ -112,12 +112,22 @@ export const ReceiptActions = ({
     `);
 
     printWindow.document.close();
-    printWindow.focus();
+
+    // Use onafterprint to close window cleanly, preventing parent page crash
+    printWindow.onafterprint = () => {
+      printWindow.close();
+    };
 
     setTimeout(() => {
+      printWindow.focus();
       printWindow.print();
-      printWindow.close();
-    }, 250);
+      // Fallback: close after delay if onafterprint doesn't fire
+      setTimeout(() => {
+        if (!printWindow.closed) {
+          printWindow.close();
+        }
+      }, 3000);
+    }, 500);
   };
 
   const handleExportPDF = async () => {
