@@ -127,10 +127,38 @@ const navigationEntries: NavEntry[] = [
   },
   {
     title: "Staff Management",
-    url: "/admin/roles",
     icon: Users,
-    description: "Staff, roles & permissions",
     permissions: [PERMISSIONS.USERS_MANAGE],
+    children: [
+      {
+        title: "Staff",
+        url: "/admin/staff",
+        icon: UserCog,
+        description: "",
+        permissions: [PERMISSIONS.USERS_MANAGE],
+      },
+      {
+        title: "Roles",
+        url: "/admin/staff/roles",
+        icon: Shield,
+        description: "",
+        permissions: [PERMISSIONS.USERS_MANAGE],
+      },
+      {
+        title: "Permissions",
+        url: "/admin/staff/permissions",
+        icon: Key,
+        description: "",
+        permissions: [PERMISSIONS.USERS_MANAGE],
+      },
+      {
+        title: "User Access",
+        url: "/admin/staff/user-access",
+        icon: Users,
+        description: "",
+        permissions: [PERMISSIONS.USERS_MANAGE],
+      },
+    ],
   },
   {
     title: "Settings",
