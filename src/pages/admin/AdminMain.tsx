@@ -12,6 +12,9 @@ import OrderDetail from "./OrderDetail";
 import QRGenerator from "./QRGenerator";
 import Settings from "./Settings";
 import RolesPermissions from "./RolesPermissions";
+import Inventory from "./Inventory";
+import StockAdjustment from "./StockAdjustment";
+import InventoryHistory from "./InventoryHistory";
 
 const getPageInfo = (pathname: string) => {
   switch (pathname) {
