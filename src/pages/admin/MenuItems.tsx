@@ -21,6 +21,7 @@ import ItemOptionsEditor, { ItemOptions } from '@/components/admin/ItemOptionsEd
 import SizePricingEditor, { SizeOption } from '@/components/admin/SizePricingEditor';
 import { Json } from '@/integrations/supabase/types';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { RecipeBuilder } from '@/components/admin/RecipeBuilder';
 
 interface Category {
   id: string;
@@ -602,6 +603,13 @@ const MenuItems = () => {
                         onChange={setItemOptions}
                       />
                     </div>
+
+                    {/* Recipe Builder - only show when editing existing item */}
+                    {editingItem && (
+                      <div className="border-t pt-4 mt-4">
+                        <RecipeBuilder menuItemId={editingItem.id} />
+                      </div>
+                    )}
 
                     <div className="flex items-center space-x-2">
                       <Switch

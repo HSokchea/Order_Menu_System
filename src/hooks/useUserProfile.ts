@@ -90,6 +90,10 @@ export const PERMISSIONS = {
   // QR Codes
   QR_VIEW: 'qr.view',
   QR_MANAGE: 'qr.manage',
+
+  // Inventory
+  INVENTORY_VIEW: 'inventory.view',
+  INVENTORY_MANAGE: 'inventory.manage',
 } as const;
 
 /**

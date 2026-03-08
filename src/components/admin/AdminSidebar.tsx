@@ -13,7 +13,10 @@ import {
   Package,
   LogOut,
   LucideIcon,
-  ChevronsUpDownIcon
+  ChevronsUpDownIcon,
+  Warehouse,
+  PackagePlus,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -82,6 +85,27 @@ const navigationItems: NavigationItem[] = [
     icon: QrCode,
     description: "Create QR codes for tables",
     permissions: [PERMISSIONS.QR_MANAGE],
+  },
+  {
+    title: "Ingredients",
+    url: "/admin/inventory",
+    icon: Warehouse,
+    description: "Manage ingredient stock",
+    permissions: [PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE],
+  },
+  {
+    title: "Stock Adjustment",
+    url: "/admin/inventory/adjustment",
+    icon: PackagePlus,
+    description: "Add or remove stock",
+    permissions: [PERMISSIONS.INVENTORY_MANAGE],
+  },
+  {
+    title: "Inventory History",
+    url: "/admin/inventory/history",
+    icon: History,
+    description: "Stock transaction log",
+    permissions: [PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE],
   },
   {
     title: "Staff Management",
