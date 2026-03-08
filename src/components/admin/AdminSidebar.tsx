@@ -273,11 +273,14 @@ export function AdminSidebar() {
     if (visibleChildren.length === 0) return null;
     const groupActive = visibleChildren.some(c => isActive(c.url));
 
+    const isOpen = groupOpen[group.title] ?? false;
+    const toggleGroup = (open: boolean) => setGroupOpen(prev => ({ ...prev, [group.title]: open }));
+
     return (
       <Collapsible
         key={group.title}
-        open={inventoryOpen}
-        onOpenChange={setInventoryOpen}
+        open={isOpen}
+        onOpenChange={toggleGroup}
       >
         <SidebarMenuItem className="p-0 m-0">
           <CollapsibleTrigger asChild>
