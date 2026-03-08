@@ -228,6 +228,9 @@ export function AdminSidebar() {
     if (path === "/admin/inventory") {
       return location.pathname === "/admin/inventory";
     }
+    if (path === "/admin/staff") {
+      return location.pathname === "/admin/staff";
+    }
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
