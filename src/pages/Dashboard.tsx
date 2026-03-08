@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LowStockAlert } from '@/components/admin/LowStockAlert';
 import { DateRangeFilter } from '@/components/admin/DateRangeFilter';
 import { ExportMenu } from '@/components/admin/ExportMenu';
 import { AnalyticsCharts } from '@/components/admin/AnalyticsCharts';
