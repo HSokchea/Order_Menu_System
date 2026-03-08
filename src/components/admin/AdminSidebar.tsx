@@ -200,10 +200,18 @@ export function AdminSidebar() {
     clearState,
   } = useUserProfile();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [language, setLanguage] = useState<"en" | "km">(() => {
+    return (localStorage.getItem("app_language") as "en" | "km") || "en";
+  });
   const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => ({
     Inventory: location.pathname.startsWith("/admin/inventory"),
     "Staff Management": location.pathname.startsWith("/admin/staff"),
   }));
+
+  const handleLanguageChange = (lang: "en" | "km") => {
+    setLanguage(lang);
+    localStorage.setItem("app_language", lang);
+  };
 
   const handleSignOut = async () => {
     try {
