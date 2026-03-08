@@ -221,14 +221,9 @@ export function AdminSidebar() {
     <SidebarMenuItem key={item.title} className="p-0 m-0">
       <SidebarMenuButton asChild className="h-auto p-0">
         <NavLink to={item.url} className={getNavClassName(item.url)}>
-          <item.icon className={`h-5 w-5 ${state === "collapsed" ? "mx-auto" : ""}`} />
+          <item.icon className={`h-5 w-5 shrink-0 ${state === "collapsed" ? "mx-auto" : ""}`} />
           {state !== "collapsed" && (
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm">{item.title}</div>
-              <div className="text-xs text-muted-foreground truncate">
-                {item.description}
-              </div>
-            </div>
+            <span className="font-medium text-sm truncate">{item.title}</span>
           )}
         </NavLink>
       </SidebarMenuButton>
@@ -267,7 +262,7 @@ export function AdminSidebar() {
             </button>
           </CollapsibleTrigger>
         </SidebarMenuItem>
-        <CollapsibleContent>
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-[collapsible-down_200ms_ease-out] data-[state=closed]:animate-[collapsible-up_200ms_ease-out]">
           <div className={state !== "collapsed" ? "ml-4 border-l border-border/40 pl-1" : ""}>
             {visibleChildren.map(renderNavItem)}
           </div>
