@@ -21,6 +21,8 @@ import {
   Key,
   PanelLeftClose,
   PanelLeft,
+  Globe,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
