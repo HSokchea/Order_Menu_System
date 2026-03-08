@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Printer, Download, CreditCard, MoreHorizontal, X } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Printer, Download, CreditCard, MoreHorizontal, X, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { printViaIframe, printEscPos } from '@/lib/printUtils';
+import type { ReceiptSession } from './SessionReceipt';
 
 interface ReceiptActionsProps {
   receiptRef: React.RefObject<HTMLDivElement>;
@@ -14,6 +16,7 @@ interface ReceiptActionsProps {
   onCompletePayment?: () => void;
   showPayButton?: boolean;
   onClose?: () => void;
+  session?: ReceiptSession;
 }
 
 export const ReceiptActions = ({
@@ -24,99 +27,91 @@ export const ReceiptActions = ({
   onCompletePayment,
   showPayButton = true,
   onClose,
+  session,
 }: ReceiptActionsProps) => {
-  const handlePrint = () => {
-    if (!receiptRef.current) return;
+  const [isPrinting, setIsPrinting] = useState(false);
 
-    const printContent = receiptRef.current.innerHTML;
-    const printWindow = window.open('', '_blank');
+  const handlePrint = async () => {
+    if (!receiptRef.current || isPrinting) return;
+    setIsPrinting(true);
 
-    if (!printWindow) {
-      toast.error('Could not open print window. Please allow popups.');
-      return;
+    try {
+      const title = `Receipt - Session ${sessionId.slice(0, 8).toUpperCase()}`;
+      await printViaIframe(receiptRef.current, title);
+    } catch (err) {
+      console.error('Print error:', err);
+      toast.error('Could not print. Please try again.');
+    } finally {
+      setIsPrinting(false);
     }
+  };
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Receipt - Session ${sessionId.slice(0, 8).toUpperCase()}</title>
-          <style>
-            @page {
-              size: 80mm auto;
-              margin: 0;
-            }
-            * {
-              box-sizing: border-box;
-              margin: 0;
-              padding: 0;
-            }
-            body {
-              font-family: 'Courier New', monospace;
-              font-size: 10px;
-              width: 80mm;
-              padding: 4mm;
-              background: white;
-              color: black;
-            }
-            .text-center { text-align: center; }
-            .receipt-logo {
-              display: block;
-              margin-left: auto;
-              margin-right: auto;
-              border-radius: 9999px;
-              object-fit: cover;
-              background: #fff;
-              height: 48px;
-              width: 48px;
-            }
-            .text-muted-foreground { color: #666; }
-            .font-bold { font-weight: bold; }
-            .font-semibold { font-weight: 600; }
-            .font-medium { font-weight: 500; }
-            .flex { display: flex; }
-            .justify-between { justify-content: space-between; }
-            .items-center { align-items: center; }
-            .gap-2 { gap: 8px; }
-            .space-y-1 > * + * { margin-top: 4px; }
-            .space-y-2 > * + * { margin-top: 8px; }
-            .space-y-4 > * + * { margin-top: 16px; }
-            .mb-4 { margin-bottom: 16px; }
-            .mt-6 { margin-top: 24px; }
-            .pl-2 { padding-left: 8px; }
-            .pl-3 { padding-left: 12px; }
-            .pt-2 { padding-top: 8px; }
-            .my-3 { margin-top: 12px; margin-bottom: 12px; }
-            .my-4 { margin-top: 16px; margin-bottom: 16px; }
-            .text-lg { font-size: 14px; }
-            .text-xl { font-size: 16px; }
-            .text-sm { font-size: 12px; }
-            .text-xs { font-size: 10px; }
-            hr, [class*="separator"], [data-separator] {
-              border: none;
-              border-top: 1px dashed #000;
-              margin: 8px 0;
-            }
-            .border-t { border-top: 1px dashed #000; }
-            .border-dashed { border-style: dashed; }
-            .text-green-600 { color: #16a34a; }
-            .text-orange-600 { color: #ea580c; }
-            svg { display: inline-block; vertical-align: middle; }
-          </style>
-        </head>
-        <body>
-          ${printContent}
-        </body>
-      </html>
-    `);
+  const handleThermalPrint = async () => {
+    if (!session || isPrinting) return;
+    setIsPrinting(true);
 
-    printWindow.document.close();
-    printWindow.focus();
+    try {
+      const activeOrders = session.orders.filter(o => o.status !== 'rejected');
+      const subtotal = activeOrders.reduce((s, o) => s + o.total_usd, 0);
 
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+      const taxRate = (session.show_tax_on_receipt && session.default_tax_percentage) ? session.default_tax_percentage / 100 : 0;
+      const scRate = (session.show_service_charge_on_receipt && session.service_charge_percentage) ? session.service_charge_percentage / 100 : 0;
+      const tax = subtotal * taxRate;
+      const serviceCharge = subtotal * scRate;
+      const total = subtotal + tax + serviceCharge;
+
+      const rate = session.exchange_rate_at_payment ?? session.exchange_rate_usd_to_khr;
+      const totalKhr = rate ? Math.round(total * rate) : undefined;
+
+      const items = activeOrders.flatMap(o => o.items.map(item => {
+        let options: Array<{ label: string; price: number }> = [];
+        try {
+          const parsed = item.notes ? JSON.parse(item.notes) : null;
+          if (parsed?.selectedOptions) {
+            options = parsed.selectedOptions.map((opt: any) => ({
+              label: `${opt.group}: ${opt.value}`,
+              price: opt.price || 0,
+            }));
+          }
+        } catch { /* ignore */ }
+
+        return {
+          name: item.menu_item_name,
+          quantity: item.quantity,
+          price: item.price_usd,
+          options: options.length > 0 ? options : undefined,
+        };
+      }));
+
+      const { format } = await import('date-fns');
+
+      await printEscPos({
+        restaurantName: session.restaurant_name,
+        address: [session.restaurant_address, session.restaurant_city, session.restaurant_country].filter(Boolean).join(', ') || undefined,
+        phone: session.restaurant_phone || undefined,
+        vatTin: session.restaurant_vat_tin || undefined,
+        invoiceNumber: session.invoice_number || undefined,
+        tableNumber: `Table ${session.table_number}`,
+        orderType: session.order_type || undefined,
+        startedAt: format(new Date(session.started_at), 'dd/MM/yyyy h:mm a'),
+        endedAt: session.ended_at,
+        items,
+        subtotal,
+        tax: tax > 0 ? tax : undefined,
+        serviceCharge: serviceCharge > 0 ? serviceCharge : undefined,
+        total,
+        totalKhr,
+        isPaid: session.status === 'paid',
+        footerText: session.receipt_footer_text,
+      });
+
+      toast.success('Sent to thermal printer');
+    } catch (err: any) {
+      console.error('Thermal print error:', err);
+      toast.error(err?.message || 'Thermal printing failed. Is QZ Tray running?');
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const handleExportPDF = async () => {
@@ -131,7 +126,7 @@ export const ReceiptActions = ({
         useCORS: true,
       });
 
-      const imgWidth = 80; // 80mm
+      const imgWidth = 80;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       const pdf = new jsPDF({
@@ -155,29 +150,39 @@ export const ReceiptActions = ({
     <DropdownMenu>
       <div className='flex gap-0'>
         <DropdownMenuTrigger asChild>
-          <Button variant="custom" size="custom" className='mb-2 p-2 hover:bg-gray-100' aria-label="More actions">
+          <Button variant="custom" size="custom" className='mb-2 p-2 hover:bg-accent' aria-label="More actions" disabled={isPrinting}>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <Button variant="custom" size="custom" className='mb-2 p-2 hover:bg-gray-100' aria-label="Close receipt" onClick={onClose}>
+        <Button variant="custom" size="custom" className='mb-2 p-2 hover:bg-accent' aria-label="Close receipt" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handlePrint}>
-          <Printer className="h-4 w-4 mr-2" /> Print
+        <DropdownMenuItem onClick={handlePrint} disabled={isPrinting}>
+          <Printer className="h-4 w-4 mr-2" />
+          {isPrinting ? 'Printing...' : 'Print'}
         </DropdownMenuItem>
+        {session && (
+          <DropdownMenuItem onClick={handleThermalPrint} disabled={isPrinting}>
+            <Zap className="h-4 w-4 mr-2" />
+            Thermal Print (ESC/POS)
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={handleExportPDF}>
           <Download className="h-4 w-4 mr-2" /> Export PDF
         </DropdownMenuItem>
         {showPayButton && !isPaid && (
-          <DropdownMenuItem
-            onClick={() => onCompletePayment()}
-            disabled={isProcessing}
-          >
-            <CreditCard className="h-4 w-4 mr-2" />
-            {isProcessing ? 'Processing...' : 'Mark as Paid'}
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => onCompletePayment?.()}
+              disabled={isProcessing}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              {isProcessing ? 'Processing...' : 'Mark as Paid'}
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
