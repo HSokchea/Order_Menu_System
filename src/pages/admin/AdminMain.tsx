@@ -163,15 +163,41 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* Staff/Roles Management - requires user management permission */}
-        <Route path="roles" element={
-          <PermissionGuard 
-            permissions={[PERMISSIONS.USERS_MANAGE]} 
+        {/* Staff Management - sub-routes */}
+        <Route path="staff" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.USERS_MANAGE]}
             fallback={<AccessDenied message="You don't have permission to manage staff." />}
           >
-            <RolesPermissions />
+            <StaffPage />
           </PermissionGuard>
         } />
+        <Route path="staff/roles" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.USERS_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to manage roles." />}
+          >
+            <RolesPage />
+          </PermissionGuard>
+        } />
+        <Route path="staff/permissions" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.USERS_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to manage permissions." />}
+          >
+            <PermissionsPage />
+          </PermissionGuard>
+        } />
+        <Route path="staff/user-access" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.USERS_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to view user access." />}
+          >
+            <UserAccessPage />
+          </PermissionGuard>
+        } />
+        {/* Legacy route redirect */}
+        <Route path="roles" element={<Navigate to="/admin/staff" replace />} />
         {/* Inventory Management */}
         <Route path="inventory" element={
           <PermissionGuard
