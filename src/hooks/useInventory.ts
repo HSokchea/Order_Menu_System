@@ -74,26 +74,27 @@ export const useIngredients = () => {
     fetchIngredients();
   }, [fetchIngredients]);
 
+  const fetchIngredientsList = useCallback(async () => {
+    if (!restaurantId) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('ingredients')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching ingredients:', error);
+    } else {
+      setIngredients(data || []);
+    }
+    setLoading(false);
+  }, [restaurantId]);
+
   useEffect(() => {
     if (!restaurantId) return;
 
-    const fetch = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('ingredients')
-        .select('*')
-        .eq('restaurant_id', restaurantId)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching ingredients:', error);
-      } else {
-        setIngredients(data || []);
-      }
-      setLoading(false);
-    };
-
-    fetch();
+    fetchIngredientsList();
 
     const channel = supabase
       .channel('ingredients-realtime')
@@ -102,17 +103,18 @@ export const useIngredients = () => {
         schema: 'public',
         table: 'ingredients',
         filter: `restaurant_id=eq.${restaurantId}`
-      }, () => { fetch(); })
+      }, () => { fetchIngredientsList(); })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [restaurantId]);
+  }, [restaurantId, fetchIngredientsList]);
 
   const addIngredient = async (data: Omit<Ingredient, 'id' | 'restaurant_id' | 'created_at' | 'updated_at'>) => {
     if (!restaurantId) return;
     const { error } = await supabase.from('ingredients').insert({ ...data, restaurant_id: restaurantId });
     if (error) { toast.error(error.message); return false; }
     toast.success('Ingredient added');
+    await fetchIngredientsList();
     return true;
   };
 
@@ -120,6 +122,7 @@ export const useIngredients = () => {
     const { error } = await supabase.from('ingredients').update(data).eq('id', id);
     if (error) { toast.error(error.message); return false; }
     toast.success('Ingredient updated');
+    await fetchIngredientsList();
     return true;
   };
 
