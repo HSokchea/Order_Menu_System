@@ -66,7 +66,6 @@ export const ReceiptActions = ({
               margin-right: auto;
               border-radius: 9999px;
               object-fit: cover;
-              border: 1px solid #e5e7eb;
               background: #fff;
               height: 48px;
               width: 48px;

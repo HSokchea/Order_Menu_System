@@ -15,7 +15,7 @@ const ReceiptHeader = ({ session }: ReceiptHeaderProps) => {
           <img
             src={session.restaurant_logo_url}
             alt="Restaurant Logo"
-            className="h-14 w-14 rounded-full object-cover border"
+            className="h-14 w-14 rounded-full object-cover"
             style={{ borderColor: '#ddd' }}
           />
         </div>
