@@ -604,6 +604,13 @@ const MenuItems = () => {
                       />
                     </div>
 
+                    {/* Recipe Builder - only show when editing existing item */}
+                    {editingItem && (
+                      <div className="border-t pt-4 mt-4">
+                        <RecipeBuilder menuItemId={editingItem.id} />
+                      </div>
+                    )}
+
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="available"
