@@ -192,9 +192,10 @@ export function AdminSidebar() {
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [footerPopoverOpen, setFooterPopoverOpen] = useState(false);
   const [language, setLanguage] = useState("en");
-  const [inventoryOpen, setInventoryOpen] = useState(() => {
-    return location.pathname.startsWith("/admin/inventory");
-  });
+  const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => ({
+    "Inventory": location.pathname.startsWith("/admin/inventory"),
+    "Staff Management": location.pathname.startsWith("/admin/staff"),
+  }));
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [sidebarWidth, setSidebarWidth] = useState<number | undefined>(undefined);
 
