@@ -262,7 +262,7 @@ export function AdminSidebar() {
             </button>
           </CollapsibleTrigger>
         </SidebarMenuItem>
-        <CollapsibleContent>
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-[collapsible-down_200ms_ease-out] data-[state=closed]:animate-[collapsible-up_200ms_ease-out]">
           <div className={state !== "collapsed" ? "ml-4 border-l border-border/40 pl-1" : ""}>
             {visibleChildren.map(renderNavItem)}
           </div>
