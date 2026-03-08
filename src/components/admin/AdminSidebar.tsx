@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Globe, ChevronRight, Check } from "lucide-react";
 import { useRef, useLayoutEffect } from "react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 interface NavigationItem {
   title: string;
