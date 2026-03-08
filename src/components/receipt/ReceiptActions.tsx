@@ -127,22 +127,27 @@ export const ReceiptActions = ({
       toast.info('Generating PDF... Please wait');
 
       const canvas = await html2canvas(receiptRef.current, {
-        scale: 2,
+        scale: 3,
         backgroundColor: '#ffffff',
         useCORS: true,
+        logging: false,
+        windowWidth: receiptRef.current.scrollWidth,
+        windowHeight: receiptRef.current.scrollHeight,
       });
 
-      const imgWidth = 80; // 80mm
+      const margin = 4;
+      const imgWidth = 80 - margin * 2;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageHeight = imgHeight + margin * 2;
 
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [imgWidth, imgHeight + 10],
+        format: [80, pageHeight],
       });
 
       const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 5, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
       pdf.save(`receipt-${sessionId.slice(0, 8)}.pdf`);
 
       toast.success('Receipt saved successfully');

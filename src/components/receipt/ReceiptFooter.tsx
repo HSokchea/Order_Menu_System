@@ -11,7 +11,7 @@ const ReceiptFooter = ({ session }: ReceiptFooterProps) => {
     <>
       {/* Payment status */}
       <div className="border-t" style={{ borderColor: '#ddd' }} />
-      <div className="text-center">
+      <div className="text-center" style={{ padding: '12px 0' }}>
         {session.status === 'paid' ? (
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 font-semibold text-base" style={{ color: '#16a34a' }}>
