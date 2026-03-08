@@ -161,6 +161,9 @@ export function AdminSidebar() {
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [footerPopoverOpen, setFooterPopoverOpen] = useState(false);
   const [language, setLanguage] = useState("en");
+  const [inventoryOpen, setInventoryOpen] = useState(() => {
+    return location.pathname.startsWith("/admin/inventory");
+  });
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [sidebarWidth, setSidebarWidth] = useState<number | undefined>(undefined);
 
