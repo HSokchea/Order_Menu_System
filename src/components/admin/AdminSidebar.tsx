@@ -193,6 +193,9 @@ export function AdminSidebar() {
     if (path === "/admin") {
       return location.pathname === "/admin" || location.pathname === "/" || location.pathname === "/dashboard";
     }
+    if (path === "/admin/inventory") {
+      return location.pathname === "/admin/inventory";
+    }
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
