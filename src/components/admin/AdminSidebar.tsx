@@ -44,14 +44,23 @@ interface NavigationItem {
   url: string;
   icon: LucideIcon;
   description: string;
-  permissions: string[]; // Required permissions (user needs ANY of these)
+  permissions: string[];
 }
 
-/**
- * Navigation items with permission requirements
- * Access is controlled purely by permissions - no role name checks
- */
-const navigationItems: NavigationItem[] = [
+interface NavigationGroup {
+  title: string;
+  icon: LucideIcon;
+  permissions: string[];
+  children: NavigationItem[];
+}
+
+type NavEntry = NavigationItem | NavigationGroup;
+
+function isGroup(entry: NavEntry): entry is NavigationGroup {
+  return 'children' in entry;
+}
+
+const navigationEntries: NavEntry[] = [
   {
     title: "Dashboard",
     url: "/admin",
@@ -88,25 +97,32 @@ const navigationItems: NavigationItem[] = [
     permissions: [PERMISSIONS.QR_MANAGE],
   },
   {
-    title: "Ingredients",
-    url: "/admin/inventory",
+    title: "Inventory",
     icon: Warehouse,
-    description: "Manage ingredient stock",
     permissions: [PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE],
-  },
-  {
-    title: "Stock Adjustment",
-    url: "/admin/inventory/adjustment",
-    icon: PackagePlus,
-    description: "Add or remove stock",
-    permissions: [PERMISSIONS.INVENTORY_MANAGE],
-  },
-  {
-    title: "Inventory History",
-    url: "/admin/inventory/history",
-    icon: History,
-    description: "Stock transaction log",
-    permissions: [PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE],
+    children: [
+      {
+        title: "Ingredients",
+        url: "/admin/inventory",
+        icon: Warehouse,
+        description: "Manage ingredient stock",
+        permissions: [PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE],
+      },
+      {
+        title: "Stock Adjustment",
+        url: "/admin/inventory/adjustment",
+        icon: PackagePlus,
+        description: "Add or remove stock",
+        permissions: [PERMISSIONS.INVENTORY_MANAGE],
+      },
+      {
+        title: "Inventory History",
+        url: "/admin/inventory/history",
+        icon: History,
+        description: "Stock transaction log",
+        permissions: [PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE],
+      },
+    ],
   },
   {
     title: "Staff Management",
