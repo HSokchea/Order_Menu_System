@@ -18,6 +18,9 @@ import {
   PackagePlus,
   History,
   ChevronDown,
+  UserCog,
+  Shield,
+  Key,
 } from "lucide-react";
 import { toast } from "sonner";
 
