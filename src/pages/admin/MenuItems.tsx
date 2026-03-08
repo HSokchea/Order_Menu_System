@@ -21,6 +21,7 @@ import ItemOptionsEditor, { ItemOptions } from '@/components/admin/ItemOptionsEd
 import SizePricingEditor, { SizeOption } from '@/components/admin/SizePricingEditor';
 import { Json } from '@/integrations/supabase/types';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { RecipeBuilder } from '@/components/admin/RecipeBuilder';
 
 interface Category {
   id: string;
