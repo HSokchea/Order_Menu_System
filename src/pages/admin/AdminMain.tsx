@@ -160,6 +160,32 @@ export default function AdminMain() {
             <RolesPermissions />
           </PermissionGuard>
         } />
+        {/* Inventory Management */}
+        <Route path="inventory" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to view inventory." />}
+          >
+            <Inventory />
+          </PermissionGuard>
+        } />
+        <Route path="inventory/adjustment" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.INVENTORY_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to manage inventory." />}
+          >
+            <StockAdjustment />
+          </PermissionGuard>
+        } />
+        <Route path="inventory/history" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to view inventory history." />}
+          >
+            <InventoryHistory />
+          </PermissionGuard>
+        } />
+        
         {/* Redirect old permissions route to unified staff management */}
         <Route path="permissions" element={<Navigate to="/admin/roles" replace />} />
         
