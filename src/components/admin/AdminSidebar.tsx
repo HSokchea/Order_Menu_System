@@ -204,8 +204,8 @@ export function AdminSidebar() {
       }`;
   };
 
-  const visibleItems = navigationItems.filter(item => {
-    return hasAnyPermission(item.permissions);
+  const visibleEntries = navigationEntries.filter(entry => {
+    return hasAnyPermission(entry.permissions);
   });
 
   const displayRole = getPrimaryRoleType();
@@ -216,6 +216,65 @@ export function AdminSidebar() {
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
   const displayEmail = user?.email || '';
   const initials = getInitials(profile?.full_name);
+
+  const renderNavItem = (item: NavigationItem) => (
+    <SidebarMenuItem key={item.title} className="p-0 m-0">
+      <SidebarMenuButton asChild className="h-auto p-0">
+        <NavLink to={item.url} className={getNavClassName(item.url)}>
+          <item.icon className={`h-5 w-5 ${state === "collapsed" ? "mx-auto" : ""}`} />
+          {state !== "collapsed" && (
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm">{item.title}</div>
+              <div className="text-xs text-muted-foreground truncate">
+                {item.description}
+              </div>
+            </div>
+          )}
+        </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+
+  const renderGroup = (group: NavigationGroup) => {
+    const visibleChildren = group.children.filter(c => hasAnyPermission(c.permissions));
+    if (visibleChildren.length === 0) return null;
+    const groupActive = visibleChildren.some(c => isActive(c.url));
+
+    return (
+      <Collapsible
+        key={group.title}
+        open={inventoryOpen}
+        onOpenChange={setInventoryOpen}
+      >
+        <SidebarMenuItem className="p-0 m-0">
+          <CollapsibleTrigger asChild>
+            <button
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 w-full ${
+                groupActive && !inventoryOpen
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <group.icon className={`h-5 w-5 ${state === "collapsed" ? "mx-auto" : ""}`} />
+              {state !== "collapsed" && (
+                <>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="font-medium text-sm">{group.title}</div>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${inventoryOpen ? "rotate-180" : ""}`} />
+                </>
+              )}
+            </button>
+          </CollapsibleTrigger>
+        </SidebarMenuItem>
+        <CollapsibleContent>
+          <div className={state !== "collapsed" ? "ml-4 border-l border-border/40 pl-1" : ""}>
+            {visibleChildren.map(renderNavItem)}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
 
   return (
     <Sidebar ref={sidebarRef} className="border-r border-border/40">
@@ -243,23 +302,9 @@ export function AdminSidebar() {
         <SidebarGroup className="flex-1 p-0 m-0 overflow-y-auto">
           <SidebarGroupContent className="p-0 m-0">
             <SidebarMenu className="px-2 m-0">
-              {visibleItems.map((item) => (
-                <SidebarMenuItem key={item.title} className="p-0 m-0">
-                  <SidebarMenuButton asChild className="h-auto p-0">
-                    <NavLink to={item.url} className={getNavClassName(item.url)}>
-                      <item.icon className={`h-5 w-5 ${state === "collapsed" ? "mx-auto" : ""}`} />
-                      {state !== "collapsed" && (
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">{item.title}</div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {item.description}
-                          </div>
-                        </div>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {visibleEntries.map((entry) =>
+                isGroup(entry) ? renderGroup(entry) : renderNavItem(entry)
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
