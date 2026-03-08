@@ -12,6 +12,10 @@ import OrderDetail from "./OrderDetail";
 import QRGenerator from "./QRGenerator";
 import Settings from "./Settings";
 import RolesPermissions from "./RolesPermissions";
+import StaffPage from "./StaffPage";
+import RolesPage from "./RolesPage";
+import PermissionsPage from "./PermissionsPage";
+import UserAccessPage from "./UserAccessPage";
 import Inventory from "./Inventory";
 import StockAdjustment from "./StockAdjustment";
 import InventoryHistory from "./InventoryHistory";
@@ -29,6 +33,14 @@ const getPageInfo = (pathname: string) => {
       return { title: "Customer Orders", description: "QR menu orders (dine-in & takeaway)" };
     case "/admin/settings":
       return { title: "Settings", description: "Shop profile and configuration" };
+    case "/admin/staff":
+      return { title: "Staff", description: "Manage staff accounts" };
+    case "/admin/staff/roles":
+      return { title: "Roles", description: "Manage roles" };
+    case "/admin/staff/permissions":
+      return { title: "Permissions", description: "Role permission mapping" };
+    case "/admin/staff/user-access":
+      return { title: "User Access", description: "View user permissions" };
     case "/admin/roles":
       return { title: "Staff Management", description: "Staff, roles & permissions" };
     case "/admin/qr-generator":
@@ -151,15 +163,41 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* Staff/Roles Management - requires user management permission */}
-        <Route path="roles" element={
-          <PermissionGuard 
-            permissions={[PERMISSIONS.USERS_MANAGE]} 
+        {/* Staff Management - sub-routes */}
+        <Route path="staff" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.USERS_MANAGE]}
             fallback={<AccessDenied message="You don't have permission to manage staff." />}
           >
-            <RolesPermissions />
+            <StaffPage />
           </PermissionGuard>
         } />
+        <Route path="staff/roles" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.USERS_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to manage roles." />}
+          >
+            <RolesPage />
+          </PermissionGuard>
+        } />
+        <Route path="staff/permissions" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.USERS_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to manage permissions." />}
+          >
+            <PermissionsPage />
+          </PermissionGuard>
+        } />
+        <Route path="staff/user-access" element={
+          <PermissionGuard
+            permissions={[PERMISSIONS.USERS_MANAGE]}
+            fallback={<AccessDenied message="You don't have permission to view user access." />}
+          >
+            <UserAccessPage />
+          </PermissionGuard>
+        } />
+        {/* Legacy route redirect */}
+        <Route path="roles" element={<Navigate to="/admin/staff" replace />} />
         {/* Inventory Management */}
         <Route path="inventory" element={
           <PermissionGuard

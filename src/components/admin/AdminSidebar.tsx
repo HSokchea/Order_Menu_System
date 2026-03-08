@@ -18,6 +18,9 @@ import {
   PackagePlus,
   History,
   ChevronDown,
+  UserCog,
+  Shield,
+  Key,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -127,10 +130,38 @@ const navigationEntries: NavEntry[] = [
   },
   {
     title: "Staff Management",
-    url: "/admin/roles",
     icon: Users,
-    description: "Staff, roles & permissions",
     permissions: [PERMISSIONS.USERS_MANAGE],
+    children: [
+      {
+        title: "Staff",
+        url: "/admin/staff",
+        icon: UserCog,
+        description: "",
+        permissions: [PERMISSIONS.USERS_MANAGE],
+      },
+      {
+        title: "Roles",
+        url: "/admin/staff/roles",
+        icon: Shield,
+        description: "",
+        permissions: [PERMISSIONS.USERS_MANAGE],
+      },
+      {
+        title: "Permissions",
+        url: "/admin/staff/permissions",
+        icon: Key,
+        description: "",
+        permissions: [PERMISSIONS.USERS_MANAGE],
+      },
+      {
+        title: "User Access",
+        url: "/admin/staff/user-access",
+        icon: Users,
+        description: "",
+        permissions: [PERMISSIONS.USERS_MANAGE],
+      },
+    ],
   },
   {
     title: "Settings",
@@ -161,9 +192,10 @@ export function AdminSidebar() {
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [footerPopoverOpen, setFooterPopoverOpen] = useState(false);
   const [language, setLanguage] = useState("en");
-  const [inventoryOpen, setInventoryOpen] = useState(() => {
-    return location.pathname.startsWith("/admin/inventory");
-  });
+  const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => ({
+    "Inventory": location.pathname.startsWith("/admin/inventory"),
+    "Staff Management": location.pathname.startsWith("/admin/staff"),
+  }));
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [sidebarWidth, setSidebarWidth] = useState<number | undefined>(undefined);
 
@@ -195,6 +227,9 @@ export function AdminSidebar() {
     }
     if (path === "/admin/inventory") {
       return location.pathname === "/admin/inventory";
+    }
+    if (path === "/admin/staff") {
+      return location.pathname === "/admin/staff";
     }
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
@@ -238,17 +273,20 @@ export function AdminSidebar() {
     if (visibleChildren.length === 0) return null;
     const groupActive = visibleChildren.some(c => isActive(c.url));
 
+    const isOpen = groupOpen[group.title] ?? false;
+    const toggleGroup = (open: boolean) => setGroupOpen(prev => ({ ...prev, [group.title]: open }));
+
     return (
       <Collapsible
         key={group.title}
-        open={inventoryOpen}
-        onOpenChange={setInventoryOpen}
+        open={isOpen}
+        onOpenChange={toggleGroup}
       >
         <SidebarMenuItem className="p-0 m-0">
           <CollapsibleTrigger asChild>
             <button
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 w-full ${
-                groupActive && !inventoryOpen
+                groupActive && !isOpen
                   ? "bg-primary/10 text-primary border border-primary/20"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
@@ -259,7 +297,7 @@ export function AdminSidebar() {
                   <div className="flex-1 min-w-0 text-left">
                     <div className="font-medium text-sm">{group.title}</div>
                   </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${inventoryOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
                 </>
               )}
             </button>
