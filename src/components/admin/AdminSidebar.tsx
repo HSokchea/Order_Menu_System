@@ -51,6 +51,11 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface NavigationItem {
   title: string;
@@ -360,51 +365,52 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-0">
-        {/* Brand header */}
-        <div className={`flex items-center gap-3 px-3 py-3 ${collapsed ? "justify-center" : ""}`}>
-          <div className="h-8 w-8 shrink-0 rounded-lg bg-primary flex items-center justify-center">
-            <Store className="h-4 w-4 text-primary-foreground" />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold tracking-tight truncate text-sidebar-foreground">
-                {restaurant?.name || "Admin"}
-              </h2>
-              <p className="text-xs text-sidebar-foreground/50">
-                {displayRoleLabel}
-              </p>
-            </div>
+        {/* Brand header with inline toggle - Claude style */}
+        <div className={`flex items-center gap-2 px-3 py-3 ${collapsed ? "justify-center" : ""}`}>
+          {!collapsed ? (
+            <>
+              <div className="h-8 w-8 shrink-0 rounded-lg bg-primary flex items-center justify-center">
+                <Store className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold tracking-tight truncate text-sidebar-foreground">
+                  {restaurant?.name || "Admin"}
+                </h2>
+                <p className="text-xs text-sidebar-foreground/50">
+                  {displayRoleLabel}
+                </p>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={toggleSidebar}
+                    className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                  >
+                    <PanelLeftClose className="h-[18px] w-[18px]" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">
+                  Close sidebar
+                </TooltipContent>
+              </Tooltip>
+            </>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleSidebar}
+                  className="rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                >
+                  <PanelLeft className="h-[18px] w-[18px]" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                Open sidebar
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
       </SidebarHeader>
-
-      <SidebarSeparator className="mx-0 w-full" />
-
-      {/* Toggle button - Claude style */}
-      <div className={`px-2 py-1.5 ${collapsed ? "flex justify-center" : ""}`}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={toggleSidebar}
-              className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors w-full"
-            >
-              {collapsed ? (
-                <PanelLeft className="h-[18px] w-[18px] shrink-0 mx-auto" />
-              ) : (
-                <>
-                  <PanelLeftClose className="h-[18px] w-[18px] shrink-0" />
-                  <span className="truncate">Close sidebar</span>
-                </>
-              )}
-            </button>
-          </TooltipTrigger>
-          {collapsed && (
-            <TooltipContent side="right" className="font-medium">
-              Open sidebar
-            </TooltipContent>
-          )}
-        </Tooltip>
-      </div>
 
       <SidebarSeparator className="mx-0 w-full" />
 
@@ -423,59 +429,51 @@ export function AdminSidebar() {
       <SidebarFooter className="p-0 mt-auto">
         <SidebarSeparator className="mx-0 w-full" />
 
-        {/* Sign out button */}
-        {!collapsed ? (
-          <div className="px-2 py-1.5">
+        {/* User profile with popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              className={`flex items-center gap-3 px-3 py-3 w-full hover:bg-sidebar-accent/50 transition-colors ${
+                collapsed ? "justify-center" : ""
+              }`}
+            >
+              <div className="h-8 w-8 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center">
+                <span className="text-xs font-semibold text-sidebar-foreground leading-none">
+                  {initials}
+                </span>
+              </div>
+              {!collapsed && (
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="text-sm font-medium truncate text-sidebar-foreground leading-tight">
+                    {displayName}
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/50 truncate leading-tight">
+                    {displayEmail}
+                  </p>
+                </div>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="start"
+            className="w-56 p-1"
+            sideOffset={8}
+          >
+            <div className="px-3 py-2 border-b border-border mb-1">
+              <p className="text-sm font-medium truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{displayRoleLabel}</p>
+            </div>
             <button
               onClick={() => setShowSignOutDialog(true)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
             >
-              <LogOut className="h-[18px] w-[18px] shrink-0" />
+              <LogOut className="h-4 w-4" />
               <span>Sign Out</span>
             </button>
-          </div>
-        ) : (
-          <div className="px-2 py-1.5 flex justify-center">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setShowSignOutDialog(true)}
-                  className="flex items-center justify-center rounded-lg px-3 py-2 text-destructive hover:bg-destructive/10 transition-colors"
-                >
-                  <LogOut className="h-[18px] w-[18px] shrink-0" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="font-medium">
-                Sign Out
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
-
-        <SidebarSeparator className="mx-0 w-full" />
-
-        {/* User profile */}
-        <div
-          className={`flex items-center gap-3 px-3 py-3 ${
-            collapsed ? "justify-center" : ""
-          }`}
-        >
-          <div className="h-8 w-8 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center">
-            <span className="text-xs font-semibold text-sidebar-foreground leading-none">
-              {initials}
-            </span>
-          </div>
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate text-sidebar-foreground leading-tight">
-                {displayName}
-              </p>
-              <p className="text-xs text-sidebar-foreground/50 truncate leading-tight">
-                {displayEmail}
-              </p>
-            </div>
-          )}
-        </div>
+          </PopoverContent>
+        </Popover>
       </SidebarFooter>
 
       <ConfirmDialog
