@@ -33,6 +33,12 @@ const getPageInfo = (pathname: string) => {
       return { title: "Staff Management", description: "Staff, roles & permissions" };
     case "/admin/qr-generator":
       return { title: "QR Generator", description: "Create QR codes for tables" };
+    case "/admin/inventory":
+      return { title: "Ingredients", description: "Manage inventory ingredients" };
+    case "/admin/inventory/adjustment":
+      return { title: "Stock Adjustment", description: "Add or remove stock" };
+    case "/admin/inventory/history":
+      return { title: "Inventory History", description: "Stock transaction history" };
     default:
       return { title: "Customer Orders", description: "QR menu orders (dine-in & takeaway)" };
   }
