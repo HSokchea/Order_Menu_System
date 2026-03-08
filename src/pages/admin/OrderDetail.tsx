@@ -653,6 +653,7 @@ const OrderDetail = () => {
               isPaid={false}
               showPayButton={false}
               onClose={() => setReceiptOpen(false)}
+              session={receiptSession}
             />
           </DialogHeader>
           <div className="px-2 pb-4">
