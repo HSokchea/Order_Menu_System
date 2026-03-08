@@ -13,7 +13,10 @@ import {
   Package,
   LogOut,
   LucideIcon,
-  ChevronsUpDownIcon
+  ChevronsUpDownIcon,
+  Warehouse,
+  PackagePlus,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 
