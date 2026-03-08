@@ -114,6 +114,7 @@ export const useIngredients = () => {
     const { error } = await supabase.from('ingredients').insert({ ...data, restaurant_id: restaurantId });
     if (error) { toast.error(error.message); return false; }
     toast.success('Ingredient added');
+    await fetchIngredientsList();
     return true;
   };
 
@@ -121,6 +122,7 @@ export const useIngredients = () => {
     const { error } = await supabase.from('ingredients').update(data).eq('id', id);
     if (error) { toast.error(error.message); return false; }
     toast.success('Ingredient updated');
+    await fetchIngredientsList();
     return true;
   };
 
