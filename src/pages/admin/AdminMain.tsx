@@ -33,6 +33,14 @@ const getPageInfo = (pathname: string) => {
       return { title: "Customer Orders", description: "QR menu orders (dine-in & takeaway)" };
     case "/admin/settings":
       return { title: "Settings", description: "Shop profile and configuration" };
+    case "/admin/staff":
+      return { title: "Staff", description: "Manage staff accounts" };
+    case "/admin/staff/roles":
+      return { title: "Roles", description: "Manage roles" };
+    case "/admin/staff/permissions":
+      return { title: "Permissions", description: "Role permission mapping" };
+    case "/admin/staff/user-access":
+      return { title: "User Access", description: "View user permissions" };
     case "/admin/roles":
       return { title: "Staff Management", description: "Staff, roles & permissions" };
     case "/admin/qr-generator":
