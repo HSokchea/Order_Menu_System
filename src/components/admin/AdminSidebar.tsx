@@ -21,6 +21,8 @@ import {
   Key,
   PanelLeftClose,
   PanelLeft,
+  Globe,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -198,10 +200,18 @@ export function AdminSidebar() {
     clearState,
   } = useUserProfile();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [language, setLanguage] = useState<"en" | "km">(() => {
+    return (localStorage.getItem("app_language") as "en" | "km") || "en";
+  });
   const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>(() => ({
     Inventory: location.pathname.startsWith("/admin/inventory"),
     "Staff Management": location.pathname.startsWith("/admin/staff"),
   }));
+
+  const handleLanguageChange = (lang: "en" | "km") => {
+    setLanguage(lang);
+    localStorage.setItem("app_language", lang);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -465,6 +475,38 @@ export function AdminSidebar() {
               <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{displayRoleLabel}</p>
             </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors">
+                  <Globe className="h-4 w-4" />
+                  <span className="flex-1 text-left">Language</span>
+                  <span className="text-xs text-muted-foreground">
+                    {language === "en" ? "English" : "ខ្មែរ"}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="right"
+                align="start"
+                className="w-44 p-1"
+                sideOffset={8}
+              >
+                <button
+                  onClick={() => handleLanguageChange("en")}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                >
+                  <span className="flex-1 text-left">English</span>
+                  {language === "en" && <Check className="h-4 w-4 text-primary" />}
+                </button>
+                <button
+                  onClick={() => handleLanguageChange("km")}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                >
+                  <span className="flex-1 text-left">ខ្មែរ (Khmer)</span>
+                  {language === "km" && <Check className="h-4 w-4 text-primary" />}
+                </button>
+              </PopoverContent>
+            </Popover>
             <button
               onClick={() => setShowSignOutDialog(true)}
               className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
