@@ -399,9 +399,9 @@ export function AdminSidebar() {
                     <PanelLeftClose className="h-[18px] w-[18px]" />
                   </button>
                 </TooltipTrigger>
-            <TooltipContent side="right" className="font-medium z-[100]">
-              Close sidebar
-            </TooltipContent>
+                <TooltipContent side="right" className="font-medium">
+                  Close sidebar
+                </TooltipContent>
               </Tooltip>
             </>
           ) : (
@@ -414,7 +414,7 @@ export function AdminSidebar() {
                   <PanelLeft className="h-[18px] w-[18px]" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right" className="font-medium z-[100]">
+              <TooltipContent side="right" className="font-medium">
                 Open sidebar
               </TooltipContent>
             </Tooltip>

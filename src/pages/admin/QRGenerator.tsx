@@ -290,7 +290,7 @@ const QRGenerator = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="bg-background/95">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
