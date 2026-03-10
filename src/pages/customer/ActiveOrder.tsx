@@ -298,6 +298,7 @@ const OrderRoundSection = forwardRef<HTMLDivElement, OrderRoundSectionProps>(
     const itemsByStatus = {
       ready: groupedItems.filter(g => g.status === 'ready'),
       preparing: groupedItems.filter(g => g.status === 'preparing'),
+      confirmed: groupedItems.filter(g => g.status === 'confirmed'),
       pending: groupedItems.filter(g => g.status === 'pending'),
       rejected: groupedItems.filter(g => g.status === 'rejected'),
     };
