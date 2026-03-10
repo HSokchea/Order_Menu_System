@@ -391,6 +391,7 @@ export function CustomerOrdersFilters({
                 <div className="grid grid-cols-2 gap-y-2 gap-x-3">
                   {[
                     { key: "pending" as const, label: "Pending", color: "text-yellow-600" },
+                    { key: "confirmed" as const, label: "Confirmed", color: "text-purple-600" },
                     { key: "preparing" as const, label: "Preparing", color: "text-blue-600" },
                     { key: "ready" as const, label: "Ready", color: "text-green-600" },
                     { key: "rejected" as const, label: "Rejected", color: "text-red-600" },
