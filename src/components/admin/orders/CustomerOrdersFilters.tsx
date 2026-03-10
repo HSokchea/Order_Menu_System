@@ -178,7 +178,7 @@ export function CustomerOrdersFilters({
 
       <Select
         value={activeQuickFilter || "all"}
-        onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'preparing' | 'ready' | 'rejected')}
+        onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected')}
       >
         <SelectTrigger className="w-[140px] h-8 text-xs hover:bg-accent hover:text-foreground">
           <SelectValue placeholder="All Statuses" />
