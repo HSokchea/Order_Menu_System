@@ -13,14 +13,18 @@ export function computeRoundStatus(items: StoredOrderItem[]): RoundStatus {
   const allRejected = statuses.every(s => s === 'rejected');
   if (allRejected) return 'rejected';
 
-  const allReady = statuses.filter(s => s !== 'rejected').every(s => s === 'ready');
+  const nonRejected = statuses.filter(s => s !== 'rejected');
+  const allReady = nonRejected.every(s => s === 'ready');
   if (allReady) return 'ready';
 
   const hasPreparing = statuses.includes('preparing');
   if (hasPreparing) return 'preparing';
 
+  const hasConfirmed = statuses.includes('confirmed');
+  if (hasConfirmed) return 'confirmed';
+
   const hasPending = statuses.includes('pending');
-  if (hasPending) return 'confirmed';
+  if (hasPending) return 'pending';
 
   return 'pending';
 }

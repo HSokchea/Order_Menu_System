@@ -112,6 +112,11 @@ const OrderCard = ({ order, onClick }: OrderCardProps) => {
               {statusCounts.pending} pending
             </Badge>
           )}
+          {statusCounts.confirmed > 0 && (
+            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+              {statusCounts.confirmed} confirmed
+            </Badge>
+          )}
           {statusCounts.preparing > 0 && (
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
               {statusCounts.preparing} preparing
