@@ -298,7 +298,7 @@ const CustomerOrders = () => {
   }, [orders, activeTab, filters, sortDirection]);
 
   // Handle quick filter clicks
-  const handleQuickFilter = (type: 'pending' | 'preparing' | 'ready' | 'rejected') => {
+  const handleQuickFilter = (type: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected') => {
     if (activeQuickFilter === type) {
       // Toggle off
       setActiveQuickFilter('');
