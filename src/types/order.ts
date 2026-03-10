@@ -71,7 +71,7 @@ export interface GroupedOrderItem {
   name: string;
   options: OrderItemOption[];
   price: number;
-  status: 'pending' | 'preparing' | 'ready' | 'rejected';
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected';
   count: number;
   item_ids: string[];
   created_at: string; // earliest created_at in the group
