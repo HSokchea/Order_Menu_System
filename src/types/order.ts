@@ -89,9 +89,10 @@ export interface OrderRound {
 // Status priority for sorting (lower = higher priority, shown first)
 const STATUS_PRIORITY: Record<string, number> = {
   pending: 0,
-  preparing: 1,
-  ready: 2,
-  rejected: 3,
+  confirmed: 1,
+  preparing: 2,
+  ready: 3,
+  rejected: 4,
 };
 
 // Helper to group stored items for display
