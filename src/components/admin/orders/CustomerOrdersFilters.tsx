@@ -69,6 +69,7 @@ export const defaultFilters: OrderFilters = {
   roundsFilter: 'all',
   statusContains: {
     pending: false,
+    confirmed: false,
     preparing: false,
     ready: false,
     rejected: false,
