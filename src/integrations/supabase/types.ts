@@ -1371,6 +1371,14 @@ export type Database = {
         Args: { p_device_id: string; p_order_id: string }
         Returns: Json
       }
+      restore_inventory_for_items: {
+        Args: {
+          p_item_ids: string[]
+          p_reference_id?: string
+          p_restaurant_id: string
+        }
+        Returns: Json
+      }
       update_device_order: {
         Args: {
           p_customer_notes?: string
