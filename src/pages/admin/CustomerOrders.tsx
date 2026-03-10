@@ -278,8 +278,8 @@ const CustomerOrders = () => {
     const statusFiltersActive = Object.values(filters.statusContains).some(v => v);
     if (statusFiltersActive) {
       result = result.filter(order => {
-        // Order must contain at least one item with any of the selected statuses
         if (filters.statusContains.pending && orderContainsStatus(order.items, 'pending')) return true;
+        if (filters.statusContains.confirmed && orderContainsStatus(order.items, 'confirmed')) return true;
         if (filters.statusContains.preparing && orderContainsStatus(order.items, 'preparing')) return true;
         if (filters.statusContains.ready && orderContainsStatus(order.items, 'ready')) return true;
         if (filters.statusContains.rejected && orderContainsStatus(order.items, 'rejected')) return true;
