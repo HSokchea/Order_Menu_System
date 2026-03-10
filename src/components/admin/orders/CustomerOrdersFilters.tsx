@@ -188,6 +188,9 @@ export function CustomerOrdersFilters({
           <SelectItem value="pending">
             <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span>
           </SelectItem>
+          <SelectItem value="confirmed">
+            <span className="flex items-center gap-2"><Hash className="h-3.5 w-3.5" /> Confirmed</span>
+          </SelectItem>
           <SelectItem value="preparing">
             <span className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" /> Preparing</span>
           </SelectItem>
