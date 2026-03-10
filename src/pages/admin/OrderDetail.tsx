@@ -685,6 +685,12 @@ const StatusBadge = ({ status }: { status: string }) => {
           <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" /> Pending
         </Badge>
       );
+    case 'confirmed':
+      return (
+        <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-500" /> Confirmed
+        </Badge>
+      );
     case 'preparing':
       return (
         <Badge variant="secondary" className="text-xs gap-1 bg-yellow-100 text-yellow-700">
