@@ -64,7 +64,7 @@ const FILTER_STORAGE_KEY = 'customerOrdersFilters';
 function loadPersistedFilters(): {
   filters: OrderFilters;
   activeTab: 'all' | 'dine_in' | 'takeaway';
-  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready' | 'rejected';
+  activeQuickFilter: '' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected';
   sortDirection: SortDirection;
 } {
   try {
@@ -89,7 +89,7 @@ const CustomerOrders = () => {
   const persisted = useMemo(() => loadPersistedFilters(), []);
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>(persisted.activeTab);
   const [filters, setFilters] = useState<OrderFilters>(persisted.filters);
-  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'pending' | 'preparing' | 'ready' | 'rejected'>(persisted.activeQuickFilter || '');
+  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected'>(persisted.activeQuickFilter || '');
   const [sortDirection, setSortDirection] = useState<SortDirection>(persisted.sortDirection);
 
   // Persist filter state to sessionStorage
@@ -278,8 +278,8 @@ const CustomerOrders = () => {
     const statusFiltersActive = Object.values(filters.statusContains).some(v => v);
     if (statusFiltersActive) {
       result = result.filter(order => {
-        // Order must contain at least one item with any of the selected statuses
         if (filters.statusContains.pending && orderContainsStatus(order.items, 'pending')) return true;
+        if (filters.statusContains.confirmed && orderContainsStatus(order.items, 'confirmed')) return true;
         if (filters.statusContains.preparing && orderContainsStatus(order.items, 'preparing')) return true;
         if (filters.statusContains.ready && orderContainsStatus(order.items, 'ready')) return true;
         if (filters.statusContains.rejected && orderContainsStatus(order.items, 'rejected')) return true;
@@ -298,7 +298,7 @@ const CustomerOrders = () => {
   }, [orders, activeTab, filters, sortDirection]);
 
   // Handle quick filter clicks
-  const handleQuickFilter = (type: 'pending' | 'preparing' | 'ready' | 'rejected') => {
+  const handleQuickFilter = (type: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected') => {
     if (activeQuickFilter === type) {
       // Toggle off
       setActiveQuickFilter('');
@@ -311,6 +311,8 @@ const CustomerOrders = () => {
       };
       if (type === 'pending') {
         newFilters.statusContains.pending = true;
+      } else if (type === 'confirmed') {
+        newFilters.statusContains.confirmed = true;
       } else if (type === 'preparing') {
         newFilters.statusContains.preparing = true;
       } else if (type === 'ready') {

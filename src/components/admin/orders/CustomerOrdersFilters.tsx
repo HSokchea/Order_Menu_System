@@ -55,6 +55,7 @@ export interface OrderFilters {
   // Item status filter (show orders containing items with these statuses)
   statusContains: {
     pending: boolean;
+    confirmed: boolean;
     preparing: boolean;
     ready: boolean;
     rejected: boolean;
@@ -68,6 +69,7 @@ export const defaultFilters: OrderFilters = {
   roundsFilter: 'all',
   statusContains: {
     pending: false,
+    confirmed: false,
     preparing: false,
     ready: false,
     rejected: false,
@@ -81,8 +83,8 @@ export type OrderTypeTab = 'all' | 'dine_in' | 'takeaway';
 interface CustomerOrdersFiltersProps {
   filters: OrderFilters;
   onFiltersChange: (filters: OrderFilters) => void;
-  onQuickFilter: (type: 'pending' | 'preparing' | 'ready' | 'rejected') => void;
-  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready' | 'rejected';
+  onQuickFilter: (type: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected') => void;
+  activeQuickFilter: '' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected';
   sortDirection: SortDirection;
   onSortChange: (direction: SortDirection) => void;
   orderType: OrderTypeTab;
@@ -148,6 +150,7 @@ export function CustomerOrdersFilters({
 
   const statusOptions = [
     { value: 'pending', label: <span className="text-yellow-600">Pending</span> },
+    { value: 'confirmed', label: <span className="text-purple-600">Confirmed</span> },
     { value: 'preparing', label: <span className="text-blue-600">Preparing</span> },
     { value: 'ready', label: <span className="text-green-600">Ready</span> },
     { value: 'rejected', label: <span className="text-red-600">Rejected</span> },
@@ -175,7 +178,7 @@ export function CustomerOrdersFilters({
 
       <Select
         value={activeQuickFilter || "all"}
-        onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'preparing' | 'ready' | 'rejected')}
+        onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected')}
       >
         <SelectTrigger className="w-[140px] h-8 text-xs hover:bg-accent hover:text-foreground">
           <SelectValue placeholder="All Statuses" />
@@ -184,6 +187,9 @@ export function CustomerOrdersFilters({
           <SelectItem value="all">All Statuses</SelectItem>
           <SelectItem value="pending">
             <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span>
+          </SelectItem>
+          <SelectItem value="confirmed">
+            <span className="flex items-center gap-2"><Hash className="h-3.5 w-3.5" /> Confirmed</span>
           </SelectItem>
           <SelectItem value="preparing">
             <span className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" /> Preparing</span>
@@ -385,6 +391,7 @@ export function CustomerOrdersFilters({
                 <div className="grid grid-cols-2 gap-y-2 gap-x-3">
                   {[
                     { key: "pending" as const, label: "Pending", color: "text-yellow-600" },
+                    { key: "confirmed" as const, label: "Confirmed", color: "text-purple-600" },
                     { key: "preparing" as const, label: "Preparing", color: "text-blue-600" },
                     { key: "ready" as const, label: "Ready", color: "text-green-600" },
                     { key: "rejected" as const, label: "Rejected", color: "text-red-600" },

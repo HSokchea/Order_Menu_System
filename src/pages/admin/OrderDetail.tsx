@@ -178,8 +178,18 @@ const OrderDetail = () => {
 
       if (error) throw error;
 
-      const response = data as { success: boolean; error?: string };
-      if (!response.success) throw new Error(response.error);
+      const response = data as { success: boolean; error?: string; insufficient_items?: any[] };
+      if (!response.success) {
+        if (response.insufficient_items && response.insufficient_items.length > 0) {
+          const details = response.insufficient_items
+            .map((i: any) => `${i.ingredient}: need ${i.required} ${i.unit}, have ${i.available}`)
+            .join('\n');
+          toast.error(`Cannot confirm order: insufficient stock\n${details}`, { duration: 6000 });
+        } else {
+          throw new Error(response.error);
+        }
+        return;
+      }
 
       toast.success(`Items marked as ${newStatus}`);
       fetchOrder();
@@ -375,6 +385,9 @@ const OrderDetail = () => {
               <DropdownMenuItem onClick={() => setStatusFilter('pending')}>
                 <Clock className="h-4 w-4 mr-2" /> Pending
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter('confirmed')}>
+                <CheckCircle className="h-4 w-4 mr-2" /> Confirmed
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter('preparing')}>
                 <ChefHat className="h-4 w-4 mr-2" /> Preparing
               </DropdownMenuItem>
@@ -477,6 +490,9 @@ const OrderDetail = () => {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'pending')}>
                                 <Clock className="h-4 w-4 mr-2" /> Pending
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'confirmed')}>
+                                <CheckCircle className="h-4 w-4 mr-2" /> Confirmed
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'preparing')}>
                                 <ChefHat className="h-4 w-4 mr-2" /> Preparing
@@ -677,6 +693,12 @@ const StatusBadge = ({ status }: { status: string }) => {
       return (
         <Badge variant="outline" className="text-xs gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" /> Pending
+        </Badge>
+      );
+    case 'confirmed':
+      return (
+        <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-500" /> Confirmed
         </Badge>
       );
     case 'preparing':

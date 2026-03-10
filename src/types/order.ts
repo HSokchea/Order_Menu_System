@@ -15,7 +15,7 @@ export interface StoredOrderItem {
   name: string;
   price: number;
   options: OrderItemOption[];
-  status: 'pending' | 'preparing' | 'ready' | 'rejected';
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected';
   created_at: string;
   category_name?: string;
   special_request?: string; // Per-round special request note
@@ -71,7 +71,7 @@ export interface GroupedOrderItem {
   name: string;
   options: OrderItemOption[];
   price: number;
-  status: 'pending' | 'preparing' | 'ready' | 'rejected';
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected';
   count: number;
   item_ids: string[];
   created_at: string; // earliest created_at in the group
@@ -89,9 +89,10 @@ export interface OrderRound {
 // Status priority for sorting (lower = higher priority, shown first)
 const STATUS_PRIORITY: Record<string, number> = {
   pending: 0,
-  preparing: 1,
-  ready: 2,
-  rejected: 3,
+  confirmed: 1,
+  preparing: 2,
+  ready: 3,
+  rejected: 4,
 };
 
 // Helper to group stored items for display

@@ -33,6 +33,7 @@ const ROUND_STATUS_ORDER: Record<string, number> = {
 
 const statusDotClass: Record<string, string> = {
   pending: 'bg-primary/60',
+  confirmed: 'bg-purple-500',
   preparing: 'bg-warning',
   ready: 'bg-success',
   rejected: 'bg-destructive',
@@ -297,6 +298,7 @@ const OrderRoundSection = forwardRef<HTMLDivElement, OrderRoundSectionProps>(
     const itemsByStatus = {
       ready: groupedItems.filter(g => g.status === 'ready'),
       preparing: groupedItems.filter(g => g.status === 'preparing'),
+      confirmed: groupedItems.filter(g => g.status === 'confirmed'),
       pending: groupedItems.filter(g => g.status === 'pending'),
       rejected: groupedItems.filter(g => g.status === 'rejected'),
     };
@@ -430,10 +432,11 @@ interface RoundItemsProps {
 }
 
 const RoundItems = ({ itemsByStatus }: RoundItemsProps) => {
-  const statusOrder = ['ready', 'preparing', 'pending', 'rejected'] as const;
+  const statusOrder = ['ready', 'preparing', 'confirmed', 'pending', 'rejected'] as const;
   const statusLabels: Record<string, string> = {
     ready: 'Ready',
     preparing: 'Preparing',
+    confirmed: 'Confirmed',
     pending: 'Pending',
     rejected: 'Rejected',
   };
