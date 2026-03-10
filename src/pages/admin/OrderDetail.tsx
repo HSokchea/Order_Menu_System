@@ -478,6 +478,9 @@ const OrderDetail = () => {
                               <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'pending')}>
                                 <Clock className="h-4 w-4 mr-2" /> Pending
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'confirmed')}>
+                                <CheckCircle className="h-4 w-4 mr-2" /> Confirmed
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'preparing')}>
                                 <ChefHat className="h-4 w-4 mr-2" /> Preparing
                               </DropdownMenuItem>
