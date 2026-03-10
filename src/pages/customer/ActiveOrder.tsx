@@ -432,10 +432,11 @@ interface RoundItemsProps {
 }
 
 const RoundItems = ({ itemsByStatus }: RoundItemsProps) => {
-  const statusOrder = ['ready', 'preparing', 'pending', 'rejected'] as const;
+  const statusOrder = ['ready', 'preparing', 'confirmed', 'pending', 'rejected'] as const;
   const statusLabels: Record<string, string> = {
     ready: 'Ready',
     preparing: 'Preparing',
+    confirmed: 'Confirmed',
     pending: 'Pending',
     rejected: 'Rejected',
   };
