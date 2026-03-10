@@ -15,7 +15,7 @@ export interface StoredOrderItem {
   name: string;
   price: number;
   options: OrderItemOption[];
-  status: 'pending' | 'preparing' | 'ready' | 'rejected';
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected';
   created_at: string;
   category_name?: string;
   special_request?: string; // Per-round special request note
