@@ -375,6 +375,9 @@ const OrderDetail = () => {
               <DropdownMenuItem onClick={() => setStatusFilter('pending')}>
                 <Clock className="h-4 w-4 mr-2" /> Pending
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter('confirmed')}>
+                <CheckCircle className="h-4 w-4 mr-2" /> Confirmed
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter('preparing')}>
                 <ChefHat className="h-4 w-4 mr-2" /> Preparing
               </DropdownMenuItem>
