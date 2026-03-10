@@ -89,7 +89,7 @@ const CustomerOrders = () => {
   const persisted = useMemo(() => loadPersistedFilters(), []);
   const [activeTab, setActiveTab] = useState<'all' | 'dine_in' | 'takeaway'>(persisted.activeTab);
   const [filters, setFilters] = useState<OrderFilters>(persisted.filters);
-  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'pending' | 'preparing' | 'ready' | 'rejected'>(persisted.activeQuickFilter || '');
+  const [activeQuickFilter, setActiveQuickFilter] = useState<'' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected'>(persisted.activeQuickFilter || '');
   const [sortDirection, setSortDirection] = useState<SortDirection>(persisted.sortDirection);
 
   // Persist filter state to sessionStorage
