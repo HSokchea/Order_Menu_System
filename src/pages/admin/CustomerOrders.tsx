@@ -64,7 +64,7 @@ const FILTER_STORAGE_KEY = 'customerOrdersFilters';
 function loadPersistedFilters(): {
   filters: OrderFilters;
   activeTab: 'all' | 'dine_in' | 'takeaway';
-  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready' | 'rejected';
+  activeQuickFilter: '' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected';
   sortDirection: SortDirection;
 } {
   try {
