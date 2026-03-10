@@ -178,8 +178,18 @@ const OrderDetail = () => {
 
       if (error) throw error;
 
-      const response = data as { success: boolean; error?: string };
-      if (!response.success) throw new Error(response.error);
+      const response = data as { success: boolean; error?: string; insufficient_items?: any[] };
+      if (!response.success) {
+        if (response.insufficient_items && response.insufficient_items.length > 0) {
+          const details = response.insufficient_items
+            .map((i: any) => `${i.ingredient}: need ${i.required} ${i.unit}, have ${i.available}`)
+            .join('\n');
+          toast.error(`Cannot confirm order: insufficient stock\n${details}`, { duration: 6000 });
+        } else {
+          throw new Error(response.error);
+        }
+        return;
+      }
 
       toast.success(`Items marked as ${newStatus}`);
       fetchOrder();
