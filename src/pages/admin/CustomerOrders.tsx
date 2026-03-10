@@ -311,6 +311,8 @@ const CustomerOrders = () => {
       };
       if (type === 'pending') {
         newFilters.statusContains.pending = true;
+      } else if (type === 'confirmed') {
+        newFilters.statusContains.confirmed = true;
       } else if (type === 'preparing') {
         newFilters.statusContains.preparing = true;
       } else if (type === 'ready') {
