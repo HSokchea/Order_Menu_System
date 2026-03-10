@@ -83,8 +83,8 @@ export type OrderTypeTab = 'all' | 'dine_in' | 'takeaway';
 interface CustomerOrdersFiltersProps {
   filters: OrderFilters;
   onFiltersChange: (filters: OrderFilters) => void;
-  onQuickFilter: (type: 'pending' | 'preparing' | 'ready' | 'rejected') => void;
-  activeQuickFilter: '' | 'pending' | 'preparing' | 'ready' | 'rejected';
+  onQuickFilter: (type: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected') => void;
+  activeQuickFilter: '' | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected';
   sortDirection: SortDirection;
   onSortChange: (direction: SortDirection) => void;
   orderType: OrderTypeTab;
