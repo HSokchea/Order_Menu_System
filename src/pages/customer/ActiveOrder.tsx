@@ -33,6 +33,7 @@ const ROUND_STATUS_ORDER: Record<string, number> = {
 
 const statusDotClass: Record<string, string> = {
   pending: 'bg-primary/60',
+  confirmed: 'bg-purple-500',
   preparing: 'bg-warning',
   ready: 'bg-success',
   rejected: 'bg-destructive',
