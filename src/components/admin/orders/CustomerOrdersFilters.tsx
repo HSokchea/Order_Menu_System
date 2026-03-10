@@ -55,6 +55,7 @@ export interface OrderFilters {
   // Item status filter (show orders containing items with these statuses)
   statusContains: {
     pending: boolean;
+    confirmed: boolean;
     preparing: boolean;
     ready: boolean;
     rejected: boolean;
