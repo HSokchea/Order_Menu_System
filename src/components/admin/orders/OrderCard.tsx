@@ -26,7 +26,7 @@ interface OrderCardProps {
 
 // Calculate status counts from items
 function getStatusCounts(items: StoredOrderItem[]) {
-  const counts = { pending: 0, preparing: 0, ready: 0, rejected: 0 };
+  const counts = { pending: 0, confirmed: 0, preparing: 0, ready: 0, rejected: 0 };
   items.forEach(item => {
     const status = item.status || 'pending';
     if (status in counts) {
