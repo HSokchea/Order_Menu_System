@@ -150,6 +150,7 @@ export function CustomerOrdersFilters({
 
   const statusOptions = [
     { value: 'pending', label: <span className="text-yellow-600">Pending</span> },
+    { value: 'confirmed', label: <span className="text-purple-600">Confirmed</span> },
     { value: 'preparing', label: <span className="text-blue-600">Preparing</span> },
     { value: 'ready', label: <span className="text-green-600">Ready</span> },
     { value: 'rejected', label: <span className="text-red-600">Rejected</span> },
