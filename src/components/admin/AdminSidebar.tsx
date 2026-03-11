@@ -4,9 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutGrid,
   UtensilsCrossed,
-  ClipboardList,
   QrCode,
-  Store,
   Users,
   Settings,
   Package,
@@ -36,13 +34,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useUserProfile, PERMISSIONS } from "@/hooks/useUserProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -265,11 +261,10 @@ export function AdminSidebar() {
     const link = (
       <NavLink
         to={item.url}
-        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-          active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-        } ${indent && !collapsed ? "pl-9" : ""}`}
+        className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${active
+          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          } ${indent && !collapsed ? "pl-9" : ""}`}
       >
         <item.icon className="h-[18px] w-[18px] shrink-0" />
         {!collapsed && <span className="truncate">{item.title}</span>}
@@ -322,11 +317,10 @@ export function AdminSidebar() {
               <SidebarMenuButton asChild className="h-auto p-0">
                 <NavLink
                   to={firstChild.url}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                    groupActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                  }`}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${groupActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                    }`}
                 >
                   <group.icon className="h-[18px] w-[18px] shrink-0" />
                 </NavLink>
@@ -349,18 +343,16 @@ export function AdminSidebar() {
         <SidebarMenuItem className="p-0">
           <CollapsibleTrigger asChild>
             <button
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                groupActive && !isOpen
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-              }`}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${groupActive && !isOpen
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                }`}
             >
               <group.icon className="h-[18px] w-[18px] shrink-0" />
               <span className="flex-1 truncate text-left">{group.title}</span>
               <ChevronDown
-                className={`h-4 w-4 shrink-0 text-sidebar-foreground/50 transition-transform duration-200 ${
-                  isOpen ? "rotate-180" : ""
-                }`}
+                className={`h-4 w-4 shrink-0 text-sidebar-foreground/50 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
           </CollapsibleTrigger>
@@ -375,54 +367,84 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-0">
-        {/* Brand header with inline toggle - Claude style */}
         <div className={`flex items-center gap-2 px-3 py-3 ${collapsed ? "justify-center" : ""}`}>
           {!collapsed ? (
-            <>
-              <div className="h-8 w-8 shrink-0 rounded-lg bg-primary flex items-center justify-center">
-                <Store className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-semibold tracking-tight truncate text-sidebar-foreground">
-                  {restaurant?.name || "Admin"}
-                </h2>
-                <p className="text-xs text-sidebar-foreground/50">
-                  {displayRoleLabel}
-                </p>
-              </div>
+            restaurant?.logo_url ? (
+              <>
+                <div className="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center overflow-hidden bg-white border border-border">
+                  <img
+                    src={restaurant.logo_url}
+                    alt={restaurant.name}
+                    className="w-8 h-8 object-cover"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-sm font-semibold tracking-tight truncate text-sidebar-foreground">
+                    {restaurant.name}
+                  </h2>
+                  <p className="text-xs text-sidebar-foreground/50">
+                    {displayRoleLabel}
+                  </p>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={toggleSidebar}
+                      className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                    >
+                      <PanelLeftClose className="h-[18px] w-[18px]" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium">
+                    Close sidebar
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-1 flex-col items-start justify-start pl-2">
+                  <h2 className="text-sm font-semibold tracking-tight truncate text-sidebar-foreground">
+                    {restaurant?.name || "Admin"}
+                  </h2>
+                  <p className="text-xs text-sidebar-foreground/50">
+                    {displayRoleLabel}
+                  </p>
+                </div>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={toggleSidebar}
+                      className="rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                    >
+                      <PanelLeftClose className="h-[18px] w-[18px]" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium">
+                    Close sidebar
+                  </TooltipContent>
+                </Tooltip>
+              </>
+            )
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     onClick={toggleSidebar}
-                    className="shrink-0 rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                    className="rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
                   >
-                    <PanelLeftClose className="h-[18px] w-[18px]" />
+                    <PanelLeft className="h-[18px] w-[18px]" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium">
-                  Close sidebar
+                  Open sidebar
                 </TooltipContent>
               </Tooltip>
-            </>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={toggleSidebar}
-                  className="rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
-                >
-                  <PanelLeft className="h-[18px] w-[18px]" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="font-medium">
-                Open sidebar
-              </TooltipContent>
-            </Tooltip>
+            </div>
           )}
         </div>
       </SidebarHeader>
-
-      <SidebarSeparator className="mx-0 w-full" />
 
       <SidebarContent className="p-0 gap-0">
         <SidebarGroup className="p-0">
@@ -437,15 +459,13 @@ export function AdminSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-0 mt-auto">
-        <SidebarSeparator className="mx-0 w-full" />
 
         {/* User profile with popover */}
         <Popover>
           <PopoverTrigger asChild>
             <button
-              className={`flex items-center gap-3 px-3 py-3 w-full hover:bg-sidebar-accent/50 transition-colors ${
-                collapsed ? "justify-center" : ""
-              }`}
+              className={`flex items-center gap-3 px-3 py-3 w-full hover:bg-sidebar-accent/50 transition-colors ${collapsed ? "justify-center" : ""
+                }`}
             >
               <div className="h-8 w-8 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center">
                 <span className="text-xs font-semibold text-sidebar-foreground leading-none">
@@ -466,8 +486,8 @@ export function AdminSidebar() {
           </PopoverTrigger>
           <PopoverContent
             side="top"
-            align="start"
-            className="w-56 p-1"
+            align="center"
+            className="w-56 p-1 rounded-xl border shadow-sm"
             sideOffset={8}
           >
             <div className="px-3 py-2 border-b border-border mb-1">
@@ -477,39 +497,39 @@ export function AdminSidebar() {
             </div>
             <Popover>
               <PopoverTrigger asChild>
-                <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors">
+                <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors">
                   <Globe className="h-4 w-4" />
                   <span className="flex-1 text-left">Language</span>
                   <span className="text-xs text-muted-foreground">
-                    {language === "en" ? "English" : "ខ្មែរ"}
+                    {language === "en" ? "English" : "Khmer"}
                   </span>
                 </button>
               </PopoverTrigger>
               <PopoverContent
                 side="right"
                 align="start"
-                className="w-44 p-1"
+                className="w-44 p-1 rounded-xl border shadow-sm"
                 sideOffset={8}
               >
                 <button
                   onClick={() => handleLanguageChange("en")}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-accent transition-colors"
                 >
                   <span className="flex-1 text-left">English</span>
                   {language === "en" && <Check className="h-4 w-4 text-primary" />}
                 </button>
                 <button
                   onClick={() => handleLanguageChange("km")}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-accent transition-colors"
                 >
-                  <span className="flex-1 text-left">ខ្មែរ (Khmer)</span>
+                  <span className="flex-1 text-left">Khmer</span>
                   {language === "km" && <Check className="h-4 w-4 text-primary" />}
                 </button>
               </PopoverContent>
             </Popover>
             <button
               onClick={() => setShowSignOutDialog(true)}
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
             >
               <LogOut className="h-4 w-4" />
               <span>Sign Out</span>

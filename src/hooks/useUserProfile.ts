@@ -24,6 +24,7 @@ export interface RestaurantInfo {
   id: string;
   name: string;
   is_onboarded: boolean;
+  logo_url: string | null;
 }
 
 export interface EffectivePermission {
@@ -225,7 +226,7 @@ export const useUserProfile = () => {
       // Check if user is restaurant owner
       const { data: ownedRestaurant } = await supabase
         .from('restaurants')
-        .select('id, name, is_onboarded')
+        .select('id, name, is_onboarded, logo_url')
         .eq('owner_id', user.id)
         .single();
 
@@ -241,7 +242,7 @@ export const useUserProfile = () => {
         // Staff - get restaurant info
         const { data: staffRestaurant } = await supabase
           .from('restaurants')
-          .select('id, name, is_onboarded')
+          .select('id, name, is_onboarded, logo_url')
           .eq('id', profileData.restaurant_id)
           .single();
         

@@ -26,7 +26,7 @@ const getBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
   if (orderDetailMatch) {
     return [
       { label: "Customer Orders", href: "/admin/customer-orders" },
-      { label: `Order #${orderDetailMatch[1].slice(0, 8)}` },
+      { label: `Order Details` },
     ];
   }
 

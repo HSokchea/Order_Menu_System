@@ -7,14 +7,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { toast } from 'sonner';
 import {
-  ArrowLeft,
   Clock,
   CheckCircle,
   ChefHat,
   XCircle,
   DollarSign,
   Printer,
-  Pencil,
   ClipboardList,
   FileText,
   RefreshCw,
@@ -355,8 +353,9 @@ const OrderDetail = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4">
           <div>
+            <h2 className="text-xl font-semibold">Order {shortId}</h2>
             <p className="text-sm text-muted-foreground">
-              {shortId} • {rounds.length} Round{rounds.length !== 1 ? 's' : ''} •
+              {rounds.length} Round{rounds.length !== 1 ? 's' : ''} •
               {isDineIn ? ` Table ${order.table_number || 'N/A'}` : ' Takeaway'}
             </p>
           </div>
