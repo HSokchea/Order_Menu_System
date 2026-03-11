@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
+import { AdminLayout, BreadcrumbItem } from "@/components/admin/AdminLayout";
 import { useUserProfile, PERMISSIONS } from "@/hooks/useUserProfile";
 import { PermissionGuard, AccessDenied } from "@/components/admin/PermissionGuard";
 import { RoleDashboard } from "@/components/admin/RoleDashboard";
@@ -20,69 +20,84 @@ import Inventory from "./Inventory";
 import StockAdjustment from "./StockAdjustment";
 import InventoryHistory from "./InventoryHistory";
 
-const getPageInfo = (pathname: string) => {
-  switch (pathname) {
-    case "/admin":
-    case "/admin/dashboard":
-      return { title: "Dashboard", description: "Overview and statistics" };
-    case "/admin/categories":
-      return { title: "Categories", description: "Manage menu categories" };
-    case "/admin/menu-items":
-      return { title: "Menu Items", description: "Add and manage your menu items" };
-    case "/admin/customer-orders":
-      return { title: "Customer Orders", description: "QR menu orders (dine-in & takeaway)" };
-    case "/admin/settings":
-      return { title: "Settings", description: "Shop profile and configuration" };
-    case "/admin/staff":
-      return { title: "Staff", description: "Manage staff accounts" };
-    case "/admin/staff/roles":
-      return { title: "Roles", description: "Manage roles" };
-    case "/admin/staff/permissions":
-      return { title: "Permissions", description: "Role permission mapping" };
-    case "/admin/staff/user-access":
-      return { title: "User Access", description: "View user permissions" };
-    case "/admin/roles":
-      return { title: "Staff Management", description: "Staff, roles & permissions" };
-    case "/admin/qr-generator":
-      return { title: "QR Generator", description: "Create QR codes for tables" };
-    case "/admin/inventory":
-      return { title: "Ingredients", description: "Manage inventory ingredients" };
-    case "/admin/inventory/adjustment":
-      return { title: "Stock Adjustment", description: "Add or remove stock" };
-    case "/admin/inventory/history":
-      return { title: "Inventory History", description: "Stock transaction history" };
-    default:
-      return { title: "Customer Orders", description: "QR menu orders (dine-in & takeaway)" };
+const getBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
+  // Order detail sub-page
+  const orderDetailMatch = pathname.match(/^\/admin\/customer-orders\/(.+)$/);
+  if (orderDetailMatch) {
+    return [
+      { label: "Customer Orders", href: "/admin/customer-orders" },
+      { label: `Order #${orderDetailMatch[1].slice(0, 8)}` },
+    ];
   }
+
+  // Staff sub-pages
+  if (pathname === "/admin/staff/roles") {
+    return [
+      { label: "Staff Management", href: "/admin/staff" },
+      { label: "Roles" },
+    ];
+  }
+  if (pathname === "/admin/staff/permissions") {
+    return [
+      { label: "Staff Management", href: "/admin/staff" },
+      { label: "Permissions" },
+    ];
+  }
+  if (pathname === "/admin/staff/user-access") {
+    return [
+      { label: "Staff Management", href: "/admin/staff" },
+      { label: "User Access" },
+    ];
+  }
+
+  // Inventory sub-pages
+  if (pathname === "/admin/inventory/adjustment") {
+    return [
+      { label: "Ingredients", href: "/admin/inventory" },
+      { label: "Stock Adjustment" },
+    ];
+  }
+  if (pathname === "/admin/inventory/history") {
+    return [
+      { label: "Ingredients", href: "/admin/inventory" },
+      { label: "Inventory History" },
+    ];
+  }
+
+  // Top-level pages — single breadcrumb
+  const topLevel: Record<string, string> = {
+    "/admin": "Dashboard",
+    "/admin/dashboard": "Dashboard",
+    "/admin/categories": "Categories",
+    "/admin/menu-items": "Menu Items",
+    "/admin/customer-orders": "Customer Orders",
+    "/admin/settings": "Settings",
+    "/admin/staff": "Staff Management",
+    "/admin/qr-generator": "QR Generator",
+    "/admin/inventory": "Ingredients",
+    "/admin/roles": "Staff Management",
+  };
+
+  const label = topLevel[pathname] || "Dashboard";
+  return [{ label }];
 };
 
-/**
- * AdminMain - Main admin layout with permission-based route protection
- * 
- * ALL route access is controlled by PERMISSIONS, not role names
- * - Each route specifies required permissions
- * - PermissionGuard checks if user has required permissions
- * - hasPermission() handles owner access automatically
- */
 export default function AdminMain() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, restaurant, isOwner, loading, hasPermission } = useUserProfile();
-  const { title, description } = getPageInfo(location.pathname);
+  const breadcrumbs = getBreadcrumbs(location.pathname);
   
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
     if (loading) return;
     
-    // Only owners need onboarding check
-    // Staff users skip onboarding entirely
     if (!isOwner) {
       setCheckingOnboarding(false);
       return;
     }
 
-    // Owner: check if onboarding is needed
     if (restaurant && !restaurant.is_onboarded) {
       navigate('/onboarding', { replace: true });
       return;
@@ -91,7 +106,6 @@ export default function AdminMain() {
     setCheckingOnboarding(false);
   }, [user, restaurant, isOwner, loading, navigate]);
 
-  // Show loader while loading OR while checking onboarding for owners
   if (loading || (isOwner && checkingOnboarding)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -101,13 +115,11 @@ export default function AdminMain() {
   }
 
   return (
-    <AdminLayout title={title} description={description}>
+    <AdminLayout breadcrumbs={breadcrumbs}>
       <Routes>
-        {/* Dashboard - shows permission-appropriate view */}
         <Route index element={<RoleDashboard />} />
         <Route path="dashboard" element={<RoleDashboard />} />
         
-        {/* Menu Management - requires menu permissions */}
         <Route path="categories" element={
           <PermissionGuard 
             permissions={[PERMISSIONS.MENU_MANAGE]} 
@@ -125,7 +137,6 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* Customer Orders (QR Menu) - requires order permissions */}
         <Route path="customer-orders" element={
           <PermissionGuard 
             permissions={[PERMISSIONS.ORDERS_VIEW]} 
@@ -143,7 +154,6 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* QR Generator - requires QR management permission */}
         <Route path="qr-generator" element={
           <PermissionGuard 
             permissions={[PERMISSIONS.QR_MANAGE]} 
@@ -153,7 +163,6 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* Settings - requires settings permission */}
         <Route path="settings" element={
           <PermissionGuard 
             permissions={[PERMISSIONS.SETTINGS_MANAGE]} 
@@ -163,7 +172,6 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* Staff Management - sub-routes */}
         <Route path="staff" element={
           <PermissionGuard
             permissions={[PERMISSIONS.USERS_MANAGE]}
@@ -196,9 +204,8 @@ export default function AdminMain() {
             <UserAccessPage />
           </PermissionGuard>
         } />
-        {/* Legacy route redirect */}
         <Route path="roles" element={<Navigate to="/admin/staff" replace />} />
-        {/* Inventory Management */}
+        
         <Route path="inventory" element={
           <PermissionGuard
             permissions={[PERMISSIONS.INVENTORY_VIEW, PERMISSIONS.INVENTORY_MANAGE]}
@@ -224,10 +231,7 @@ export default function AdminMain() {
           </PermissionGuard>
         } />
         
-        {/* Redirect old permissions route to unified staff management */}
         <Route path="permissions" element={<Navigate to="/admin/roles" replace />} />
-        
-        {/* Redirect root admin to dashboard */}
         <Route path="/" element={<Navigate to="/admin" replace />} />
       </Routes>
     </AdminLayout>

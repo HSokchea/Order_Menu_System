@@ -231,8 +231,7 @@ const MenuManagement = () => {
 
   return (
     <AdminLayout 
-      title="Menu Management"
-      description="Manage your menu categories and items"
+      breadcrumbs={[{ label: "Menu Management" }]}
     >
       <div className="space-y-8">
         {/* Category Management */}

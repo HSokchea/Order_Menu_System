@@ -354,16 +354,7 @@ const OrderDetail = () => {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/admin/customer-orders')}
-            className="gap-2 hover:bg-transparent"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
           <div>
-            <h1 className="text-l font-bold">Order Detail</h1>
             <p className="text-sm text-muted-foreground">
               {shortId} • {rounds.length} Round{rounds.length !== 1 ? 's' : ''} •
               {isDineIn ? ` Table ${order.table_number || 'N/A'}` : ' Takeaway'}
