@@ -629,8 +629,7 @@ const MenuItems = () => {
                         <div className="space-y-2">
                           <Label className="text-base font-medium">Recipe Ingredients</Label>
                           <p className="text-xs text-muted-foreground">
-                            Save this menu item first, then edit it to configure recipe ingredients.
-                            These ingredients will be automatically deducted from inventory when orders are confirmed.
+                            Click "{editingItem ? 'Update Item' : 'Save Item'}" first to unlock recipe ingredient configuration.
                           </p>
                         </div>
                       )}
