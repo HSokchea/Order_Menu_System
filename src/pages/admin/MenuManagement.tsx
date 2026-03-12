@@ -148,19 +148,33 @@ const MenuManagement = () => {
         .from('menu_items')
         .update(itemData)
         .eq('id', editingItem.id));
+      
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Menu item updated successfully');
+        setDialogOpen(false);
+        resetForm();
+        fetchData();
+      }
     } else {
-      ({ error } = await supabase
+      const { data: newItem, error: insertError } = await supabase
         .from('menu_items')
-        .insert(itemData));
-    }
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`Menu item ${editingItem ? 'updated' : 'added'} successfully`);
-      setDialogOpen(false);
-      resetForm();
-      fetchData();
+        .insert(itemData)
+        .select('*, category:menu_categories(id, name, display_order)')
+        .single();
+      
+      if (insertError) {
+        toast.error(insertError.message);
+      } else if (newItem) {
+        toast.success('Menu item added! You can now configure recipe ingredients.');
+        const mapped: MenuItem = {
+          ...newItem,
+          category: Array.isArray(newItem.category) ? newItem.category[0] : newItem.category
+        };
+        setEditingItem(mapped);
+        fetchData();
+      }
     }
   };
 
