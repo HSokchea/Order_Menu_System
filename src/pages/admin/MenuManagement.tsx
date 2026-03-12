@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Filter } from 'lucide-react';
+import { RecipeBuilder } from '@/components/admin/RecipeBuilder';
 import CategoryManager from '@/components/admin/CategoryManager';
 import ImageUpload from '@/components/admin/ImageUpload';
 import MenuItemCard from '@/components/admin/MenuItemCard';
