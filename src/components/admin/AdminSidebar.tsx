@@ -21,6 +21,7 @@ import {
   PanelLeft,
   Globe,
   Check,
+  List,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,7 +86,7 @@ const navigationEntries: NavEntry[] = [
   {
     title: "Categories",
     url: "/admin/categories",
-    icon: LayoutGrid,
+    icon: List,
     permissions: [PERMISSIONS.MENU_MANAGE],
   },
   {
