@@ -605,12 +605,20 @@ const MenuItems = () => {
                       />
                     </div>
 
-                    {/* Recipe Builder - only show when editing existing item */}
-                    {editingItem && (
-                      <div className="border-t pt-4 mt-4">
+                    {/* Recipe Builder */}
+                    <div className="border-t pt-4 mt-4">
+                      {editingItem ? (
                         <RecipeBuilder menuItemId={editingItem.id} />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="space-y-2">
+                          <Label className="text-base font-medium">Recipe Ingredients</Label>
+                          <p className="text-xs text-muted-foreground">
+                            Save this menu item first, then edit it to configure recipe ingredients.
+                            These ingredients will be automatically deducted from inventory when orders are confirmed.
+                          </p>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex items-center space-x-2">
                       <Switch
