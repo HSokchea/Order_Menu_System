@@ -22,6 +22,7 @@ interface MenuItem {
   options?: ItemOptions | null;
   size_enabled?: boolean;
   sizes?: SizeOption[] | null;
+  available_servings?: number | null;
 }
 
 interface Category {
