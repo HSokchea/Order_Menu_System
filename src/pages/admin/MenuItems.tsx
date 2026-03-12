@@ -42,6 +42,7 @@ interface MenuItem {
   size_enabled: boolean;
   sizes?: SizeOption[] | null;
   category?: Category;
+  available_servings?: number | null;
 }
 
 // Get display price: for size-based items, use default size price
