@@ -1337,6 +1337,7 @@ export type Database = {
       get_shop_menu_items: {
         Args: { p_shop_id: string }
         Returns: {
+          available_servings: number
           category_id: string
           category_name: string
           description: string
