@@ -644,9 +644,16 @@ const MenuItems = () => {
                       <Label htmlFor="available">Available for ordering</Label>
                     </div>
 
-                    <Button onClick={handleSaveItem} className="w-full" size="lg">
-                      {editingItem ? 'Update Item' : 'Add Item'}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveItem} className="flex-1" size="lg">
+                        {editingItem ? 'Update Item' : 'Save Item'}
+                      </Button>
+                      {editingItem && (
+                        <Button variant="outline" size="lg" onClick={() => { setDialogOpen(false); resetForm(); }}>
+                          Done
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
