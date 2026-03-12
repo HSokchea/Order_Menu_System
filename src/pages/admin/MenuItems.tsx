@@ -276,19 +276,35 @@ const MenuItems = () => {
         .from('menu_items')
         .update(itemData)
         .eq('id', editingItem.id));
+      
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Menu item updated successfully');
+        setDialogOpen(false);
+        resetForm();
+        fetchData();
+      }
     } else {
-      ({ error } = await supabase
+      const { data: newItem, error: insertError } = await supabase
         .from('menu_items')
-        .insert(itemData));
-    }
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`Menu item ${editingItem ? 'updated' : 'added'} successfully`);
-      setDialogOpen(false);
-      resetForm();
-      fetchData();
+        .insert(itemData)
+        .select('*, category:menu_categories(id, name, display_order)')
+        .single();
+      
+      if (insertError) {
+        toast.error(insertError.message);
+      } else if (newItem) {
+        toast.success('Menu item added! You can now configure recipe ingredients.');
+        const mapped: MenuItem = {
+          ...newItem,
+          options: (newItem.options as unknown as ItemOptions) || null,
+          sizes: (newItem.sizes as unknown as SizeOption[]) || null,
+          category: Array.isArray(newItem.category) ? newItem.category[0] : newItem.category
+        };
+        setEditingItem(mapped);
+        fetchData();
+      }
     }
   };
 
@@ -613,8 +629,7 @@ const MenuItems = () => {
                         <div className="space-y-2">
                           <Label className="text-base font-medium">Recipe Ingredients</Label>
                           <p className="text-xs text-muted-foreground">
-                            Save this menu item first, then edit it to configure recipe ingredients.
-                            These ingredients will be automatically deducted from inventory when orders are confirmed.
+                            Click "{editingItem ? 'Update Item' : 'Save Item'}" first to unlock recipe ingredient configuration.
                           </p>
                         </div>
                       )}
@@ -629,9 +644,16 @@ const MenuItems = () => {
                       <Label htmlFor="available">Available for ordering</Label>
                     </div>
 
-                    <Button onClick={handleSaveItem} className="w-full" size="lg">
-                      {editingItem ? 'Update Item' : 'Add Item'}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveItem} className="flex-1" size="lg">
+                        {editingItem ? 'Update Item' : 'Save Item'}
+                      </Button>
+                      {editingItem && (
+                        <Button variant="outline" size="lg" onClick={() => { setDialogOpen(false); resetForm(); }}>
+                          Done
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
