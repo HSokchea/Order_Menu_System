@@ -746,7 +746,7 @@ const MenuItems = () => {
                     </TableCell>
                     <TableCell className="w-[100px] hidden lg:table-cell">
                       {(() => {
-                        const servings = (item as any).available_servings;
+                        const servings = item.available_servings;
                         if (servings === null || servings === undefined) {
                           return <span className="text-xs text-muted-foreground">No recipe</span>;
                         }
