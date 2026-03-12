@@ -688,6 +688,7 @@ const MenuItems = () => {
                       {getSortIcon('category')}
                     </div>
                   </TableHead>
+                  <TableHead className="w-[100px] hidden lg:table-cell">Stock</TableHead>
                   <TableHead
                     className="cursor-pointer hover:bg-muted/50 select-none w-[100px]"
                     onClick={() => handleSort('is_available')}

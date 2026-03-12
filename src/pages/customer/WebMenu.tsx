@@ -396,6 +396,8 @@ const WebMenu = () => {
                   ?.menu_items.map((item) => {
                     const itemCount = getItemCount(item.id);
                     const hasOptions = item.options?.options && item.options.options.length > 0;
+                    const isOutOfStock = item.available_servings === 0;
+                    const isItemOrderable = item.is_available && !isOutOfStock;
 
                     // Get display price
                     const displayPrice = (() => {
@@ -409,8 +411,8 @@ const WebMenu = () => {
                     return (
                       <div
                         key={item.id}
-                        onClick={() => handleItemClick(item)}
-                        className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer ${!item.is_available ? "opacity-50" : ""}`}
+                        onClick={() => isItemOrderable ? handleItemClick(item) : undefined}
+                        className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-200 ${isItemOrderable ? "cursor-pointer" : "cursor-default opacity-60"}`}
                       >
                         {/* Product Image */}
                         <div className="relative w-full aspect-square bg-muted rounded-2xl overflow-hidden">
@@ -426,47 +428,56 @@ const WebMenu = () => {
                             </div>
                           )}
 
+                          {/* Out of Stock Overlay */}
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded-2xl">
+                              <Badge variant="secondary" className="text-xs font-semibold px-3 py-1">
+                                Out of Stock
+                              </Badge>
+                            </div>
+                          )}
+
                           {/* Add Button Overlay */}
-                          <div className="absolute bottom-3 right-3">
-                            {itemCount > 0 && !hasOptions ? (
-                              <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-1 py-1">
+                          {isItemOrderable && (
+                            <div className="absolute bottom-3 right-3">
+                              {itemCount > 0 && !hasOptions ? (
+                                <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-1 py-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => handleQuickRemove(e, item.id)}
+                                    className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  <span className="text-sm font-semibold min-w-[20px] text-center">{itemCount}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickAdd(item);
+                                    }}
+                                    className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
                                 <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => handleQuickRemove(e, item.id)}
-                                  className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </Button>
-                                <span className="text-sm font-semibold min-w-[20px] text-center">{itemCount}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleQuickAdd(item);
+                                    handleItemClick(item);
                                   }}
-                                  disabled={!item.is_available}
-                                  className="h-7 w-7 p-0 rounded-full hover:bg-gray-100"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-9 w-9 p-0 rounded-full shadow-sm"
                                 >
-                                  <Plus className="h-4 w-4" />
+                                  <Plus className="h-5 w-5" />
                                 </Button>
-                              </div>
-                            ) : (
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleItemClick(item);
-                                }}
-                                disabled={!item.is_available}
-                                variant="outline"
-                                size="sm"
-                                className="h-9 w-9 p-0 rounded-full shadow-sm"
-                              >
-                                <Plus className="h-5 w-5" />
-                              </Button>
-                            )}
-                          </div>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Card Content */}
@@ -478,9 +489,9 @@ const WebMenu = () => {
                             <span className="text-primary font-bold text-base md:text-lg">
                               ${displayPrice.toFixed(2)}
                             </span>
-                            {!item.is_available && (
+                            {isOutOfStock && (
                               <Badge variant="secondary" className="text-xs">
-                                Unavailable
+                                Out of Stock
                               </Badge>
                             )}
                           </div>
