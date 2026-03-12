@@ -42,6 +42,7 @@ interface MenuItem {
   size_enabled: boolean;
   sizes?: SizeOption[] | null;
   category?: Category;
+  available_servings?: number | null;
 }
 
 // Get display price: for size-based items, use default size price
@@ -688,6 +689,7 @@ const MenuItems = () => {
                       {getSortIcon('category')}
                     </div>
                   </TableHead>
+                  <TableHead className="w-[100px] hidden lg:table-cell">Stock</TableHead>
                   <TableHead
                     className="cursor-pointer hover:bg-muted/50 select-none w-[100px]"
                     onClick={() => handleSort('is_available')}
@@ -741,6 +743,33 @@ const MenuItems = () => {
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
+                    </TableCell>
+                    <TableCell className="w-[100px] hidden lg:table-cell">
+                      {(() => {
+                        const servings = item.available_servings;
+                        if (servings === null || servings === undefined) {
+                          return <span className="text-xs text-muted-foreground">No recipe</span>;
+                        }
+                        if (servings === 0) {
+                          return (
+                            <Badge variant="destructive" className="text-xs">
+                              Out of Stock
+                            </Badge>
+                          );
+                        }
+                        if (servings <= 5) {
+                          return (
+                            <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-600 dark:text-yellow-400">
+                              Low ({servings})
+                            </Badge>
+                          );
+                        }
+                        return (
+                          <Badge variant="outline" className="text-xs border-green-500 text-green-600 dark:text-green-400">
+                            {servings} servings
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="w-[100px]">
                       <Badge
