@@ -615,21 +615,25 @@ const MenuItems = () => {
 
                     {/* Item Options Section */}
                     <div className="border-t pt-4 mt-4">
-                      <ItemOptionsEditor
-                        value={itemOptions}
-                        onChange={setItemOptions}
-                      />
+                      {editingItem ? (
+                        <OptionGroupsEditor menuItemId={editingItem.id} />
+                      ) : (
+                        <ItemOptionsEditor
+                          value={itemOptions}
+                          onChange={setItemOptions}
+                        />
+                      )}
                     </div>
 
                     {/* Recipe Builder */}
                     <div className="border-t pt-4 mt-4">
                       {editingItem ? (
-                        <RecipeBuilder menuItemId={editingItem.id} />
+                        <RecipeBuilder menuItemId={editingItem.id} sizeEnabled={itemSizeEnabled} />
                       ) : (
                         <div className="space-y-2">
                           <Label className="text-base font-medium">Recipe Ingredients</Label>
                           <p className="text-xs text-muted-foreground">
-                            Click "{editingItem ? 'Update Item' : 'Save Item'}" first to unlock recipe ingredient configuration.
+                            Click "Save Item" first to unlock recipe and option configuration.
                           </p>
                         </div>
                       )}
