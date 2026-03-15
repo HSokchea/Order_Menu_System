@@ -374,7 +374,7 @@ const MenuManagement = () => {
                     {/* Recipe Builder */}
                     <div className="border-t pt-4 mt-4">
                       {editingItem ? (
-                        <RecipeBuilder menuItemId={editingItem.id} />
+                        <RecipeBuilder menuItemId={editingItem.id} sizeEnabled={false} />
                       ) : (
                         <div className="space-y-2">
                           <Label className="text-base font-medium">Recipe Ingredients</Label>
