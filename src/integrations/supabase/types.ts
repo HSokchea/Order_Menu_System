@@ -181,6 +181,7 @@ export type Database = {
           ingredient_id: string
           menu_item_id: string
           quantity: number
+          size_id: string | null
         }
         Insert: {
           created_at?: string
@@ -188,6 +189,7 @@ export type Database = {
           ingredient_id: string
           menu_item_id: string
           quantity?: number
+          size_id?: string | null
         }
         Update: {
           created_at?: string
@@ -195,6 +197,7 @@ export type Database = {
           ingredient_id?: string
           menu_item_id?: string
           quantity?: number
+          size_id?: string | null
         }
         Relationships: [
           {
@@ -206,6 +209,51 @@ export type Database = {
           },
           {
             foreignKeyName: "menu_item_ingredients_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_item_ingredients_size_id_fkey"
+            columns: ["size_id"]
+            isOneToOne: false
+            referencedRelation: "menu_item_sizes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_sizes: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          menu_item_id: string
+          name: string
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          menu_item_id: string
+          name: string
+          price?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          menu_item_id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_sizes_menu_item_id_fkey"
             columns: ["menu_item_id"]
             isOneToOne: false
             referencedRelation: "menu_items"
@@ -282,6 +330,121 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      option_groups: {
+        Row: {
+          created_at: string
+          id: string
+          menu_item_id: string
+          name: string
+          required: boolean
+          selection_type: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          menu_item_id: string
+          name: string
+          required?: boolean
+          selection_type?: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          menu_item_id?: string
+          name?: string
+          required?: boolean
+          selection_type?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_groups_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      option_value_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          option_value_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          option_value_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          option_value_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_value_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "option_value_ingredients_option_value_id_fkey"
+            columns: ["option_value_id"]
+            isOneToOne: false
+            referencedRelation: "option_values"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      option_values: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          is_default: boolean
+          name: string
+          price_adjustment: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          is_default?: boolean
+          name: string
+          price_adjustment?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          price_adjustment?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "option_values_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "option_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -1164,6 +1327,14 @@ export type Database = {
         }
         Returns: Json
       }
+      deduct_inventory_for_items_v2: {
+        Args: {
+          p_order_items: Json
+          p_reference_id?: string
+          p_restaurant_id: string
+        }
+        Returns: Json
+      }
       get_active_orders_by_tokens: {
         Args: { p_order_tokens: string[] }
         Returns: {
@@ -1372,9 +1543,21 @@ export type Database = {
         Args: { p_device_id: string; p_order_id: string }
         Returns: Json
       }
+      recalculate_menu_item_servings: {
+        Args: { p_menu_item_id: string }
+        Returns: undefined
+      }
       restore_inventory_for_items: {
         Args: {
           p_item_ids: string[]
+          p_reference_id?: string
+          p_restaurant_id: string
+        }
+        Returns: Json
+      }
+      restore_inventory_for_items_v2: {
+        Args: {
+          p_order_items: Json
           p_reference_id?: string
           p_restaurant_id: string
         }
