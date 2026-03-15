@@ -22,6 +22,7 @@ import SizePricingEditor, { SizeOption } from '@/components/admin/SizePricingEdi
 import { Json } from '@/integrations/supabase/types';
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RecipeBuilder } from '@/components/admin/RecipeBuilder';
+import OptionGroupsEditor from '@/components/admin/OptionGroupsEditor';
 
 interface Category {
   id: string;
