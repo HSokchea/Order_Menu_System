@@ -114,12 +114,9 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
     }
   }, [deviceIdLoaded, shopId, deviceId, fetchActiveOrder]);
 
-  // Set up real-time subscription + polling fallback for order updates
+  // Set up real-time subscription for order updates (no polling)
   useEffect(() => {
     if (!order?.id) return;
-
-    let pollInterval: ReturnType<typeof setInterval> | null = null;
-    let lastUpdatedAt = order.updated_at;
 
     const channel = supabase
       .channel(`active-order-${order.id}`)
@@ -135,32 +132,10 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
           fetchActiveOrder();
         }
       )
-      .subscribe((status) => {
-        // If realtime connects, use longer poll interval as fallback
-        if (status === 'SUBSCRIBED') {
-          if (pollInterval) clearInterval(pollInterval);
-          pollInterval = setInterval(async () => {
-            // Light poll: only refetch if updated_at changed
-            const { data } = await supabase
-              .from('tb_order_temporary')
-              .select('updated_at')
-              .eq('id', order.id)
-              .maybeSingle();
-            if (data && data.updated_at !== lastUpdatedAt) {
-              lastUpdatedAt = data.updated_at;
-              fetchActiveOrder();
-            }
-          }, 10000); // Every 10s as fallback
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          // Realtime failed, poll more aggressively
-          if (pollInterval) clearInterval(pollInterval);
-          pollInterval = setInterval(() => fetchActiveOrder(), 5000);
-        }
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
-      if (pollInterval) clearInterval(pollInterval);
     };
   }, [order?.id, fetchActiveOrder]);
 
