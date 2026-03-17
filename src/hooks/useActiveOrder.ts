@@ -22,58 +22,19 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchActiveOrder = useCallback(async () => {
-    if (!shopId || !deviceId) return;
-
-    setIsLoading(true);
-    setError(null);
-
+  // Fetch shop info once (cached in state)
+  const fetchShopInfo = useCallback(async () => {
+    if (!shopId || shop) return;
     try {
-      const { data, error: rpcError } = await supabase.rpc('get_device_active_order', {
-        p_shop_id: shopId,
-        p_device_id: deviceId,
-      });
-
-      if (rpcError) {
-        console.error('Error fetching active order:', rpcError);
-        setError(rpcError.message);
-        setOrder(null);
-        return;
-      }
-
-      const response = data as { success: boolean; order?: any; shop?: any; error?: string };
-
-      if (response.success && response.order) {
-        // Parse items - now they're individual units with status and special_request
-        const items: StoredOrderItem[] = Array.isArray(response.order.items) 
-          ? response.order.items.map((item: any) => ({
-              item_id: item.item_id,
-              menu_item_id: item.menu_item_id,
-              name: item.name,
-              price: item.price || 0,
-              options: item.options || [],
-              status: item.status || 'pending',
-              created_at: item.created_at,
-              special_request: item.special_request || null,
-            }))
-          : [];
-
-        setOrder({
-          id: response.order.id,
-          shop_id: response.order.shop_id,
-          device_id: response.order.device_id,
-          status: response.order.status,
-          total_usd: response.order.total_usd || 0,
-          customer_notes: response.order.customer_notes,
-          items,
-          order_type: response.order.order_type || 'takeaway',
-          table_id: response.order.table_id || null,
-          table_number: response.order.table_number || null,
-          created_at: response.order.created_at,
-          updated_at: response.order.updated_at,
-          paid_at: response.order.paid_at || null,
+      const { data } = await supabase.rpc('get_public_shop', { p_shop_id: shopId });
+      if (data && data.length > 0) {
+        // Get full restaurant info for receipt fields via get_device_active_order fallback
+        const { data: rpcData } = await supabase.rpc('get_device_active_order', {
+          p_shop_id: shopId,
+          p_device_id: deviceId || '',
         });
-        if (response.shop) {
+        const response = rpcData as { success: boolean; shop?: any } | null;
+        if (response?.shop) {
           setShop({
             name: response.shop.name,
             currency: response.shop.currency || 'USD',
@@ -90,12 +51,93 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
             receipt_footer_text: response.shop.receipt_footer_text || null,
           });
         } else {
-          setShop(null);
+          setShop({
+            name: data[0].name || '',
+            currency: data[0].currency || 'USD',
+            logo_url: data[0].logo_url || null,
+          });
         }
-      } else {
-        setOrder(null);
-        setError(response.error || null);
       }
+    } catch (err) {
+      console.error('Error fetching shop info:', err);
+    }
+  }, [shopId, deviceId, shop]);
+
+  // Fetch order directly from tb_order_temporary table
+  const fetchActiveOrder = useCallback(async () => {
+    if (!shopId || !deviceId) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: orderData, error: queryError } = await supabase
+        .from('tb_order_temporary')
+        .select('*')
+        .eq('shop_id', shopId)
+        .eq('device_id', deviceId)
+        .eq('order_date', today)
+        .in('status', ['pending', 'placed'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (queryError) {
+        console.error('Error fetching active order:', queryError);
+        setError(queryError.message);
+        setOrder(null);
+        return;
+      }
+
+      if (!orderData) {
+        setOrder(null);
+        setError(null);
+        return;
+      }
+
+      // Parse items
+      const rawItems = Array.isArray(orderData.items) ? orderData.items : [];
+      const items: StoredOrderItem[] = rawItems.map((item: any) => ({
+        item_id: item.item_id,
+        menu_item_id: item.menu_item_id,
+        name: item.name,
+        price: item.price || 0,
+        options: item.options || [],
+        status: item.status || 'pending',
+        created_at: item.created_at,
+        special_request: item.special_request || null,
+      }));
+
+      // Get table_number if table_id exists
+      let tableNumber: string | null = null;
+      if (orderData.table_id) {
+        const { data: tableData } = await supabase.rpc('get_public_table_by_id', {
+          p_table_id: orderData.table_id,
+        });
+        if (tableData && tableData.length > 0) {
+          tableNumber = tableData[0].table_number;
+        }
+      }
+
+      setOrder({
+        id: orderData.id,
+        shop_id: orderData.shop_id,
+        device_id: orderData.device_id,
+        status: orderData.status as ActiveOrder['status'],
+        total_usd: orderData.total_usd || 0,
+        customer_notes: orderData.customer_notes,
+        items,
+        order_type: (orderData.order_type as 'dine_in' | 'takeaway') || 'takeaway',
+        table_id: orderData.table_id || null,
+        table_number: tableNumber,
+        created_at: orderData.created_at,
+        updated_at: orderData.updated_at,
+        paid_at: null,
+      });
+
+      // Fetch shop info if not loaded yet
+      fetchShopInfo();
     } catch (err: any) {
       console.error('Unexpected error:', err);
       setError(err.message || 'Failed to load order');
@@ -103,7 +145,7 @@ export const useActiveOrder = (shopId?: string): UseActiveOrderResult => {
     } finally {
       setIsLoading(false);
     }
-  }, [shopId, deviceId]);
+  }, [shopId, deviceId, fetchShopInfo]);
 
   // Initial fetch
   useEffect(() => {
