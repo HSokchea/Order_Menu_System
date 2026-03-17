@@ -283,18 +283,18 @@ const WebCart = () => {
                     value={notes}
                     onChange={(e) => {
                       const plainText = e.target.value.replace(/<[^>]*>/g, '');
-                      if (plainText.length <= 500) updateNotes(plainText);
+                      if (plainText.length <= 200) updateNotes(plainText);
                     }}
                     className="resize-none bg-background/60 border-none rounded-xl text-sm min-h-[80px]"
                     rows={3}
-                    maxLength={500}
+                    maxLength={200}
                   />
                   <div className="flex justify-end">
                     <span className={cn(
                       'text-[11px]',
-                      notes.length >= 450 ? 'text-destructive' : 'text-muted-foreground',
+                      notes.length >= 180 ? 'text-destructive' : 'text-muted-foreground',
                     )}>
-                      {notes.length}/500
+                      {notes.length}/200
                     </span>
                   </div>
                 </div>
