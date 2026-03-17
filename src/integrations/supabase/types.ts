@@ -263,6 +263,7 @@ export type Database = {
       }
       menu_items: {
         Row: {
+          available_servings: number | null
           category_id: string | null
           created_at: string
           description: string | null
@@ -279,6 +280,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_servings?: number | null
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -295,6 +297,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_servings?: number | null
           category_id?: string | null
           created_at?: string
           description?: string | null
