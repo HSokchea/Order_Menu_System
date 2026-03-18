@@ -478,19 +478,20 @@ const OrderDetail = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'pending')}>
+                              <DropdownMenuItem disabled={item.status === 'pending'} onClick={() => updateItemStatus(item.item_ids, 'pending')}>
                                 <Clock className="h-4 w-4 mr-2" /> Pending
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'confirmed')}>
+                              <DropdownMenuItem disabled={item.status === 'confirmed'} onClick={() => updateItemStatus(item.item_ids, 'confirmed')}>
                                 <CheckCircle className="h-4 w-4 mr-2" /> Confirmed
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'preparing')}>
+                              <DropdownMenuItem disabled={item.status === 'preparing'} onClick={() => updateItemStatus(item.item_ids, 'preparing')}>
                                 <ChefHat className="h-4 w-4 mr-2" /> Preparing
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => updateItemStatus(item.item_ids, 'ready')}>
+                              <DropdownMenuItem disabled={item.status === 'ready'} onClick={() => updateItemStatus(item.item_ids, 'ready')}>
                                 <CheckCircle className="h-4 w-4 mr-2" /> Ready
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                disabled={item.status === 'rejected'}
                                 onClick={() => updateItemStatus(item.item_ids, 'rejected')}
                                 className="text-destructive"
                               >
