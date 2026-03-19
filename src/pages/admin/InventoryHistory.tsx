@@ -28,7 +28,6 @@ const DATE_PRESETS: { label: string; value: DatePreset }[] = [
   { label: 'Today', value: 'today' },
   { label: 'Last 7 Days', value: 'last7days' },
   { label: 'Last 30 Days', value: 'last30days' },
-  { label: 'Custom', value: 'custom' },
 ];
 
 const InventoryHistory = () => {
