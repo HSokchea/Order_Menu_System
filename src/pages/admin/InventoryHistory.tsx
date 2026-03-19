@@ -108,7 +108,7 @@ const InventoryHistory = () => {
           </PopoverContent>
         </Popover>
 
-        <Select value={filters.datePreset} onValueChange={(v) => handleDatePreset(v)}>
+        <Select value={filters.datePreset} onValueChange={(v) => handleDatePreset(v as DatePreset | 'custom')}>
           <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Date Range" />
           </SelectTrigger>
