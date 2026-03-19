@@ -28,7 +28,6 @@ const DATE_PRESETS: { label: string; value: DatePreset }[] = [
   { label: 'Today', value: 'today' },
   { label: 'Last 7 Days', value: 'last7days' },
   { label: 'Last 30 Days', value: 'last30days' },
-  { label: 'Custom', value: 'custom' },
 ];
 
 const InventoryHistory = () => {
@@ -85,50 +84,44 @@ const InventoryHistory = () => {
         </DropdownMenu>
       </div>
 
-      {/* Date Range Filter */}
-      <div className="flex flex-wrap items-center gap-2">
-        {DATE_PRESETS.map((p) =>
-          p.value === 'custom' ? (
-            <Popover key={p.value} open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={filters.datePreset === 'custom' ? 'default' : 'outline'}
-                  size="sm"
-                  className="gap-2"
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  {filters.datePreset === 'custom' && filters.customFrom && filters.customTo
-                    ? `${format(filters.customFrom, 'MMM d')} - ${format(filters.customTo, 'MMM d')}`
-                    : p.label}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  defaultMonth={tempRange.from}
-                  selected={tempRange as { from: Date; to: Date }}
-                  onSelect={handleCalendarSelect}
-                  numberOfMonths={2}
-                  disabled={(date) => date > new Date()}
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          ) : (
-            <Button
-              key={p.value}
-              variant={filters.datePreset === p.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleDatePreset(p.value)}
-            >
-              {p.label}
-            </Button>
-          )
-        )}
-      </div>
-
       {/* Filters Row */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+        {filters.datePreset === 'custom' && (
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 h-10">
+                <CalendarIcon className="h-4 w-4" />
+                {filters.customFrom && filters.customTo
+                  ? `${format(filters.customFrom, 'MMM d')} – ${format(filters.customTo, 'MMM d')}`
+                  : 'Pick dates'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={tempRange.from}
+                selected={tempRange as { from: Date; to: Date }}
+                onSelect={handleCalendarSelect}
+                numberOfMonths={2}
+                disabled={(date) => date > new Date()}
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        )}
+
+        <Select value={filters.datePreset} onValueChange={(v) => handleDatePreset(v as DatePreset | 'custom')}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Date Range" />
+          </SelectTrigger>
+          <SelectContent>
+            {DATE_PRESETS.map(p => (
+              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+            ))}
+            <SelectItem value="custom">Custom Range</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Select value={filters.ingredientId} onValueChange={(v) => updateFilter({ ingredientId: v })}>
           <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="All Ingredients" /></SelectTrigger>
           <SelectContent>
