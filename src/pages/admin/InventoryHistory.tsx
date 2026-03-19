@@ -36,8 +36,9 @@ const InventoryHistory = () => {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
 
-  const handleDatePreset = (preset: DatePreset) => {
+  const handleDatePreset = (preset: DatePreset | 'custom') => {
     if (preset === 'custom') {
+      updateFilter({ datePreset: 'custom' });
       setCalendarOpen(true);
     } else {
       updateFilter({ datePreset: preset });
