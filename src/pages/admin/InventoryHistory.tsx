@@ -86,27 +86,29 @@ const InventoryHistory = () => {
 
       {/* Filters Row */}
       <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
-        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 h-10">
-              <CalendarIcon className="h-4 w-4" />
-              {filters.datePreset === 'custom' && filters.customFrom && filters.customTo
-                ? `${format(filters.customFrom, 'MMM d')} – ${format(filters.customTo, 'MMM d')}`
-                : null}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="range"
-              defaultMonth={tempRange.from}
-              selected={tempRange as { from: Date; to: Date }}
-              onSelect={handleCalendarSelect}
-              numberOfMonths={2}
-              disabled={(date) => date > new Date()}
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
+        {filters.datePreset === 'custom' && (
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 h-10">
+                <CalendarIcon className="h-4 w-4" />
+                {filters.customFrom && filters.customTo
+                  ? `${format(filters.customFrom, 'MMM d')} – ${format(filters.customTo, 'MMM d')}`
+                  : 'Pick dates'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={tempRange.from}
+                selected={tempRange as { from: Date; to: Date }}
+                onSelect={handleCalendarSelect}
+                numberOfMonths={2}
+                disabled={(date) => date > new Date()}
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        )}
 
         <Select value={filters.datePreset} onValueChange={(v) => handleDatePreset(v as DatePreset | 'custom')}>
           <SelectTrigger className="w-full sm:w-[160px]">
