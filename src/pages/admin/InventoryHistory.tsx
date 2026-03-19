@@ -67,50 +67,13 @@ const InventoryHistory = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h2 className="text-xl font-semibold">Inventory History</h2>
-          <p className="text-sm text-muted-foreground">{totalCount} transactions</p>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" /> Export
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleExport('csv')}>Export CSV</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('xlsx')}>Export Excel</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div>
+        <h2 className="text-xl font-semibold">Inventory History</h2>
+        <p className="text-sm text-muted-foreground">{totalCount} transactions</p>
       </div>
 
-      {/* Filters Row */}
+      {/* Filters Row - all filters + export in one row */}
       <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
-        {filters.datePreset === 'custom' && (
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 h-10">
-                <CalendarIcon className="h-4 w-4" />
-                {filters.customFrom && filters.customTo
-                  ? `${format(filters.customFrom, 'MMM d')} – ${format(filters.customTo, 'MMM d')}`
-                  : 'Pick dates'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                defaultMonth={tempRange.from}
-                selected={tempRange as { from: Date; to: Date }}
-                onSelect={handleCalendarSelect}
-                numberOfMonths={2}
-                disabled={(date) => date > new Date()}
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        )}
-
         <Select value={filters.datePreset} onValueChange={(v) => handleDatePreset(v as DatePreset | 'custom')}>
           <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Date Range" />
@@ -122,6 +85,30 @@ const InventoryHistory = () => {
             <SelectItem value="custom">Custom Range</SelectItem>
           </SelectContent>
         </Select>
+
+        {filters.datePreset === 'custom' && (
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 h-10">
+                <CalendarIcon className="h-4 w-4" />
+                {filters.customFrom && filters.customTo
+                  ? `${format(filters.customFrom, 'dd MMM yyyy')} - ${format(filters.customTo, 'dd MMM yyyy')}`
+                  : 'Pick dates'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={tempRange.from}
+                selected={tempRange as { from: Date; to: Date }}
+                onSelect={handleCalendarSelect}
+                numberOfMonths={2}
+                disabled={(date) => date > new Date()}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        )}
 
         <Select value={filters.ingredientId} onValueChange={(v) => updateFilter({ ingredientId: v })}>
           <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="All Ingredients" /></SelectTrigger>
@@ -153,7 +140,7 @@ const InventoryHistory = () => {
           </SelectContent>
         </Select>
 
-        <div className="relative flex-1 w-full sm:w-auto">
+        <div className="relative flex-1 w-full sm:w-auto min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search ingredient, note, ref..."
@@ -162,6 +149,18 @@ const InventoryHistory = () => {
             className="pl-9"
           />
         </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 h-10">
+              <Download className="h-4 w-4" /> Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleExport('csv')}>Export CSV</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('xlsx')}>Export Excel</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Summary Section */}
