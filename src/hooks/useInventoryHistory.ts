@@ -122,5 +122,5 @@ export const useInventoryHistory = (restaurantId: string) => {
     setFilters(prev => ({ ...prev, page }));
   }, []);
 
-  return { transactions: filtered, loading, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize: PAGE_SIZE };
+  return { transactions: filtered, loading: initialLoading, refreshing, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize: PAGE_SIZE };
 };
