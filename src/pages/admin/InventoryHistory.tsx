@@ -52,6 +52,7 @@ const InventoryHistory = () => {
       updateFilter({ datePreset: preset });
       setShowCalendar(false);
       setDatePopoverOpen(false);
+      setTempRange({});
     }
   };
 
@@ -77,35 +78,50 @@ const InventoryHistory = () => {
 
   return (
     <div className={cn("space-y-4 transition-opacity duration-200", refreshing && "opacity-60 pointer-events-none")}>
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-semibold">Inventory History</h2>
-        <p className="text-sm text-muted-foreground">{totalCount} transactions</p>
+      {/* Header with Export */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Inventory History</h2>
+          <p className="text-sm text-muted-foreground">{totalCount} transactions</p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 h-9">
+              <Download className="h-4 w-4" /> Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleExport('csv')}>Export CSV</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('xlsx')}>Export Excel</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Filters Row */}
-      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
         <Popover open={datePopoverOpen} onOpenChange={(open) => {
           setDatePopoverOpen(open);
-          if (!open) setShowCalendar(false);
+          if (!open) { setShowCalendar(false); setTempRange({}); }
         }}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 h-10 w-full sm:w-auto">
-              <CalendarIcon className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="gap-2 h-9 w-full sm:w-auto text-sm">
+              <CalendarIcon className="h-3.5 w-3.5" />
               {getDateLabel(filters.datePreset, filters.customFrom, filters.customTo)}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            {!showCalendar ? (
-              <div className="flex flex-col p-1 min-w-[160px]">
+            <div className="flex">
+              <div className="flex flex-col p-1 min-w-[150px] border-r border-border">
                 {DATE_PRESETS.map(p => (
                   <Button
                     key={p.value}
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      'justify-start font-normal',
-                      filters.datePreset === p.value && p.value !== 'custom' && 'bg-accent text-accent-foreground'
+                      'justify-start font-normal text-sm',
+                      p.value === 'custom'
+                        ? showCalendar && 'bg-accent text-accent-foreground'
+                        : filters.datePreset === p.value && !showCalendar && 'bg-accent text-accent-foreground'
                     )}
                     onClick={() => handleDatePreset(p.value)}
                   >
@@ -113,22 +129,23 @@ const InventoryHistory = () => {
                   </Button>
                 ))}
               </div>
-            ) : (
-              <Calendar
-                mode="range"
-                defaultMonth={tempRange.from || new Date()}
-                selected={tempRange as { from: Date; to: Date }}
-                onSelect={handleCalendarSelect}
-                numberOfMonths={2}
-                disabled={(date) => date > new Date()}
-                className="p-3 pointer-events-auto"
-              />
-            )}
+              {showCalendar && (
+                <Calendar
+                  mode="range"
+                  defaultMonth={tempRange.from || filters.customFrom || new Date()}
+                  selected={tempRange.from ? tempRange as { from: Date; to: Date } : undefined}
+                  onSelect={handleCalendarSelect}
+                  numberOfMonths={2}
+                  disabled={(date) => date > new Date()}
+                  className="p-3 pointer-events-auto"
+                />
+              )}
+            </div>
           </PopoverContent>
         </Popover>
 
         <Select value={filters.ingredientId} onValueChange={(v) => updateFilter({ ingredientId: v })}>
-          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="All Ingredients" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm"><SelectValue placeholder="All Ingredients" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Ingredients</SelectItem>
             {ingredients.filter(i => i.is_active).map(i => (
@@ -138,7 +155,7 @@ const InventoryHistory = () => {
         </Select>
 
         <Select value={filters.direction} onValueChange={(v: any) => updateFilter({ direction: v })}>
-          <SelectTrigger className="w-full sm:w-[150px]"><SelectValue placeholder="All Directions" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[140px] h-9 text-sm"><SelectValue placeholder="All Directions" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Directions</SelectItem>
             <SelectItem value="in">Stock In (+)</SelectItem>
@@ -147,7 +164,7 @@ const InventoryHistory = () => {
         </Select>
 
         <Select value={filters.type} onValueChange={(v) => updateFilter({ type: v })}>
-          <SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="All Types" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[130px] h-9 text-sm"><SelectValue placeholder="All Types" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="purchase">Purchase</SelectItem>
@@ -157,27 +174,15 @@ const InventoryHistory = () => {
           </SelectContent>
         </Select>
 
-        <div className="relative flex-1 w-full sm:w-auto min-w-[180px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex-1 w-full sm:w-auto min-w-[160px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search ingredient, note, ref..."
+            placeholder="Search..."
             value={filters.search}
             onChange={(e) => updateFilter({ search: e.target.value })}
-            className="pl-9"
+            className="pl-8 h-9 text-sm"
           />
         </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 h-10">
-              <Download className="h-4 w-4" /> Export
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleExport('csv')}>Export CSV</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('xlsx')}>Export Excel</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       {/* Summary Section */}
