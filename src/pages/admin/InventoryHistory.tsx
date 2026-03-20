@@ -76,7 +76,7 @@ const InventoryHistory = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-4 transition-opacity duration-200", refreshing && "opacity-60 pointer-events-none")}>
       {/* Header */}
       <div>
         <h2 className="text-xl font-semibold">Inventory History</h2>
