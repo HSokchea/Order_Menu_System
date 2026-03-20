@@ -40,7 +40,7 @@ const getDateLabel = (preset: DatePreset | 'custom', from?: Date, to?: Date) => 
 
 const InventoryHistory = () => {
   const { restaurantId, ingredients } = useIngredients();
-  const { transactions, loading, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize } = useInventoryHistory(restaurantId);
+  const { transactions, loading, refreshing, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize } = useInventoryHistory(restaurantId);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
   const [showCalendar, setShowCalendar] = useState(false);
@@ -76,7 +76,7 @@ const InventoryHistory = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-4 transition-opacity duration-200", refreshing && "opacity-60 pointer-events-none")}>
       {/* Header */}
       <div>
         <h2 className="text-xl font-semibold">Inventory History</h2>

@@ -39,7 +39,8 @@ function getDateRange(filters: HistoryFilters): { from: Date; to: Date } {
 export const useInventoryHistory = (restaurantId: string) => {
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState<HistoryFilters>({
     datePreset: 'today',
     ingredientId: 'all',
@@ -51,7 +52,7 @@ export const useInventoryHistory = (restaurantId: string) => {
 
   const fetchTransactions = useCallback(async () => {
     if (!restaurantId) return;
-    setLoading(true);
+    setRefreshing(true);
 
     const { from, to } = getDateRange(filters);
 
@@ -86,7 +87,8 @@ export const useInventoryHistory = (restaurantId: string) => {
       })));
       setTotalCount(count || 0);
     }
-    setLoading(false);
+    setRefreshing(false);
+    setInitialLoading(false);
   }, [restaurantId, filters]);
 
   useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
@@ -120,5 +122,5 @@ export const useInventoryHistory = (restaurantId: string) => {
     setFilters(prev => ({ ...prev, page }));
   }, []);
 
-  return { transactions: filtered, loading, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize: PAGE_SIZE };
+  return { transactions: filtered, loading: initialLoading, refreshing, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize: PAGE_SIZE };
 };
