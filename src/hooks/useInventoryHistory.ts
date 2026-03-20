@@ -87,7 +87,8 @@ export const useInventoryHistory = (restaurantId: string) => {
       })));
       setTotalCount(count || 0);
     }
-    setLoading(false);
+    setRefreshing(false);
+    setInitialLoading(false);
   }, [restaurantId, filters]);
 
   useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
