@@ -39,7 +39,8 @@ function getDateRange(filters: HistoryFilters): { from: Date; to: Date } {
 export const useInventoryHistory = (restaurantId: string) => {
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState<HistoryFilters>({
     datePreset: 'today',
     ingredientId: 'all',
