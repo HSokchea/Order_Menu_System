@@ -52,6 +52,7 @@ const InventoryHistory = () => {
       updateFilter({ datePreset: preset });
       setShowCalendar(false);
       setDatePopoverOpen(false);
+      setTempRange({});
     }
   };
 
