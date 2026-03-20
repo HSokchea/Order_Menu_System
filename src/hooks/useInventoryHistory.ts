@@ -52,7 +52,7 @@ export const useInventoryHistory = (restaurantId: string) => {
 
   const fetchTransactions = useCallback(async () => {
     if (!restaurantId) return;
-    setLoading(true);
+    setRefreshing(true);
 
     const { from, to } = getDateRange(filters);
 
