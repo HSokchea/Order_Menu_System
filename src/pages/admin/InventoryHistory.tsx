@@ -24,24 +24,34 @@ const TYPE_COLORS: Record<string, string> = {
   order_reversal: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
 };
 
-const DATE_PRESETS: { label: string; value: DatePreset }[] = [
+const DATE_PRESETS: { label: string; value: DatePreset | 'custom' }[] = [
   { label: 'Today', value: 'today' },
   { label: 'Last 7 Days', value: 'last7days' },
   { label: 'Last 30 Days', value: 'last30days' },
+  { label: 'Custom Range', value: 'custom' },
 ];
+
+const getDateLabel = (preset: DatePreset | 'custom', from?: Date, to?: Date) => {
+  if (preset === 'custom' && from && to) {
+    return `${format(from, 'dd MMM yyyy')} – ${format(to, 'dd MMM yyyy')}`;
+  }
+  return DATE_PRESETS.find(p => p.value === preset)?.label || 'Today';
+};
 
 const InventoryHistory = () => {
   const { restaurantId, ingredients } = useIngredients();
   const { transactions, loading, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize } = useInventoryHistory(restaurantId);
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const handleDatePreset = (preset: DatePreset | 'custom') => {
     if (preset === 'custom') {
-      updateFilter({ datePreset: 'custom' });
-      setCalendarOpen(true);
+      setShowCalendar(true);
     } else {
       updateFilter({ datePreset: preset });
+      setShowCalendar(false);
+      setDatePopoverOpen(false);
     }
   };
 
@@ -50,7 +60,8 @@ const InventoryHistory = () => {
     setTempRange(range);
     if (range.from && range.to) {
       updateFilter({ datePreset: 'custom', customFrom: range.from, customTo: range.to });
-      setCalendarOpen(false);
+      setShowCalendar(false);
+      setDatePopoverOpen(false);
     }
   };
 
@@ -72,43 +83,49 @@ const InventoryHistory = () => {
         <p className="text-sm text-muted-foreground">{totalCount} transactions</p>
       </div>
 
-      {/* Filters Row - all filters + export in one row */}
+      {/* Filters Row */}
       <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
-        <Select value={filters.datePreset} onValueChange={(v) => handleDatePreset(v as DatePreset | 'custom')}>
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="Date Range" />
-          </SelectTrigger>
-          <SelectContent>
-            {DATE_PRESETS.map(p => (
-              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-            ))}
-            <SelectItem value="custom">Custom Range</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {filters.datePreset === 'custom' && (
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 h-10">
-                <CalendarIcon className="h-4 w-4" />
-                {filters.customFrom && filters.customTo
-                  ? `${format(filters.customFrom, 'dd MMM yyyy')} - ${format(filters.customTo, 'dd MMM yyyy')}`
-                  : 'Pick dates'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+        <Popover open={datePopoverOpen} onOpenChange={(open) => {
+          setDatePopoverOpen(open);
+          if (!open) setShowCalendar(false);
+        }}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 h-10 w-full sm:w-auto">
+              <CalendarIcon className="h-4 w-4" />
+              {getDateLabel(filters.datePreset, filters.customFrom, filters.customTo)}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            {!showCalendar ? (
+              <div className="flex flex-col p-1 min-w-[160px]">
+                {DATE_PRESETS.map(p => (
+                  <Button
+                    key={p.value}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      'justify-start font-normal',
+                      filters.datePreset === p.value && p.value !== 'custom' && 'bg-accent text-accent-foreground'
+                    )}
+                    onClick={() => handleDatePreset(p.value)}
+                  >
+                    {p.label}
+                  </Button>
+                ))}
+              </div>
+            ) : (
               <Calendar
                 mode="range"
-                defaultMonth={tempRange.from}
+                defaultMonth={tempRange.from || new Date()}
                 selected={tempRange as { from: Date; to: Date }}
                 onSelect={handleCalendarSelect}
                 numberOfMonths={2}
                 disabled={(date) => date > new Date()}
                 className="p-3 pointer-events-auto"
               />
-            </PopoverContent>
-          </Popover>
-        )}
+            )}
+          </PopoverContent>
+        </Popover>
 
         <Select value={filters.ingredientId} onValueChange={(v) => updateFilter({ ingredientId: v })}>
           <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="All Ingredients" /></SelectTrigger>
