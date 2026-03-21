@@ -431,7 +431,6 @@ const InventoryHistory = () => {
       onOpenChange={(open) => { if (!open) setSelectedTx(null); }}
       transaction={selectedTx}
     />
-    />
     </>
   );
 };
