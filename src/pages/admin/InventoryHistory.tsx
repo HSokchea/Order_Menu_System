@@ -92,7 +92,7 @@ const InventoryHistory = () => {
               if (!open) { setShowCalendar(false); setTempRange({}); }
             }}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-9 text-sm">
+                <Button variant="outline" size="sm" className="gap-2 h-9 font-normal text-sm">
                   <CalendarIcon className="h-3.5 w-3.5" />
                   {getDateLabel(filters.datePreset, filters.customFrom, filters.customTo)}
                 </Button>
@@ -136,7 +136,7 @@ const InventoryHistory = () => {
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-9 text-sm min-w-[140px] justify-between">
+                <Button variant="outline" size="sm" className="gap-2 h-9 font-normal text-sm min-w-[140px] justify-between">
                   {filters.ingredientId === 'all'
                     ? 'All Ingredients'
                     : ingredients.find(i => i.id === filters.ingredientId)?.name || 'All Ingredients'}
@@ -170,7 +170,7 @@ const InventoryHistory = () => {
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-9 text-sm min-w-[130px] justify-between">
+                <Button variant="outline" size="sm" className="gap-2 h-9 font-normal text-sm min-w-[130px] justify-between">
                   {filters.direction === 'all' ? 'All Directions' : filters.direction === 'in' ? 'Stock In (+)' : 'Stock Out (−)'}
                   <ChevronDown className="h-3.5 w-3.5 opacity-50" />
                 </Button>
@@ -198,7 +198,7 @@ const InventoryHistory = () => {
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-9 text-sm min-w-[120px] justify-between">
+                <Button variant="outline" size="sm" className="gap-2 h-9 font-normal text-sm min-w-[120px] justify-between">
                   {filters.type === 'all' ? 'All Types' : filters.type.charAt(0).toUpperCase() + filters.type.slice(1)}
                   <ChevronDown className="h-3.5 w-3.5 opacity-50" />
                 </Button>

@@ -160,7 +160,7 @@ export function CustomerOrdersFilters({
     <div className="flex items-center gap-2 flex-wrap">
       {/* Order Type */}
       <Select value={orderType} onValueChange={(v) => onOrderTypeChange(v as OrderTypeTab)}>
-        <SelectTrigger className="w-[150px] h-8 text-xs hover:text-foreground hover:bg-accent">
+        <SelectTrigger className="w-[150px] h-9 font-normal text-sm hover:text-foreground hover:bg-accent">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -180,7 +180,7 @@ export function CustomerOrdersFilters({
         value={activeQuickFilter || "all"}
         onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected')}
       >
-        <SelectTrigger className="w-[140px] h-8 text-xs hover:bg-accent hover:text-foreground">
+        <SelectTrigger className="w-[140px] h-9 font-normal text-sm hover:bg-accent hover:text-foreground">
           <SelectValue placeholder="All Statuses" />
         </SelectTrigger>
         <SelectContent>
@@ -208,7 +208,7 @@ export function CustomerOrdersFilters({
         value={filters.timePreset}
         onValueChange={(v) => updateFilter('timePreset', v as TimePreset)}
       >
-        <SelectTrigger className="w-[150px] h-8 text-xs hover:bg-accent hover:text-foreground">
+        <SelectTrigger className="w-[160px] h-9 font-normal text-sm hover:bg-accent hover:text-foreground">
           <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
           <SelectValue placeholder="Time" />
         </SelectTrigger>
@@ -224,7 +224,7 @@ export function CustomerOrdersFilters({
       {filters.timePreset === 'custom' && (
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 font-normal text-sm">
               <CalendarIcon className="h-3.5 w-3.5" />
               {filters.customDateFrom && filters.customDateTo
                 ? `${format(filters.customDateFrom, 'MMM d')} – ${format(filters.customDateTo, 'MMM d')}`
@@ -249,7 +249,7 @@ export function CustomerOrdersFilters({
         variant="ghost"
         size="sm"
         onClick={() => onSortChange(sortDirection === 'desc' ? 'asc' : 'desc')}
-        className="h-8 gap-1.5 text-xs border text-muted-foreground hover:text-foreground"
+        className="h-9 font-normal text-sm gap-1.5 border"
       >
         {sortDirection === 'desc' ? (
           <ArrowDown className="h-3.5 w-3.5" />
@@ -266,7 +266,7 @@ export function CustomerOrdersFilters({
             variant="ghost"
             size="sm"
             className={cn(
-              "h-8 gap-1.5 text-xs border text-muted-foreground hover:text-foreground",
+              "h-9 gap-1.5 font-normal text-sm border text-muted-foreground hover:text-foreground",
               activeCount > 0 && "text-foreground"
             )}
           >
