@@ -78,110 +78,114 @@ const InventoryHistory = () => {
 
   return (
     <div className={cn("space-y-4 transition-opacity duration-200", refreshing && "opacity-60 pointer-events-none")}>
-      {/* Header with Export */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Inventory History</h2>
-          <p className="text-sm text-muted-foreground">{totalCount} transactions</p>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 h-9">
-              <Download className="h-4 w-4" /> Export
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleExport('csv')}>Export CSV</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport('xlsx')}>Export Excel</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {/* Header with Filters and Export */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">Inventory History</h2>
+            <p className="text-sm text-muted-foreground">{totalCount} transactions</p>
+          </div>
 
-      {/* Filters Row */}
-      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
-        <Popover open={datePopoverOpen} onOpenChange={(open) => {
-          setDatePopoverOpen(open);
-          if (!open) { setShowCalendar(false); setTempRange({}); }
-        }}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 h-9 w-full sm:w-auto text-sm">
-              <CalendarIcon className="h-3.5 w-3.5" />
-              {getDateLabel(filters.datePreset, filters.customFrom, filters.customTo)}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <div className="flex">
-              <div className="flex flex-col p-1 min-w-[150px] border-r border-border">
-                {DATE_PRESETS.map(p => (
-                  <Button
-                    key={p.value}
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      'justify-start font-normal text-sm',
-                      p.value === 'custom'
-                        ? showCalendar && 'bg-accent text-accent-foreground'
-                        : filters.datePreset === p.value && !showCalendar && 'bg-accent text-accent-foreground'
-                    )}
-                    onClick={() => handleDatePreset(p.value)}
-                  >
-                    {p.label}
-                  </Button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Popover open={datePopoverOpen} onOpenChange={(open) => {
+              setDatePopoverOpen(open);
+              if (!open) { setShowCalendar(false); setTempRange({}); }
+            }}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 h-9 text-sm">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {getDateLabel(filters.datePreset, filters.customFrom, filters.customTo)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <div className="relative">
+                  <div className="flex flex-col p-1 min-w-[150px]">
+                    {DATE_PRESETS.map(p => (
+                      <Button
+                        key={p.value}
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          'justify-start font-normal text-sm',
+                          p.value === 'custom'
+                            ? showCalendar && 'bg-accent text-accent-foreground'
+                            : filters.datePreset === p.value && !showCalendar && 'bg-accent text-accent-foreground'
+                        )}
+                        onClick={() => handleDatePreset(p.value)}
+                      >
+                        {p.label}
+                      </Button>
+                    ))}
+                  </div>
+                  {showCalendar && (
+                    <div className="absolute left-full top-0 z-50 ml-1.5 border border-border rounded-md bg-popover shadow-md">
+                      <Calendar
+                        mode="range"
+                        defaultMonth={tempRange.from || filters.customFrom || new Date()}
+                        selected={tempRange.from ? tempRange as { from: Date; to: Date } : undefined}
+                        onSelect={handleCalendarSelect}
+                        numberOfMonths={2}
+                        disabled={(date) => date > new Date()}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Select value={filters.ingredientId} onValueChange={(v) => updateFilter({ ingredientId: v })}>
+              <SelectTrigger className="w-[160px] h-9 text-sm"><SelectValue placeholder="All Ingredients" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ingredients</SelectItem>
+                {ingredients.filter(i => i.is_active).map(i => (
+                  <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
                 ))}
-              </div>
-              {showCalendar && (
-                <Calendar
-                  mode="range"
-                  defaultMonth={tempRange.from || filters.customFrom || new Date()}
-                  selected={tempRange.from ? tempRange as { from: Date; to: Date } : undefined}
-                  onSelect={handleCalendarSelect}
-                  numberOfMonths={2}
-                  disabled={(date) => date > new Date()}
-                  className="p-3 pointer-events-auto"
-                />
-              )}
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.direction} onValueChange={(v: any) => updateFilter({ direction: v })}>
+              <SelectTrigger className="w-[140px] h-9 text-sm"><SelectValue placeholder="All Directions" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Directions</SelectItem>
+                <SelectItem value="in">Stock In (+)</SelectItem>
+                <SelectItem value="out">Stock Out (−)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.type} onValueChange={(v) => updateFilter({ type: v })}>
+              <SelectTrigger className="w-[130px] h-9 text-sm"><SelectValue placeholder="All Types" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="purchase">Purchase</SelectItem>
+                <SelectItem value="order">Order</SelectItem>
+                <SelectItem value="adjustment">Adjustment</SelectItem>
+                <SelectItem value="waste">Waste</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                value={filters.search}
+                onChange={(e) => updateFilter({ search: e.target.value })}
+                className="pl-8 h-9 text-sm w-[160px]"
+              />
             </div>
-          </PopoverContent>
-        </Popover>
 
-        <Select value={filters.ingredientId} onValueChange={(v) => updateFilter({ ingredientId: v })}>
-          <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm"><SelectValue placeholder="All Ingredients" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Ingredients</SelectItem>
-            {ingredients.filter(i => i.is_active).map(i => (
-              <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={filters.direction} onValueChange={(v: any) => updateFilter({ direction: v })}>
-          <SelectTrigger className="w-full sm:w-[140px] h-9 text-sm"><SelectValue placeholder="All Directions" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Directions</SelectItem>
-            <SelectItem value="in">Stock In (+)</SelectItem>
-            <SelectItem value="out">Stock Out (−)</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={filters.type} onValueChange={(v) => updateFilter({ type: v })}>
-          <SelectTrigger className="w-full sm:w-[130px] h-9 text-sm"><SelectValue placeholder="All Types" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="purchase">Purchase</SelectItem>
-            <SelectItem value="order">Order</SelectItem>
-            <SelectItem value="adjustment">Adjustment</SelectItem>
-            <SelectItem value="waste">Waste</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="relative flex-1 w-full sm:w-auto min-w-[160px]">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            value={filters.search}
-            onChange={(e) => updateFilter({ search: e.target.value })}
-            className="pl-8 h-9 text-sm"
-          />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 h-9">
+                  <Download className="h-4 w-4" /> Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('csv')}>Export CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('xlsx')}>Export Excel</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
