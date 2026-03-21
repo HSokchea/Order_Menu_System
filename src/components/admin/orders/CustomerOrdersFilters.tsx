@@ -276,8 +276,8 @@ export function CustomerOrdersFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <div className="flex">
-            <div className="flex flex-col p-1 min-w-[140px] border-r border-border">
+          <div className="relative">
+            <div className="flex flex-col p-1 min-w-[140px]">
               {datePresets.map(preset => (
                 <Button
                   key={preset.value}
@@ -295,7 +295,7 @@ export function CustomerOrdersFilters({
               ))}
             </div>
             {showCalendar && (
-              <div className="p-3 pointer-events-auto">
+              <div className="absolute left-full top-[-1px] z-50 ml-1 border border-border rounded-xl bg-popover shadow-sm">
                 <Calendar
                   mode="range"
                   defaultMonth={tempDateRange.from || new Date()}
@@ -303,6 +303,7 @@ export function CustomerOrdersFilters({
                   onSelect={handleCalendarSelect}
                   numberOfMonths={2}
                   disabled={(date) => date > new Date()}
+                  className="p-3 pointer-events-auto"
                 />
               </div>
             )}
@@ -332,7 +333,7 @@ export function CustomerOrdersFilters({
             variant="ghost"
             size="sm"
             className={cn(
-              "h-9 gap-1.5 font-normal text-sm border text-muted-foreground hover:text-foreground",
+              "h-9 gap-1.5 font-normal text-sm border",
               activeCount > 0 && "text-foreground"
             )}
           >
@@ -363,8 +364,8 @@ export function CustomerOrdersFilters({
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full h-8 justify-between text-xs font-normal">
                       {filters.amountOperator === 'none' ? 'Any amount' :
-                       filters.amountOperator === 'gt' ? 'Greater than' :
-                       filters.amountOperator === 'lt' ? 'Less than' : 'Between'}
+                        filters.amountOperator === 'gt' ? 'Greater than' :
+                          filters.amountOperator === 'lt' ? 'Less than' : 'Between'}
                       <ChevronDown className="h-3 w-3 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
@@ -428,7 +429,7 @@ export function CustomerOrdersFilters({
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full h-8 justify-between text-xs font-normal">
                       {filters.itemCountOperator === 'none' ? 'Any count' :
-                       filters.itemCountOperator === 'gte' ? '≥ (at least)' : '≤ (at most)'}
+                        filters.itemCountOperator === 'gte' ? '≥ (at least)' : '≤ (at most)'}
                       <ChevronDown className="h-3 w-3 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
@@ -473,7 +474,7 @@ export function CustomerOrdersFilters({
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full h-8 justify-between text-xs font-normal">
                       {filters.roundsFilter === 'all' ? 'All orders' :
-                       filters.roundsFilter === 'single' ? 'Single round' : 'Multiple rounds'}
+                        filters.roundsFilter === 'single' ? 'Single round' : 'Multiple rounds'}
                       <ChevronDown className="h-3 w-3 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>

@@ -118,7 +118,7 @@ const InventoryHistory = () => {
                     ))}
                   </div>
                   {showCalendar && (
-                    <div className="absolute left-full top-0 z-50 ml-1.5 border border-border rounded-md bg-popover shadow-md">
+                    <div className="absolute left-full top-[-1px] z-50 ml-1.5 border border-border rounded-xl bg-popover shadow-sm">
                       <Calendar
                         mode="range"
                         defaultMonth={tempRange.from || filters.customFrom || new Date()}
