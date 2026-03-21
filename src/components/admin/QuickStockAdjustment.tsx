@@ -18,9 +18,9 @@ interface QuickStockAdjustmentProps {
 type AdjustType = 'purchase' | 'waste' | 'adjustment';
 
 const TYPE_CONFIG: { value: AdjustType; label: string; icon: typeof PackagePlus; key: string }[] = [
-  { value: 'purchase', label: 'Stock In', icon: PackagePlus, key: '1' },
-  { value: 'waste', label: 'Stock Out', icon: PackageMinus, key: '2' },
-  { value: 'adjustment', label: 'Adjustment', icon: Settings2, key: '3' },
+  { value: 'purchase', label: 'Purchase', icon: PackagePlus, key: '1' },
+  { value: 'waste', label: 'Waste', icon: PackageMinus, key: '2' },
+  { value: 'adjustment', label: 'Correction', icon: Settings2, key: '3' },
 ];
 
 const QuickStockAdjustment = ({ open, onOpenChange, ingredients, onAdjust }: QuickStockAdjustmentProps) => {
