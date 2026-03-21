@@ -28,7 +28,7 @@ export interface InventoryTransaction {
   id: string;
   ingredient_id: string;
   restaurant_id: string;
-  type: 'purchase' | 'order' | 'adjustment' | 'waste';
+  type: 'purchase' | 'order' | 'adjustment' | 'waste' | 'order_reversal';
   quantity: number;
   reference_id: string | null;
   note: string | null;
