@@ -243,3 +243,129 @@ const StockAdjustment = () => {
     </div>
   );
 };
+
+/* ─── Row Component ─── */
+
+interface RowProps {
+  row: AdjustmentRow;
+  ingredients: Ingredient[];
+  usedIds: string[];
+  getIngredient: (id: string) => Ingredient | undefined;
+  onUpdate: (id: string, field: keyof AdjustmentRow, value: string) => void;
+  onRemove: (id: string) => void;
+  canRemove: boolean;
+}
+
+function AdjustmentRowItem({ row, ingredients, usedIds, getIngredient, onUpdate, onRemove, canRemove }: RowProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selectedIng = getIngredient(row.ingredientId);
+  const change = parseFloat(row.change);
+  const isValidChange = !isNaN(change) && change !== 0;
+  const newStock = selectedIng ? selectedIng.current_stock + (isValidChange ? change : 0) : 0;
+  const isNegativeResult = selectedIng && isValidChange && newStock < 0;
+
+  const available = ingredients.filter(i => i.id === row.ingredientId || !usedIds.includes(i.id));
+  const filtered = search
+    ? available.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+    : available;
+
+  useEffect(() => {
+    if (searchOpen) setSearch('');
+  }, [searchOpen]);
+
+  return (
+    <div className={cn(
+      "grid grid-cols-1 sm:grid-cols-[1fr_100px_100px_100px_40px] gap-2 sm:gap-3 p-3 rounded-lg border",
+      isNegativeResult && 'border-destructive/50 bg-destructive/5'
+    )}>
+      <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="justify-start font-normal h-10 text-sm truncate">
+            {selectedIng ? (
+              <span>{selectedIng.name} <span className="text-muted-foreground">({selectedIng.unit})</span></span>
+            ) : (
+              <span className="text-muted-foreground">Select ingredient...</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[260px] p-1" align="start">
+          <Input
+            ref={inputRef}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search ingredient..."
+            className="h-8 mb-1 text-sm"
+            autoFocus
+          />
+          <div className="max-h-48 overflow-auto">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-muted-foreground p-2">No ingredients found</p>
+            ) : filtered.map(ing => (
+              <Button
+                key={ing.id}
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'w-full justify-start text-sm font-normal',
+                  ing.id === row.ingredientId && 'bg-accent text-accent-foreground'
+                )}
+                onClick={() => { onUpdate(row.id, 'ingredientId', ing.id); setSearchOpen(false); }}
+              >
+                {ing.name} <span className="ml-auto text-xs text-muted-foreground">{ing.current_stock} {ing.unit}</span>
+              </Button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <div className="flex items-center gap-1 sm:justify-center">
+        <span className="sm:hidden text-xs text-muted-foreground">Current:</span>
+        <span className="text-sm font-medium">{selectedIng ? `${selectedIng.current_stock} ${selectedIng.unit}` : '—'}</span>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <span className="sm:hidden text-xs text-muted-foreground">Change:</span>
+        <Input
+          type="number"
+          step="0.01"
+          value={row.change}
+          onChange={e => onUpdate(row.id, 'change', e.target.value)}
+          placeholder="±0"
+          className={cn(
+            'h-10 text-sm',
+            isValidChange && change > 0 && 'text-green-600 border-green-300',
+            isValidChange && change < 0 && 'text-destructive border-destructive/30'
+          )}
+        />
+      </div>
+
+      <div className="flex items-center gap-1 sm:justify-center">
+        <span className="sm:hidden text-xs text-muted-foreground">New:</span>
+        {selectedIng && isValidChange ? (
+          <span className={cn(
+            'text-sm font-semibold flex items-center gap-1',
+            change > 0 ? 'text-green-600' : 'text-destructive',
+            isNegativeResult && 'text-destructive'
+          )}>
+            {change > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+            {newStock} {selectedIng.unit}
+            {isNegativeResult && <AlertTriangle className="h-3 w-3 ml-0.5" />}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        )}
+      </div>
+
+      <div className="flex items-center justify-end sm:justify-center">
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => onRemove(row.id)} disabled={!canRemove}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default StockAdjustment;
