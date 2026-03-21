@@ -74,6 +74,18 @@ const Inventory = () => {
     i.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setQuickAdjustOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   if (loading) return <div className="flex items-center justify-center py-12">Loading...</div>;
 
   return (
@@ -94,6 +106,14 @@ const Inventory = () => {
               className="pl-9"
             />
           </div>
+
+          <Button variant="outline" onClick={() => setQuickAdjustOpen(true)} className="gap-1.5">
+            <Zap className="h-4 w-4" />
+            <span className="hidden sm:inline">Quick Adjust</span>
+            <kbd className="hidden md:inline-flex h-5 items-center gap-0.5 rounded border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground ml-1">
+              ⌘K
+            </kbd>
+          </Button>
 
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
