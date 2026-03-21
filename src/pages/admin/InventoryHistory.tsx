@@ -40,12 +40,12 @@ const getDateLabel = (preset: DatePreset | 'custom', from?: Date, to?: Date) => 
 };
 
 const InventoryHistory = () => {
-  const navigate = useNavigate();
   const { restaurantId, ingredients } = useIngredients();
   const { transactions, loading, refreshing, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize } = useInventoryHistory(restaurantId);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
   const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<any>(null);
 
   const handleDatePreset = (preset: DatePreset | 'custom') => {
     if (preset === 'custom') {
