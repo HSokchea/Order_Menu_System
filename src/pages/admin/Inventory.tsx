@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,13 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Edit, Search, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Search, AlertTriangle, Zap } from 'lucide-react';
 import { useIngredients, Ingredient } from '@/hooks/useInventory';
+import QuickStockAdjustment from '@/components/admin/QuickStockAdjustment';
 
 const UNITS = ['g', 'kg', 'ml', 'L', 'pcs', 'oz', 'lb', 'cup', 'tbsp', 'tsp'];
 
 const Inventory = () => {
-  const { ingredients, loading, addIngredient, updateIngredient } = useIngredients();
+  const { ingredients, loading, addIngredient, updateIngredient, adjustStock } = useIngredients();
+  const [quickAdjustOpen, setQuickAdjustOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Ingredient | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,6 +74,18 @@ const Inventory = () => {
     i.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setQuickAdjustOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   if (loading) return <div className="flex items-center justify-center py-12">Loading...</div>;
 
   return (
@@ -92,6 +106,14 @@ const Inventory = () => {
               className="pl-9"
             />
           </div>
+
+          <Button variant="outline" onClick={() => setQuickAdjustOpen(true)} className="gap-1.5">
+            <Zap className="h-4 w-4" />
+            <span className="hidden sm:inline">Quick Adjust</span>
+            <kbd className="hidden md:inline-flex h-5 items-center gap-0.5 rounded border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground ml-1">
+              ⌘K
+            </kbd>
+          </Button>
 
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
@@ -218,6 +240,13 @@ const Inventory = () => {
           </div>
         </TooltipProvider>
       )}
+
+      <QuickStockAdjustment
+        open={quickAdjustOpen}
+        onOpenChange={setQuickAdjustOpen}
+        ingredients={ingredients}
+        onAdjust={adjustStock}
+      />
     </div>
   );
 };
