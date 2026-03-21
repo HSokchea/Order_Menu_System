@@ -134,35 +134,97 @@ const InventoryHistory = () => {
               </PopoverContent>
             </Popover>
 
-            <Select value={filters.ingredientId} onValueChange={(v) => updateFilter({ ingredientId: v })}>
-              <SelectTrigger className="w-[160px] h-9 text-sm"><SelectValue placeholder="All Ingredients" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Ingredients</SelectItem>
-                {ingredients.filter(i => i.is_active).map(i => (
-                  <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 h-9 text-sm min-w-[140px] justify-between">
+                  {filters.ingredientId === 'all'
+                    ? 'All Ingredients'
+                    : ingredients.find(i => i.id === filters.ingredientId)?.name || 'All Ingredients'}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-1 min-w-[160px]" align="start">
+                <div className="flex flex-col">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn('justify-start font-normal text-sm', filters.ingredientId === 'all' && 'bg-accent text-accent-foreground')}
+                    onClick={() => updateFilter({ ingredientId: 'all' })}
+                  >
+                    All Ingredients
+                  </Button>
+                  {ingredients.filter(i => i.is_active).map(i => (
+                    <Button
+                      key={i.id}
+                      variant="ghost"
+                      size="sm"
+                      className={cn('justify-start font-normal text-sm', filters.ingredientId === i.id && 'bg-accent text-accent-foreground')}
+                      onClick={() => updateFilter({ ingredientId: i.id })}
+                    >
+                      {i.name}
+                    </Button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            <Select value={filters.direction} onValueChange={(v: any) => updateFilter({ direction: v })}>
-              <SelectTrigger className="w-[140px] h-9 text-sm"><SelectValue placeholder="All Directions" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Directions</SelectItem>
-                <SelectItem value="in">Stock In (+)</SelectItem>
-                <SelectItem value="out">Stock Out (−)</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 h-9 text-sm min-w-[130px] justify-between">
+                  {filters.direction === 'all' ? 'All Directions' : filters.direction === 'in' ? 'Stock In (+)' : 'Stock Out (−)'}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-1 min-w-[140px]" align="start">
+                <div className="flex flex-col">
+                  {[
+                    { value: 'all', label: 'All Directions' },
+                    { value: 'in', label: 'Stock In (+)' },
+                    { value: 'out', label: 'Stock Out (−)' },
+                  ].map(opt => (
+                    <Button
+                      key={opt.value}
+                      variant="ghost"
+                      size="sm"
+                      className={cn('justify-start font-normal text-sm', filters.direction === opt.value && 'bg-accent text-accent-foreground')}
+                      onClick={() => updateFilter({ direction: opt.value as any })}
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-            <Select value={filters.type} onValueChange={(v) => updateFilter({ type: v })}>
-              <SelectTrigger className="w-[130px] h-9 text-sm"><SelectValue placeholder="All Types" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="purchase">Purchase</SelectItem>
-                <SelectItem value="order">Order</SelectItem>
-                <SelectItem value="adjustment">Adjustment</SelectItem>
-                <SelectItem value="waste">Waste</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 h-9 text-sm min-w-[120px] justify-between">
+                  {filters.type === 'all' ? 'All Types' : filters.type.charAt(0).toUpperCase() + filters.type.slice(1)}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-1 min-w-[130px]" align="start">
+                <div className="flex flex-col">
+                  {[
+                    { value: 'all', label: 'All Types' },
+                    { value: 'purchase', label: 'Purchase' },
+                    { value: 'order', label: 'Order' },
+                    { value: 'adjustment', label: 'Adjustment' },
+                    { value: 'waste', label: 'Waste' },
+                  ].map(opt => (
+                    <Button
+                      key={opt.value}
+                      variant="ghost"
+                      size="sm"
+                      className={cn('justify-start font-normal text-sm', filters.type === opt.value && 'bg-accent text-accent-foreground')}
+                      onClick={() => updateFilter({ type: opt.value })}
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
