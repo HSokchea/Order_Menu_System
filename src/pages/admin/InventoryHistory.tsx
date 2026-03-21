@@ -9,8 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronLeft, ChevronRight, ChevronDown, ClipboardList, Package, Wrench, Trash2, RotateCcw } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useIngredients } from '@/hooks/useInventory';
+import { InventoryTransactionDetail } from '@/components/admin/InventoryTransactionDetail';
 import { useInventoryHistory, type DatePreset } from '@/hooks/useInventoryHistory';
 import { exportInventoryHistory } from '@/lib/inventoryExport';
 import { format } from 'date-fns';
@@ -40,12 +40,12 @@ const getDateLabel = (preset: DatePreset | 'custom', from?: Date, to?: Date) => 
 };
 
 const InventoryHistory = () => {
-  const navigate = useNavigate();
   const { restaurantId, ingredients } = useIngredients();
   const { transactions, loading, refreshing, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize } = useInventoryHistory(restaurantId);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
   const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<any>(null);
 
   const handleDatePreset = (preset: DatePreset | 'custom') => {
     if (preset === 'custom') {
@@ -74,62 +74,46 @@ const InventoryHistory = () => {
     else toast.error(result.message);
   };
 
+  const openDetail = (tx: any) => setSelectedTx(tx);
+
   const renderReference = (tx: any) => {
     const ref = tx.reference_id;
-    const note = tx.note;
+
+    const clickable = (icon: React.ReactNode, label: string) => (
+      <button
+        onClick={() => openDetail(tx)}
+        className="inline-flex items-center gap-1.5 text-primary hover:underline cursor-pointer"
+      >
+        {icon}
+        {label}
+      </button>
+    );
 
     switch (tx.type) {
       case 'order': {
         const shortId = ref ? ref.substring(0, 8).toUpperCase() : null;
-        return shortId ? (
-          <button
-            onClick={() => navigate(`/admin/orders/${ref}`)}
-            className="inline-flex items-center gap-1.5 text-primary hover:underline"
-          >
-            <ClipboardList className="h-3.5 w-3.5" />
-            Order #{shortId}
-          </button>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        );
+        return shortId
+          ? clickable(<ClipboardList className="h-3.5 w-3.5" />, `Order #${shortId}`)
+          : <span className="text-muted-foreground">—</span>;
       }
       case 'order_reversal': {
         const shortId = ref ? ref.substring(0, 8).toUpperCase() : null;
-        return shortId ? (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reversal #{shortId}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <RotateCcw className="h-3.5 w-3.5" />
-            Order Reversal
-          </span>
+        return clickable(
+          <RotateCcw className="h-3.5 w-3.5" />,
+          shortId ? `Reversal #${shortId}` : 'Order Reversal'
         );
       }
       case 'purchase':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Package className="h-3.5 w-3.5" />
-            {ref ? `Invoice #${ref}` : 'Stock Purchase'}
-          </span>
+        return clickable(
+          <Package className="h-3.5 w-3.5" />,
+          ref ? `Invoice #${ref}` : 'Stock Purchase'
         );
       case 'waste':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Trash2 className="h-3.5 w-3.5" />
-            {'Waste'}
-          </span>
-        );
+        return clickable(<Trash2 className="h-3.5 w-3.5" />, 'Waste');
       case 'adjustment':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Wrench className="h-3.5 w-3.5" />
-            {'Manual Adjustment'}
-          </span>
-        );
+        return clickable(<Wrench className="h-3.5 w-3.5" />, 'Manual Adjustment');
       default:
-        return <span className="text-muted-foreground">{ref || '—'}</span>;
+        return clickable(<Wrench className="h-3.5 w-3.5" />, ref || '—');
     }
   };
 
@@ -139,6 +123,7 @@ const InventoryHistory = () => {
   }
 
   return (
+    <>
     <div className={cn("space-y-4 transition-opacity duration-200", refreshing && "opacity-60 pointer-events-none")}>
       {/* Header with Filters and Export */}
       <div className="flex flex-col gap-3">
@@ -440,6 +425,13 @@ const InventoryHistory = () => {
         </>
       )}
     </div>
+
+    <InventoryTransactionDetail
+      open={!!selectedTx}
+      onOpenChange={(open) => { if (!open) setSelectedTx(null); }}
+      transaction={selectedTx}
+    />
+    </>
   );
 };
 
