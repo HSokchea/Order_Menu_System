@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { useIngredients } from '@/hooks/useInventory';
 import { useInventoryHistory, type DatePreset } from '@/hooks/useInventoryHistory';
 import { exportInventoryHistory } from '@/lib/inventoryExport';
