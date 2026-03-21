@@ -74,7 +74,66 @@ const InventoryHistory = () => {
     else toast.error(result.message);
   };
 
-  if (loading && transactions.length === 0) {
+  const renderReference = (tx: any) => {
+    const ref = tx.reference_id;
+    const note = tx.note;
+
+    switch (tx.type) {
+      case 'order': {
+        const shortId = ref ? ref.substring(0, 8).toUpperCase() : null;
+        return shortId ? (
+          <button
+            onClick={() => navigate(`/admin/orders/${ref}`)}
+            className="inline-flex items-center gap-1.5 text-primary hover:underline"
+          >
+            <ClipboardList className="h-3.5 w-3.5" />
+            Order #{shortId}
+          </button>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      }
+      case 'order_reversal': {
+        const shortId = ref ? ref.substring(0, 8).toUpperCase() : null;
+        return shortId ? (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reversal #{shortId}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <RotateCcw className="h-3.5 w-3.5" />
+            Order Reversal
+          </span>
+        );
+      }
+      case 'purchase':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Package className="h-3.5 w-3.5" />
+            {ref ? `Invoice #${ref}` : 'Stock Purchase'}
+          </span>
+        );
+      case 'waste':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Trash2 className="h-3.5 w-3.5" />
+            {note || 'Waste'}
+          </span>
+        );
+      case 'adjustment':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Wrench className="h-3.5 w-3.5" />
+            {note || 'Manual Adjustment'}
+          </span>
+        );
+      default:
+        return <span className="text-muted-foreground">{ref || '—'}</span>;
+    }
+  };
+
+
     return <div className="flex items-center justify-center py-12 text-muted-foreground">Loading...</div>;
   }
 
