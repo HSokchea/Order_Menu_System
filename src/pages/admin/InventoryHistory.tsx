@@ -123,6 +123,7 @@ const InventoryHistory = () => {
   }
 
   return (
+    <>
     <div className={cn("space-y-4 transition-opacity duration-200", refreshing && "opacity-60 pointer-events-none")}>
       {/* Header with Filters and Export */}
       <div className="flex flex-col gap-3">
