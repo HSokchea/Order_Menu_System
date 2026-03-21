@@ -5,12 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
   Clock,
   DollarSign,
-  Filter,
   Hash,
   Layers,
   CalendarIcon,
@@ -22,11 +20,11 @@ import {
   UtensilsCrossed,
   Store,
   X,
-  StampIcon
+  StampIcon,
+  ChevronDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-
 
 export type TimePreset = 'last15min' | 'last30min' | 'today' | 'custom';
 export type AmountOperator = 'none' | 'gt' | 'lt' | 'between';
@@ -34,25 +32,16 @@ export type ItemCountOperator = 'none' | 'gte' | 'lte';
 export type RoundsFilter = 'all' | 'single' | 'multiple';
 
 export interface OrderFilters {
-  // Time filter
   timePreset: TimePreset;
   customDateFrom?: Date;
   customDateTo?: Date;
-
-  // Amount filter
   amountOperator: AmountOperator;
   amountValue?: number;
   amountMin?: number;
   amountMax?: number;
-
-  // Item count filter
   itemCountOperator: ItemCountOperator;
   itemCountValue?: number;
-
-  // Rounds filter
   roundsFilter: RoundsFilter;
-
-  // Item status filter (show orders containing items with these statuses)
   statusContains: {
     pending: boolean;
     confirmed: boolean;
@@ -77,7 +66,6 @@ export const defaultFilters: OrderFilters = {
 };
 
 export type SortDirection = 'desc' | 'asc';
-
 export type OrderTypeTab = 'all' | 'dine_in' | 'takeaway';
 
 interface CustomerOrdersFiltersProps {
@@ -92,6 +80,28 @@ interface CustomerOrdersFiltersProps {
   orderCounts: { all: number; dine_in: number; takeaway: number };
 }
 
+const orderTypeOptions = [
+  { value: 'all' as const, label: 'All', icon: Package },
+  { value: 'dine_in' as const, label: 'Dine-in', icon: UtensilsCrossed },
+  { value: 'takeaway' as const, label: 'Takeaway', icon: Store },
+];
+
+const statusFilterOptions = [
+  { value: '' as const, label: 'All Statuses' },
+  { value: 'pending' as const, label: 'Pending', icon: Clock },
+  { value: 'confirmed' as const, label: 'Confirmed', icon: Hash },
+  { value: 'preparing' as const, label: 'Preparing', icon: Layers },
+  { value: 'ready' as const, label: 'Ready', icon: Hash },
+  { value: 'rejected' as const, label: 'Rejected', icon: X },
+];
+
+const datePresets = [
+  { value: 'last15min' as const, label: 'Last 15 min' },
+  { value: 'last30min' as const, label: 'Last 30 min' },
+  { value: 'today' as const, label: 'Today' },
+  { value: 'custom' as const, label: 'Custom Range' },
+];
+
 export function CustomerOrdersFilters({
   filters,
   onFiltersChange,
@@ -104,7 +114,10 @@ export function CustomerOrdersFilters({
   orderCounts,
 }: CustomerOrdersFiltersProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [orderTypeOpen, setOrderTypeOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [tempDateRange, setTempDateRange] = useState<{ from?: Date; to?: Date }>({});
 
   const updateFilter = <K extends keyof OrderFilters>(key: K, value: OrderFilters[K]) => {
@@ -134,6 +147,20 @@ export function CustomerOrdersFilters({
 
   const activeCount = getActiveFilterCount();
 
+  const handleDatePreset = (preset: TimePreset) => {
+    if (preset === 'custom') {
+      setShowCalendar(true);
+      setTempDateRange({
+        from: filters.customDateFrom,
+        to: filters.customDateTo,
+      });
+    } else {
+      setShowCalendar(false);
+      onFiltersChange({ ...filters, timePreset: preset });
+      setDateOpen(false);
+    }
+  };
+
   const handleCalendarSelect = (range: { from?: Date; to?: Date } | undefined) => {
     if (!range) return;
     setTempDateRange(range);
@@ -144,105 +171,144 @@ export function CustomerOrdersFilters({
         customDateFrom: range.from,
         customDateTo: range.to,
       });
-      setCalendarOpen(false);
+      setShowCalendar(false);
+      setDateOpen(false);
     }
   };
 
-  const statusOptions = [
-    { value: 'pending', label: <span className="text-yellow-600">Pending</span> },
-    { value: 'confirmed', label: <span className="text-purple-600">Confirmed</span> },
-    { value: 'preparing', label: <span className="text-blue-600">Preparing</span> },
-    { value: 'ready', label: <span className="text-green-600">Ready</span> },
-    { value: 'rejected', label: <span className="text-red-600">Rejected</span> },
-  ];
+  const getDateLabel = () => {
+    if (filters.timePreset === 'custom' && filters.customDateFrom && filters.customDateTo) {
+      return `${format(filters.customDateFrom, 'dd MMM yyyy')} - ${format(filters.customDateTo, 'dd MMM yyyy')}`;
+    }
+    return datePresets.find(p => p.value === filters.timePreset)?.label || 'Today';
+  };
+
+  const getOrderTypeLabel = () => {
+    const opt = orderTypeOptions.find(o => o.value === orderType);
+    return opt ? `${opt.label} (${orderCounts[opt.value]})` : 'All';
+  };
+
+  const getStatusLabel = () => {
+    if (!activeQuickFilter) return 'All Statuses';
+    return statusFilterOptions.find(o => o.value === activeQuickFilter)?.label || 'All Statuses';
+  };
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {/* Order Type */}
-      <Select value={orderType} onValueChange={(v) => onOrderTypeChange(v as OrderTypeTab)}>
-        <SelectTrigger className="w-[150px] h-9 font-normal text-sm hover:text-foreground hover:bg-accent">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">
-            <span className="flex items-center gap-2"><Package className="h-3.5 w-3.5" /> All ({orderCounts.all})</span>
-          </SelectItem>
-          <SelectItem value="dine_in">
-            <span className="flex items-center gap-2"><UtensilsCrossed className="h-3.5 w-3.5" /> Dine-in ({orderCounts.dine_in})</span>
-          </SelectItem>
-          <SelectItem value="takeaway">
-            <span className="flex items-center gap-2"><Store className="h-3.5 w-3.5" /> Takeaway ({orderCounts.takeaway})</span>
-          </SelectItem>
-        </SelectContent>
-      </Select>
+      {/* Order Type Popover */}
+      <Popover open={orderTypeOpen} onOpenChange={setOrderTypeOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 font-normal text-sm">
+            <Package className="h-3.5 w-3.5 text-muted-foreground" />
+            {getOrderTypeLabel()}
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-1 min-w-[160px]" align="start">
+          <div className="flex flex-col">
+            {orderTypeOptions.map(opt => {
+              const Icon = opt.icon;
+              return (
+                <Button
+                  key={opt.value}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'justify-start font-normal text-sm gap-2',
+                    orderType === opt.value && 'bg-accent text-accent-foreground'
+                  )}
+                  onClick={() => {
+                    onOrderTypeChange(opt.value);
+                    setOrderTypeOpen(false);
+                  }}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {opt.label} ({orderCounts[opt.value]})
+                </Button>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
 
-      <Select
-        value={activeQuickFilter || "all"}
-        onValueChange={v => onQuickFilter(v === 'all' ? '' as any : v as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'rejected')}
-      >
-        <SelectTrigger className="w-[140px] h-9 font-normal text-sm hover:bg-accent hover:text-foreground">
-          <SelectValue placeholder="All Statuses" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="pending">
-            <span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span>
-          </SelectItem>
-          <SelectItem value="confirmed">
-            <span className="flex items-center gap-2"><Hash className="h-3.5 w-3.5" /> Confirmed</span>
-          </SelectItem>
-          <SelectItem value="preparing">
-            <span className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" /> Preparing</span>
-          </SelectItem>
-          <SelectItem value="ready">
-            <span className="flex items-center gap-2"><Hash className="h-3.5 w-3.5" /> Ready</span>
-          </SelectItem>
-          <SelectItem value="rejected">
-            <span className="flex items-center gap-2"><X className="h-3.5 w-3.5" /> Rejected</span>
-          </SelectItem>
-        </SelectContent>
-      </Select>
+      {/* Status Filter Popover */}
+      <Popover open={statusOpen} onOpenChange={setStatusOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 font-normal text-sm">
+            {getStatusLabel()}
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-1 min-w-[160px]" align="start">
+          <div className="flex flex-col">
+            {statusFilterOptions.map(opt => (
+              <Button
+                key={opt.value}
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'justify-start font-normal text-sm gap-2',
+                  activeQuickFilter === opt.value && 'bg-accent text-accent-foreground'
+                )}
+                onClick={() => {
+                  onQuickFilter(opt.value as any);
+                  setStatusOpen(false);
+                }}
+              >
+                {opt.icon && <opt.icon className="h-3.5 w-3.5" />}
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
 
-      {/* Time select */}
-      <Select
-        value={filters.timePreset}
-        onValueChange={(v) => updateFilter('timePreset', v as TimePreset)}
-      >
-        <SelectTrigger className="w-[160px] h-9 font-normal text-sm hover:bg-accent hover:text-foreground">
-          <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-          <SelectValue placeholder="Time" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="last15min">Last 15 min</SelectItem>
-          <SelectItem value="last30min">Last 30 min</SelectItem>
-          <SelectItem value="today">Today</SelectItem>
-          <SelectItem value="custom">Custom range</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {/* Custom date picker */}
-      {filters.timePreset === 'custom' && (
-        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 gap-1.5 font-normal text-sm">
-              <CalendarIcon className="h-3.5 w-3.5" />
-              {filters.customDateFrom && filters.customDateTo
-                ? `${format(filters.customDateFrom, 'MMM d')} – ${format(filters.customDateTo, 'MMM d')}`
-                : 'Pick dates'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="center">
-            <Calendar
-              mode="range"
-              defaultMonth={tempDateRange.from || new Date()}
-              selected={tempDateRange as { from: Date; to: Date }}
-              onSelect={handleCalendarSelect}
-              numberOfMonths={2}
-              disabled={(date) => date > new Date()}
-            />
-          </PopoverContent>
-        </Popover>
-      )}
+      {/* Date Filter Popover (side-by-side like Inventory History) */}
+      <Popover open={dateOpen} onOpenChange={(open) => {
+        setDateOpen(open);
+        if (!open) setShowCalendar(false);
+      }}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5 font-normal text-sm">
+            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            {getDateLabel()}
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <div className="flex">
+            <div className="flex flex-col p-1 min-w-[140px] border-r border-border">
+              {datePresets.map(preset => (
+                <Button
+                  key={preset.value}
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'justify-start font-normal text-sm',
+                    filters.timePreset === preset.value && !showCalendar && 'bg-accent text-accent-foreground',
+                    preset.value === 'custom' && showCalendar && 'bg-accent text-accent-foreground'
+                  )}
+                  onClick={() => handleDatePreset(preset.value)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+            {showCalendar && (
+              <div className="p-3 pointer-events-auto">
+                <Calendar
+                  mode="range"
+                  defaultMonth={tempDateRange.from || new Date()}
+                  selected={tempDateRange as { from: Date; to: Date }}
+                  onSelect={handleCalendarSelect}
+                  numberOfMonths={2}
+                  disabled={(date) => date > new Date()}
+                />
+              </div>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
 
       {/* Sort */}
       <Button
@@ -293,20 +359,39 @@ export function CustomerOrdersFilters({
                   <DollarSign className="h-3.5 w-3.5" />
                   Total Amount
                 </Label>
-                <Select
-                  value={filters.amountOperator}
-                  onValueChange={(v) => updateFilter('amountOperator', v as AmountOperator)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Any" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Any amount</SelectItem>
-                    <SelectItem value="gt">Greater than</SelectItem>
-                    <SelectItem value="lt">Less than</SelectItem>
-                    <SelectItem value="between">Between</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full h-8 justify-between text-xs font-normal">
+                      {filters.amountOperator === 'none' ? 'Any amount' :
+                       filters.amountOperator === 'gt' ? 'Greater than' :
+                       filters.amountOperator === 'lt' ? 'Less than' : 'Between'}
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-1 min-w-[140px]" align="start">
+                    <div className="flex flex-col">
+                      {[
+                        { value: 'none', label: 'Any amount' },
+                        { value: 'gt', label: 'Greater than' },
+                        { value: 'lt', label: 'Less than' },
+                        { value: 'between', label: 'Between' },
+                      ].map(opt => (
+                        <Button
+                          key={opt.value}
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            'justify-start font-normal text-xs',
+                            filters.amountOperator === opt.value && 'bg-accent text-accent-foreground'
+                          )}
+                          onClick={() => updateFilter('amountOperator', opt.value as AmountOperator)}
+                        >
+                          {opt.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 {filters.amountOperator === 'gt' && (
                   <Input type="number" placeholder="$ min" className="h-8 text-xs"
                     value={filters.amountValue || ''}
@@ -339,19 +424,37 @@ export function CustomerOrdersFilters({
                   <Hash className="h-3.5 w-3.5" />
                   Item Count
                 </Label>
-                <Select
-                  value={filters.itemCountOperator}
-                  onValueChange={(v) => updateFilter('itemCountOperator', v as ItemCountOperator)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Any" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Any count</SelectItem>
-                    <SelectItem value="gte">≥ (at least)</SelectItem>
-                    <SelectItem value="lte">≤ (at most)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full h-8 justify-between text-xs font-normal">
+                      {filters.itemCountOperator === 'none' ? 'Any count' :
+                       filters.itemCountOperator === 'gte' ? '≥ (at least)' : '≤ (at most)'}
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-1 min-w-[140px]" align="start">
+                    <div className="flex flex-col">
+                      {[
+                        { value: 'none', label: 'Any count' },
+                        { value: 'gte', label: '≥ (at least)' },
+                        { value: 'lte', label: '≤ (at most)' },
+                      ].map(opt => (
+                        <Button
+                          key={opt.value}
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            'justify-start font-normal text-xs',
+                            filters.itemCountOperator === opt.value && 'bg-accent text-accent-foreground'
+                          )}
+                          onClick={() => updateFilter('itemCountOperator', opt.value as ItemCountOperator)}
+                        >
+                          {opt.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 {filters.itemCountOperator !== 'none' && (
                   <Input type="number" placeholder="Count" min={1} className="h-8 text-xs"
                     value={filters.itemCountValue || ''}
@@ -366,19 +469,37 @@ export function CustomerOrdersFilters({
                   <Layers className="h-3.5 w-3.5" />
                   Order Rounds
                 </Label>
-                <Select
-                  value={filters.roundsFilter}
-                  onValueChange={(v) => updateFilter('roundsFilter', v as RoundsFilter)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All orders</SelectItem>
-                    <SelectItem value="single">Single round</SelectItem>
-                    <SelectItem value="multiple">Multiple rounds</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full h-8 justify-between text-xs font-normal">
+                      {filters.roundsFilter === 'all' ? 'All orders' :
+                       filters.roundsFilter === 'single' ? 'Single round' : 'Multiple rounds'}
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-1 min-w-[140px]" align="start">
+                    <div className="flex flex-col">
+                      {[
+                        { value: 'all', label: 'All orders' },
+                        { value: 'single', label: 'Single round' },
+                        { value: 'multiple', label: 'Multiple rounds' },
+                      ].map(opt => (
+                        <Button
+                          key={opt.value}
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            'justify-start font-normal text-xs',
+                            filters.roundsFilter === opt.value && 'bg-accent text-accent-foreground'
+                          )}
+                          onClick={() => updateFilter('roundsFilter', opt.value as RoundsFilter)}
+                        >
+                          {opt.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Item Status */}
@@ -387,7 +508,6 @@ export function CustomerOrdersFilters({
                   <StampIcon className="h-3.5 w-3.5" />
                   Contains Status
                 </Label>
-
                 <div className="grid grid-cols-2 gap-y-2 gap-x-3">
                   {[
                     { key: "pending" as const, label: "Pending", color: "text-yellow-600" },
@@ -396,15 +516,10 @@ export function CustomerOrdersFilters({
                     { key: "ready" as const, label: "Ready", color: "text-green-600" },
                     { key: "rejected" as const, label: "Rejected", color: "text-red-600" },
                   ].map(({ key, label, color }) => (
-                    <label
-                      key={key}
-                      className="flex items-center gap-2 text-xs cursor-pointer"
-                    >
+                    <label key={key} className="flex items-center gap-2 text-xs cursor-pointer">
                       <Checkbox
                         checked={filters.statusContains[key]}
-                        onCheckedChange={(checked) =>
-                          updateStatusContains(key, !!checked)
-                        }
+                        onCheckedChange={(checked) => updateStatusContains(key, !!checked)}
                       />
                       <span className={color}>{label}</span>
                     </label>
@@ -416,7 +531,7 @@ export function CustomerOrdersFilters({
         </PopoverContent>
       </Popover>
 
-      {/* Reset (only when advanced filters active) */}
+      {/* Reset */}
       {activeCount > 0 && (
         <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 gap-1 text-xs text-muted-foreground">
           <RotateCcw className="h-3 w-3" />
