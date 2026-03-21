@@ -240,6 +240,13 @@ const Inventory = () => {
           </div>
         </TooltipProvider>
       )}
+
+      <QuickStockAdjustment
+        open={quickAdjustOpen}
+        onOpenChange={setQuickAdjustOpen}
+        ingredients={ingredients}
+        onAdjust={adjustStock}
+      />
     </div>
   );
 };
