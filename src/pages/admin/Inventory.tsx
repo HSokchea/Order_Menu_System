@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,13 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Edit, Search, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Search, AlertTriangle, Zap } from 'lucide-react';
 import { useIngredients, Ingredient } from '@/hooks/useInventory';
+import QuickStockAdjustment from '@/components/admin/QuickStockAdjustment';
 
 const UNITS = ['g', 'kg', 'ml', 'L', 'pcs', 'oz', 'lb', 'cup', 'tbsp', 'tsp'];
 
 const Inventory = () => {
-  const { ingredients, loading, addIngredient, updateIngredient } = useIngredients();
+  const { ingredients, loading, addIngredient, updateIngredient, adjustStock } = useIngredients();
+  const [quickAdjustOpen, setQuickAdjustOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Ingredient | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
