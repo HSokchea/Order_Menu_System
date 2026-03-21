@@ -118,14 +118,14 @@ const InventoryHistory = () => {
         return (
           <span className="inline-flex items-center gap-1.5 text-muted-foreground">
             <Trash2 className="h-3.5 w-3.5" />
-            {note || 'Waste'}
+            {'Waste'}
           </span>
         );
       case 'adjustment':
         return (
           <span className="inline-flex items-center gap-1.5 text-muted-foreground">
             <Wrench className="h-3.5 w-3.5" />
-            {note || 'Manual Adjustment'}
+            {'Manual Adjustment'}
           </span>
         );
       default:
