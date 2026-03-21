@@ -5,11 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useIngredients, Ingredient } from '@/hooks/useInventory';
-import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle, Check } from 'lucide-react';
+import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle, PackagePlus, PackageMinus, Settings2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
+
+type AdjustType = 'purchase' | 'waste' | 'adjustment';
+
+const TYPE_OPTIONS: { value: AdjustType; label: string; icon: typeof PackagePlus }[] = [
+  { value: 'purchase', label: 'Purchase', icon: PackagePlus },
+  { value: 'waste', label: 'Waste', icon: PackageMinus },
+  { value: 'adjustment', label: 'Correction', icon: Settings2 },
+];
 
 interface AdjustmentRow {
   id: string;
@@ -20,6 +28,7 @@ interface AdjustmentRow {
 const StockAdjustment = () => {
   const { ingredients, loading, adjustStock } = useIngredients();
   const [rows, setRows] = useState<AdjustmentRow[]>([createRow()]);
+  const [adjustType, setAdjustType] = useState<AdjustType>('adjustment');
   const [reason, setReason] = useState('');
   const [reference, setReference] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -30,9 +39,7 @@ const StockAdjustment = () => {
   }
 
   const activeIngredients = ingredients.filter(i => i.is_active);
-
   const usedIngredientIds = rows.map(r => r.ingredientId).filter(Boolean);
-
   const getIngredient = useCallback((id: string) => activeIngredients.find(i => i.id === id), [activeIngredients]);
 
   const updateRow = (rowId: string, field: keyof AdjustmentRow, value: string) => {
@@ -43,9 +50,7 @@ const StockAdjustment = () => {
     setRows(prev => prev.length > 1 ? prev.filter(r => r.id !== rowId) : prev);
   };
 
-  const addRow = () => {
-    setRows(prev => [...prev, createRow()]);
-  };
+  const addRow = () => setRows(prev => [...prev, createRow()]);
 
   const validRows = rows.filter(r => {
     if (!r.ingredientId || !r.change) return false;
@@ -59,10 +64,7 @@ const StockAdjustment = () => {
 
   const canSubmit = validRows.length > 0 && reason.trim().length > 0;
 
-  const handlePreview = () => {
-    if (!canSubmit) return;
-    setShowPreview(true);
-  };
+  const handlePreview = () => { if (canSubmit) setShowPreview(true); };
 
   const handleSubmit = async () => {
     setShowPreview(false);
@@ -71,20 +73,21 @@ const StockAdjustment = () => {
     let successCount = 0;
     for (const row of validRows) {
       const change = parseFloat(row.change);
-      const type = 'adjustment';
       const note = `${reason}${reference ? ` | Ref: ${reference}` : ''}`;
-      const success = await adjustStock(row.ingredientId, change, type, note);
+      const success = await adjustStock(row.ingredientId, change, adjustType, note);
       if (success) successCount++;
     }
 
     if (successCount > 0) {
-      toast.success(`${successCount} adjustment(s) applied successfully`);
+      toast.success(`${successCount} ${adjustType} adjustment(s) applied`);
       setRows([createRow()]);
       setReason('');
       setReference('');
     }
     setSubmitting(false);
   };
+
+  const typeLabel = TYPE_OPTIONS.find(t => t.value === adjustType)?.label ?? 'Adjustment';
 
   if (loading) return <div className="flex items-center justify-center py-12">Loading...</div>;
 
@@ -101,6 +104,37 @@ const StockAdjustment = () => {
           <CardDescription>Add multiple ingredients and adjust their stock levels at once</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Adjustment Type Selector */}
+          <div className="space-y-1.5">
+            <Label className="text-sm">Adjustment Type *</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {TYPE_OPTIONS.map(t => {
+                const Icon = t.icon;
+                const isActive = adjustType === t.value;
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    className={cn(
+                      'flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border',
+                      isActive
+                        ? t.value === 'purchase'
+                          ? 'bg-green-100 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-400'
+                          : t.value === 'waste'
+                            ? 'bg-red-100 border-red-300 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-400'
+                            : 'bg-accent border-border text-accent-foreground'
+                        : 'bg-background border-border text-muted-foreground hover:bg-accent/50'
+                    )}
+                    onClick={() => setAdjustType(t.value)}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Table Header */}
           <div className="hidden sm:grid sm:grid-cols-[1fr_100px_100px_100px_40px] gap-3 text-xs font-medium text-muted-foreground px-1">
             <span>Ingredient</span>
@@ -173,7 +207,9 @@ const StockAdjustment = () => {
         confirmLabel="Confirm & Apply"
         description={
           <div className="space-y-3 text-sm">
-            <p className="text-muted-foreground">The following changes will be applied:</p>
+            <p className="text-muted-foreground">
+              Type: <span className="font-medium text-foreground">{typeLabel}</span>
+            </p>
             <div className="rounded-lg border divide-y max-h-60 overflow-auto">
               {validRows.map(row => {
                 const ing = getIngredient(row.ingredientId);
@@ -185,16 +221,10 @@ const StockAdjustment = () => {
                     <span className="flex items-center gap-1.5">
                       <span className="text-muted-foreground">{ing?.current_stock} {ing?.unit}</span>
                       <span className="text-muted-foreground">→</span>
-                      <span className={cn(
-                        'font-medium',
-                        change > 0 ? 'text-green-600' : 'text-destructive'
-                      )}>
+                      <span className={cn('font-medium', change > 0 ? 'text-green-600' : 'text-destructive')}>
                         {newStock} {ing?.unit}
                       </span>
-                      <span className={cn(
-                        'text-xs',
-                        change > 0 ? 'text-green-600' : 'text-destructive'
-                      )}>
+                      <span className={cn('text-xs', change > 0 ? 'text-green-600' : 'text-destructive')}>
                         ({change > 0 ? '+' : ''}{change})
                       </span>
                     </span>
@@ -243,9 +273,7 @@ function AdjustmentRowItem({ row, ingredients, usedIds, getIngredient, onUpdate,
     : available;
 
   useEffect(() => {
-    if (searchOpen) {
-      setSearch('');
-    }
+    if (searchOpen) setSearch('');
   }, [searchOpen]);
 
   return (
@@ -253,7 +281,6 @@ function AdjustmentRowItem({ row, ingredients, usedIds, getIngredient, onUpdate,
       "grid grid-cols-1 sm:grid-cols-[1fr_100px_100px_100px_40px] gap-2 sm:gap-3 p-3 rounded-lg border",
       isNegativeResult && 'border-destructive/50 bg-destructive/5'
     )}>
-      {/* Ingredient Selector */}
       <Popover open={searchOpen} onOpenChange={setSearchOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="justify-start font-normal h-10 text-sm truncate">
@@ -285,10 +312,7 @@ function AdjustmentRowItem({ row, ingredients, usedIds, getIngredient, onUpdate,
                   'w-full justify-start text-sm font-normal',
                   ing.id === row.ingredientId && 'bg-accent text-accent-foreground'
                 )}
-                onClick={() => {
-                  onUpdate(row.id, 'ingredientId', ing.id);
-                  setSearchOpen(false);
-                }}
+                onClick={() => { onUpdate(row.id, 'ingredientId', ing.id); setSearchOpen(false); }}
               >
                 {ing.name} <span className="ml-auto text-xs text-muted-foreground">{ing.current_stock} {ing.unit}</span>
               </Button>
@@ -297,15 +321,11 @@ function AdjustmentRowItem({ row, ingredients, usedIds, getIngredient, onUpdate,
         </PopoverContent>
       </Popover>
 
-      {/* Current Stock */}
       <div className="flex items-center gap-1 sm:justify-center">
         <span className="sm:hidden text-xs text-muted-foreground">Current:</span>
-        <span className="text-sm font-medium">
-          {selectedIng ? `${selectedIng.current_stock} ${selectedIng.unit}` : '—'}
-        </span>
+        <span className="text-sm font-medium">{selectedIng ? `${selectedIng.current_stock} ${selectedIng.unit}` : '—'}</span>
       </div>
 
-      {/* Change Input */}
       <div className="flex items-center gap-1">
         <span className="sm:hidden text-xs text-muted-foreground">Change:</span>
         <Input
@@ -322,7 +342,6 @@ function AdjustmentRowItem({ row, ingredients, usedIds, getIngredient, onUpdate,
         />
       </div>
 
-      {/* New Stock */}
       <div className="flex items-center gap-1 sm:justify-center">
         <span className="sm:hidden text-xs text-muted-foreground">New:</span>
         {selectedIng && isValidChange ? (
@@ -340,15 +359,8 @@ function AdjustmentRowItem({ row, ingredients, usedIds, getIngredient, onUpdate,
         )}
       </div>
 
-      {/* Remove */}
       <div className="flex items-center justify-end sm:justify-center">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-          onClick={() => onRemove(row.id)}
-          disabled={!canRemove}
-        >
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => onRemove(row.id)} disabled={!canRemove}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
