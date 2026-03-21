@@ -74,62 +74,46 @@ const InventoryHistory = () => {
     else toast.error(result.message);
   };
 
+  const openDetail = (tx: any) => setSelectedTx(tx);
+
   const renderReference = (tx: any) => {
     const ref = tx.reference_id;
-    const note = tx.note;
+
+    const clickable = (icon: React.ReactNode, label: string) => (
+      <button
+        onClick={() => openDetail(tx)}
+        className="inline-flex items-center gap-1.5 text-primary hover:underline cursor-pointer"
+      >
+        {icon}
+        {label}
+      </button>
+    );
 
     switch (tx.type) {
       case 'order': {
         const shortId = ref ? ref.substring(0, 8).toUpperCase() : null;
-        return shortId ? (
-          <button
-            onClick={() => navigate(`/admin/orders/${ref}`)}
-            className="inline-flex items-center gap-1.5 text-primary hover:underline"
-          >
-            <ClipboardList className="h-3.5 w-3.5" />
-            Order #{shortId}
-          </button>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        );
+        return shortId
+          ? clickable(<ClipboardList className="h-3.5 w-3.5" />, `Order #${shortId}`)
+          : <span className="text-muted-foreground">—</span>;
       }
       case 'order_reversal': {
         const shortId = ref ? ref.substring(0, 8).toUpperCase() : null;
-        return shortId ? (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reversal #{shortId}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <RotateCcw className="h-3.5 w-3.5" />
-            Order Reversal
-          </span>
+        return clickable(
+          <RotateCcw className="h-3.5 w-3.5" />,
+          shortId ? `Reversal #${shortId}` : 'Order Reversal'
         );
       }
       case 'purchase':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Package className="h-3.5 w-3.5" />
-            {ref ? `Invoice #${ref}` : 'Stock Purchase'}
-          </span>
+        return clickable(
+          <Package className="h-3.5 w-3.5" />,
+          ref ? `Invoice #${ref}` : 'Stock Purchase'
         );
       case 'waste':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Trash2 className="h-3.5 w-3.5" />
-            {'Waste'}
-          </span>
-        );
+        return clickable(<Trash2 className="h-3.5 w-3.5" />, 'Waste');
       case 'adjustment':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Wrench className="h-3.5 w-3.5" />
-            {'Manual Adjustment'}
-          </span>
-        );
+        return clickable(<Wrench className="h-3.5 w-3.5" />, 'Manual Adjustment');
       default:
-        return <span className="text-muted-foreground">{ref || '—'}</span>;
+        return clickable(<Wrench className="h-3.5 w-3.5" />, ref || '—');
     }
   };
 
