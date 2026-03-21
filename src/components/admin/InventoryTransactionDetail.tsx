@@ -107,7 +107,7 @@ export const InventoryTransactionDetail = ({ open, onOpenChange, transaction }: 
       }
 
       if (orderResult.data) {
-        const items = (orderResult.data.items as OrderItem[]) || [];
+        const items = (orderResult.data.items as unknown as OrderItem[]) || [];
         setOrderData({
           items,
           status: orderResult.data.status,
