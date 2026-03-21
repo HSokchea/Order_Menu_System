@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronLeft, ChevronRight, ChevronDown, ClipboardList, Package, Wrench, Trash2, RotateCcw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useIngredients } from '@/hooks/useInventory';
 import { useInventoryHistory, type DatePreset } from '@/hooks/useInventoryHistory';
 import { exportInventoryHistory } from '@/lib/inventoryExport';
@@ -39,6 +40,7 @@ const getDateLabel = (preset: DatePreset | 'custom', from?: Date, to?: Date) => 
 };
 
 const InventoryHistory = () => {
+  const navigate = useNavigate();
   const { restaurantId, ingredients } = useIngredients();
   const { transactions, loading, refreshing, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize } = useInventoryHistory(restaurantId);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
@@ -71,6 +73,66 @@ const InventoryHistory = () => {
     if (result.success) toast.success(result.message);
     else toast.error(result.message);
   };
+
+  const renderReference = (tx: any) => {
+    const ref = tx.reference_id;
+    const note = tx.note;
+
+    switch (tx.type) {
+      case 'order': {
+        const shortId = ref ? ref.substring(0, 8).toUpperCase() : null;
+        return shortId ? (
+          <button
+            onClick={() => navigate(`/admin/orders/${ref}`)}
+            className="inline-flex items-center gap-1.5 text-primary hover:underline"
+          >
+            <ClipboardList className="h-3.5 w-3.5" />
+            Order #{shortId}
+          </button>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      }
+      case 'order_reversal': {
+        const shortId = ref ? ref.substring(0, 8).toUpperCase() : null;
+        return shortId ? (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reversal #{shortId}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <RotateCcw className="h-3.5 w-3.5" />
+            Order Reversal
+          </span>
+        );
+      }
+      case 'purchase':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Package className="h-3.5 w-3.5" />
+            {ref ? `Invoice #${ref}` : 'Stock Purchase'}
+          </span>
+        );
+      case 'waste':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Trash2 className="h-3.5 w-3.5" />
+            {note || 'Waste'}
+          </span>
+        );
+      case 'adjustment':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Wrench className="h-3.5 w-3.5" />
+            {note || 'Manual Adjustment'}
+          </span>
+        );
+      default:
+        return <span className="text-muted-foreground">{ref || '—'}</span>;
+    }
+  };
+
 
   if (loading && transactions.length === 0) {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">Loading...</div>;
@@ -337,8 +399,8 @@ const InventoryHistory = () => {
                     <TableCell className={`text-right font-mono ${tx.quantity > 0 ? 'text-green-600' : 'text-destructive'}`}>
                       {tx.quantity > 0 ? '+' : ''}{tx.quantity} {tx.ingredient?.unit || ''}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                      {tx.reference_id || '—'}
+                    <TableCell className="hidden sm:table-cell text-sm">
+                      {renderReference(tx)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-muted-foreground max-w-[200px] truncate">
                       {tx.note || '—'}

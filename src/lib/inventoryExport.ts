@@ -3,13 +3,25 @@ import { format } from 'date-fns';
 import type { InventoryTransaction } from '@/hooks/useInventory';
 
 export function exportInventoryHistory(transactions: InventoryTransaction[], exportFormat: 'csv' | 'xlsx') {
+  const getRefLabel = (tx: InventoryTransaction) => {
+    const ref = tx.reference_id;
+    switch (tx.type) {
+      case 'order': return ref ? `Order #${ref.substring(0, 8).toUpperCase()}` : '';
+      case 'order_reversal': return ref ? `Reversal #${ref.substring(0, 8).toUpperCase()}` : 'Order Reversal';
+      case 'purchase': return ref ? `Invoice #${ref}` : 'Stock Purchase';
+      case 'waste': return tx.note || 'Waste';
+      case 'adjustment': return tx.note || 'Manual Adjustment';
+      default: return ref || '';
+    }
+  };
+
   const data = transactions.map(tx => ({
     'Date': format(new Date(tx.created_at), 'yyyy-MM-dd HH:mm:ss'),
     'Ingredient': tx.ingredient?.name || '',
     'Type': tx.type,
     'Quantity': tx.quantity,
     'Unit': tx.ingredient?.unit || '',
-    'Reference': tx.reference_id || '',
+    'Reference': getRefLabel(tx),
     'Note': tx.note || '',
   }));
 
