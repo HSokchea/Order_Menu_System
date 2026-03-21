@@ -40,6 +40,7 @@ const getDateLabel = (preset: DatePreset | 'custom', from?: Date, to?: Date) => 
 };
 
 const InventoryHistory = () => {
+  const navigate = useNavigate();
   const { restaurantId, ingredients } = useIngredients();
   const { transactions, loading, refreshing, summary, filters, updateFilter, setPage, totalPages, totalCount, pageSize } = useInventoryHistory(restaurantId);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
