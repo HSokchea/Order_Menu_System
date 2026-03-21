@@ -339,8 +339,8 @@ const InventoryHistory = () => {
                     <TableCell className={`text-right font-mono ${tx.quantity > 0 ? 'text-green-600' : 'text-destructive'}`}>
                       {tx.quantity > 0 ? '+' : ''}{tx.quantity} {tx.ingredient?.unit || ''}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                      {tx.reference_id || '—'}
+                    <TableCell className="hidden sm:table-cell text-sm">
+                      {renderReference(tx)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-muted-foreground max-w-[200px] truncate">
                       {tx.note || '—'}
