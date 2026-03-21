@@ -54,7 +54,7 @@ const getBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
   if (pathname === "/admin/inventory/adjustment") {
     return [
       { label: "Ingredients", href: "/admin/inventory" },
-      { label: "Stock Adjustment" },
+      { label: "Adjustment (Advanced)" },
     ];
   }
   if (pathname === "/admin/inventory/history") {

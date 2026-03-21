@@ -1,37 +1,87 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useIngredients } from '@/hooks/useInventory';
-import { PackagePlus, PackageMinus } from 'lucide-react';
+import { useIngredients, Ingredient } from '@/hooks/useInventory';
+import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle, Check } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { toast } from 'sonner';
+
+interface AdjustmentRow {
+  id: string;
+  ingredientId: string;
+  change: string;
+}
 
 const StockAdjustment = () => {
   const { ingredients, loading, adjustStock } = useIngredients();
-  const [ingredientId, setIngredientId] = useState('');
-  const [adjustType, setAdjustType] = useState<'add' | 'remove'>('add');
-  const [transactionType, setTransactionType] = useState<'purchase' | 'adjustment' | 'waste'>('purchase');
-  const [quantity, setQuantity] = useState('');
-  const [note, setNote] = useState('');
+  const [rows, setRows] = useState<AdjustmentRow[]>([createRow()]);
+  const [reason, setReason] = useState('');
+  const [reference, setReference] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
-  const selectedIngredient = ingredients.find(i => i.id === ingredientId);
+  function createRow(): AdjustmentRow {
+    return { id: crypto.randomUUID(), ingredientId: '', change: '' };
+  }
+
+  const activeIngredients = ingredients.filter(i => i.is_active);
+
+  const usedIngredientIds = rows.map(r => r.ingredientId).filter(Boolean);
+
+  const getIngredient = useCallback((id: string) => activeIngredients.find(i => i.id === id), [activeIngredients]);
+
+  const updateRow = (rowId: string, field: keyof AdjustmentRow, value: string) => {
+    setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r));
+  };
+
+  const removeRow = (rowId: string) => {
+    setRows(prev => prev.length > 1 ? prev.filter(r => r.id !== rowId) : prev);
+  };
+
+  const addRow = () => {
+    setRows(prev => [...prev, createRow()]);
+  };
+
+  const validRows = rows.filter(r => {
+    if (!r.ingredientId || !r.change) return false;
+    const change = parseFloat(r.change);
+    if (isNaN(change) || change === 0) return false;
+    const ing = getIngredient(r.ingredientId);
+    if (!ing) return false;
+    if (ing.current_stock + change < 0) return false;
+    return true;
+  });
+
+  const canSubmit = validRows.length > 0 && reason.trim().length > 0;
+
+  const handlePreview = () => {
+    if (!canSubmit) return;
+    setShowPreview(true);
+  };
 
   const handleSubmit = async () => {
-    if (!ingredientId || !quantity || parseFloat(quantity) <= 0) return;
+    setShowPreview(false);
     setSubmitting(true);
 
-    const qty = parseFloat(quantity);
-    const actualQty = adjustType === 'remove' ? -qty : qty;
+    let successCount = 0;
+    for (const row of validRows) {
+      const change = parseFloat(row.change);
+      const type = 'adjustment';
+      const note = `${reason}${reference ? ` | Ref: ${reference}` : ''}`;
+      const success = await adjustStock(row.ingredientId, change, type, note);
+      if (success) successCount++;
+    }
 
-    const success = await adjustStock(ingredientId, actualQty, transactionType, note || undefined);
-    if (success) {
-      setQuantity('');
-      setNote('');
-      setIngredientId('');
+    if (successCount > 0) {
+      toast.success(`${successCount} adjustment(s) applied successfully`);
+      setRows([createRow()]);
+      setReason('');
+      setReference('');
     }
     setSubmitting(false);
   };
@@ -41,88 +91,269 @@ const StockAdjustment = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Stock Adjustment</h2>
-        <p className="text-sm text-muted-foreground">Add or remove stock and record the reason</p>
+        <h2 className="text-xl font-semibold">Inventory Adjustment (Advanced)</h2>
+        <p className="text-sm text-muted-foreground">Perform bulk adjustments and track inventory changes with full audit control</p>
       </div>
 
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-base">New Adjustment</CardTitle>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Bulk Adjustment</CardTitle>
+          <CardDescription>Add multiple ingredients and adjust their stock levels at once</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label>Ingredient *</Label>
-            <Select value={ingredientId} onValueChange={setIngredientId}>
-              <SelectTrigger><SelectValue placeholder="Select ingredient" /></SelectTrigger>
-              <SelectContent>
-                {ingredients.filter(i => i.is_active).map(i => (
-                  <SelectItem key={i.id} value={i.id}>
-                    {i.name} ({i.current_stock} {i.unit})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Table Header */}
+          <div className="hidden sm:grid sm:grid-cols-[1fr_100px_100px_100px_40px] gap-3 text-xs font-medium text-muted-foreground px-1">
+            <span>Ingredient</span>
+            <span>Current</span>
+            <span>Change</span>
+            <span>New Stock</span>
+            <span></span>
           </div>
 
-          <div className="grid gap-2">
-            <Label>Adjustment Direction</Label>
-            <RadioGroup value={adjustType} onValueChange={(v) => setAdjustType(v as 'add' | 'remove')} className="flex gap-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="add" id="adj-add" />
-                <Label htmlFor="adj-add" className="flex items-center gap-1 cursor-pointer">
-                  <PackagePlus className="h-4 w-4 text-green-600" /> Add Stock
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="remove" id="adj-remove" />
-                <Label htmlFor="adj-remove" className="flex items-center gap-1 cursor-pointer">
-                  <PackageMinus className="h-4 w-4 text-destructive" /> Remove Stock
-                </Label>
-              </div>
-            </RadioGroup>
+          {/* Rows */}
+          <div className="space-y-2">
+            {rows.map((row) => (
+              <AdjustmentRowItem
+                key={row.id}
+                row={row}
+                ingredients={activeIngredients}
+                usedIds={usedIngredientIds}
+                getIngredient={getIngredient}
+                onUpdate={updateRow}
+                onRemove={removeRow}
+                canRemove={rows.length > 1}
+              />
+            ))}
           </div>
 
-          <div className="grid gap-2">
-            <Label>Type</Label>
-            <Select value={transactionType} onValueChange={(v) => setTransactionType(v as any)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="purchase">Purchase</SelectItem>
-                <SelectItem value="adjustment">Adjustment</SelectItem>
-                <SelectItem value="waste">Waste</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label>Quantity * {selectedIngredient ? `(${selectedIngredient.unit})` : ''}</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="0"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label>Note / Reason</Label>
-            <Textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. Supplier delivery, broken bag..."
-              rows={2}
-            />
-          </div>
-
-          <Button onClick={handleSubmit} className="w-full" disabled={submitting || !ingredientId || !quantity}>
-            {submitting ? 'Saving...' : 'Submit Adjustment'}
+          <Button variant="outline" size="sm" onClick={addRow} className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" /> Add Ingredient
           </Button>
+
+          <div className="border-t pt-4 space-y-3">
+            <div className="grid gap-2">
+              <Label>Reason *</Label>
+              <Textarea
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                placeholder="e.g. Monthly stock count, supplier delivery, correction"
+                rows={2}
+                maxLength={500}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Reference (optional)</Label>
+              <Input
+                value={reference}
+                onChange={e => setReference(e.target.value)}
+                placeholder="e.g. Invoice #123, Manual check"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setRows([createRow()]); setReason(''); setReference(''); }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handlePreview} disabled={!canSubmit || submitting}>
+              {submitting ? 'Applying...' : 'Apply Adjustment'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Preview Confirmation */}
+      <ConfirmDialog
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        title="Confirm Bulk Adjustment"
+        confirmLabel="Confirm & Apply"
+        description={
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">The following changes will be applied:</p>
+            <div className="rounded-lg border divide-y max-h-60 overflow-auto">
+              {validRows.map(row => {
+                const ing = getIngredient(row.ingredientId);
+                const change = parseFloat(row.change);
+                const newStock = (ing?.current_stock ?? 0) + change;
+                return (
+                  <div key={row.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="font-medium">{ing?.name}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{ing?.current_stock} {ing?.unit}</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span className={cn(
+                        'font-medium',
+                        change > 0 ? 'text-green-600' : 'text-destructive'
+                      )}>
+                        {newStock} {ing?.unit}
+                      </span>
+                      <span className={cn(
+                        'text-xs',
+                        change > 0 ? 'text-green-600' : 'text-destructive'
+                      )}>
+                        ({change > 0 ? '+' : ''}{change})
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <strong>Reason:</strong> {reason}
+              {reference && <><br /><strong>Ref:</strong> {reference}</>}
+            </div>
+          </div>
+        }
+        onConfirm={handleSubmit}
+      />
     </div>
   );
 };
+
+/* ─── Row Component ─── */
+
+interface RowProps {
+  row: AdjustmentRow;
+  ingredients: Ingredient[];
+  usedIds: string[];
+  getIngredient: (id: string) => Ingredient | undefined;
+  onUpdate: (id: string, field: keyof AdjustmentRow, value: string) => void;
+  onRemove: (id: string) => void;
+  canRemove: boolean;
+}
+
+function AdjustmentRowItem({ row, ingredients, usedIds, getIngredient, onUpdate, onRemove, canRemove }: RowProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selectedIng = getIngredient(row.ingredientId);
+  const change = parseFloat(row.change);
+  const isValidChange = !isNaN(change) && change !== 0;
+  const newStock = selectedIng ? selectedIng.current_stock + (isValidChange ? change : 0) : 0;
+  const isNegativeResult = selectedIng && isValidChange && newStock < 0;
+
+  const available = ingredients.filter(i => i.id === row.ingredientId || !usedIds.includes(i.id));
+  const filtered = search
+    ? available.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+    : available;
+
+  useEffect(() => {
+    if (searchOpen) {
+      setSearch('');
+    }
+  }, [searchOpen]);
+
+  return (
+    <div className={cn(
+      "grid grid-cols-1 sm:grid-cols-[1fr_100px_100px_100px_40px] gap-2 sm:gap-3 p-3 rounded-lg border",
+      isNegativeResult && 'border-destructive/50 bg-destructive/5'
+    )}>
+      {/* Ingredient Selector */}
+      <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="justify-start font-normal h-10 text-sm truncate">
+            {selectedIng ? (
+              <span>{selectedIng.name} <span className="text-muted-foreground">({selectedIng.unit})</span></span>
+            ) : (
+              <span className="text-muted-foreground">Select ingredient...</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[260px] p-1" align="start">
+          <Input
+            ref={inputRef}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search ingredient..."
+            className="h-8 mb-1 text-sm"
+            autoFocus
+          />
+          <div className="max-h-48 overflow-auto">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-muted-foreground p-2">No ingredients found</p>
+            ) : filtered.map(ing => (
+              <Button
+                key={ing.id}
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'w-full justify-start text-sm font-normal',
+                  ing.id === row.ingredientId && 'bg-accent text-accent-foreground'
+                )}
+                onClick={() => {
+                  onUpdate(row.id, 'ingredientId', ing.id);
+                  setSearchOpen(false);
+                }}
+              >
+                {ing.name} <span className="ml-auto text-xs text-muted-foreground">{ing.current_stock} {ing.unit}</span>
+              </Button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Current Stock */}
+      <div className="flex items-center gap-1 sm:justify-center">
+        <span className="sm:hidden text-xs text-muted-foreground">Current:</span>
+        <span className="text-sm font-medium">
+          {selectedIng ? `${selectedIng.current_stock} ${selectedIng.unit}` : '—'}
+        </span>
+      </div>
+
+      {/* Change Input */}
+      <div className="flex items-center gap-1">
+        <span className="sm:hidden text-xs text-muted-foreground">Change:</span>
+        <Input
+          type="number"
+          step="0.01"
+          value={row.change}
+          onChange={e => onUpdate(row.id, 'change', e.target.value)}
+          placeholder="±0"
+          className={cn(
+            'h-10 text-sm',
+            isValidChange && change > 0 && 'text-green-600 border-green-300',
+            isValidChange && change < 0 && 'text-destructive border-destructive/30'
+          )}
+        />
+      </div>
+
+      {/* New Stock */}
+      <div className="flex items-center gap-1 sm:justify-center">
+        <span className="sm:hidden text-xs text-muted-foreground">New:</span>
+        {selectedIng && isValidChange ? (
+          <span className={cn(
+            'text-sm font-semibold flex items-center gap-1',
+            change > 0 ? 'text-green-600' : 'text-destructive',
+            isNegativeResult && 'text-destructive'
+          )}>
+            {change > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+            {newStock} {selectedIng.unit}
+            {isNegativeResult && <AlertTriangle className="h-3 w-3 ml-0.5" />}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        )}
+      </div>
+
+      {/* Remove */}
+      <div className="flex items-center justify-end sm:justify-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          onClick={() => onRemove(row.id)}
+          disabled={!canRemove}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default StockAdjustment;
