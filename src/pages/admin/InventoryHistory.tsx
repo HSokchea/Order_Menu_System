@@ -134,6 +134,7 @@ const InventoryHistory = () => {
   };
 
 
+  if (loading && transactions.length === 0) {
     return <div className="flex items-center justify-center py-12 text-muted-foreground">Loading...</div>;
   }
 
