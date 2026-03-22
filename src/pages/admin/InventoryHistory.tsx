@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronLeft, ChevronRight, ChevronDown, ClipboardList, Package, Wrench, Trash2, RotateCcw } from 'lucide-react';
+import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronDown, ClipboardList, Package, Wrench, Trash2, RotateCcw } from 'lucide-react';
 import { useIngredients } from '@/hooks/useInventory';
 import { InventoryTransactionDetail } from '@/components/admin/InventoryTransactionDetail';
 import { useInventoryHistory, type DatePreset } from '@/hooks/useInventoryHistory';
