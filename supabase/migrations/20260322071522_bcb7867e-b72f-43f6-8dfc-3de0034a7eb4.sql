@@ -1,0 +1,2 @@
+ALTER TABLE inventory_transactions DROP CONSTRAINT inventory_transactions_type_check;
+ALTER TABLE inventory_transactions ADD CONSTRAINT inventory_transactions_type_check CHECK (type = ANY (ARRAY['purchase'::text, 'order'::text, 'adjustment'::text, 'waste'::text, 'order_reversal'::text]));
