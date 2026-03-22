@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,18 +9,35 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Edit, Search, AlertTriangle, Zap } from 'lucide-react';
+import { Plus, Edit, Search, AlertTriangle, Zap, ChefHat, ArrowUpDown } from 'lucide-react';
 import { useIngredients, Ingredient } from '@/hooks/useInventory';
+import { useRemainingServings } from '@/hooks/useRemainingServings';
 import QuickStockAdjustment from '@/components/admin/QuickStockAdjustment';
 
 const UNITS = ['g', 'kg', 'ml', 'L', 'pcs', 'oz', 'lb', 'cup', 'tbsp', 'tsp'];
 
+type SortBy = 'name' | 'stock' | 'servings';
+
+const getServingsColor = (servings: number) => {
+  if (servings < 5) return 'text-destructive font-semibold';
+  if (servings <= 10) return 'text-orange-600 dark:text-orange-400 font-medium';
+  return 'text-muted-foreground';
+};
+
+const getServingsBadge = (servings: number) => {
+  if (servings < 5) return 'bg-destructive/10 text-destructive border-destructive/20';
+  if (servings <= 10) return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800';
+  return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800';
+};
+
 const Inventory = () => {
-  const { ingredients, loading, addIngredient, updateIngredient, adjustStock } = useIngredients();
+  const { ingredients, loading, restaurantId, addIngredient, updateIngredient, adjustStock } = useIngredients();
+  const { servingsMap } = useRemainingServings(restaurantId);
   const [quickAdjustOpen, setQuickAdjustOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Ingredient | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy>('name');
 
   // Form state
   const [name, setName] = useState('');
@@ -70,9 +87,25 @@ const Inventory = () => {
     }
   };
 
-  const filtered = ingredients.filter(i =>
-    i.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const sorted = useMemo(() => {
+    const filtered = ingredients.filter(i =>
+      i.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'stock':
+          return a.current_stock - b.current_stock;
+        case 'servings': {
+          const sA = servingsMap[a.id]?.minServings ?? Infinity;
+          const sB = servingsMap[b.id]?.minServings ?? Infinity;
+          return sA - sB;
+        }
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+  }, [ingredients, searchQuery, sortBy, servingsMap]);
 
   // Ctrl+K / Cmd+K shortcut
   useEffect(() => {
@@ -106,6 +139,18 @@ const Inventory = () => {
               className="pl-9"
             />
           </div>
+
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+            <SelectTrigger className="w-[160px]">
+              <ArrowUpDown className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Sort by Name</SelectItem>
+              <SelectItem value="stock">Lowest Stock</SelectItem>
+              <SelectItem value="servings">Lowest Servings</SelectItem>
+            </SelectContent>
+          </Select>
 
           <Button variant="outline" onClick={() => setQuickAdjustOpen(true)} className="gap-1.5">
             <Zap className="h-4 w-4" />
@@ -169,7 +214,7 @@ const Inventory = () => {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {sorted.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground">
@@ -186,6 +231,7 @@ const Inventory = () => {
                   <TableHead>Ingredient</TableHead>
                   <TableHead className="text-right">Stock</TableHead>
                   <TableHead>Unit</TableHead>
+                  <TableHead className="text-center">Servings</TableHead>
                   <TableHead className="text-right hidden sm:table-cell">Min Stock</TableHead>
                   <TableHead className="text-right hidden md:table-cell">Cost/Unit</TableHead>
                   <TableHead>Status</TableHead>
@@ -193,8 +239,12 @@ const Inventory = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((item) => {
+                {sorted.map((item) => {
                   const isLow = item.is_active && item.current_stock <= item.min_stock;
+                  const servingsData = servingsMap[item.id];
+                  const hasRecipe = !!servingsData;
+                  const minServings = servingsData?.minServings ?? null;
+
                   return (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">
@@ -214,6 +264,33 @@ const Inventory = () => {
                         {item.current_stock}
                       </TableCell>
                       <TableCell>{item.unit}</TableCell>
+                      <TableCell className="text-center">
+                        {hasRecipe && minServings !== null ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-flex items-center gap-1.5 cursor-default">
+                                <ChefHat className={`h-3.5 w-3.5 ${getServingsColor(minServings)}`} />
+                                <Badge variant="outline" className={`text-xs border ${getServingsBadge(minServings)}`}>
+                                  ≈ {minServings}
+                                </Badge>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="max-w-[250px]">
+                              <p className="font-medium mb-1">Remaining servings by recipe:</p>
+                              <div className="space-y-0.5">
+                                {servingsData.recipes.map((r, i) => (
+                                  <div key={i} className="flex justify-between gap-3 text-xs">
+                                    <span>{r.menuItemName}</span>
+                                    <span className="font-mono">{r.servings}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right hidden sm:table-cell">{item.min_stock}</TableCell>
                       <TableCell className="text-right hidden md:table-cell">${item.cost_per_unit.toFixed(2)}</TableCell>
                       <TableCell>
