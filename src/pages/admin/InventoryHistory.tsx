@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronLeft, ChevronRight, ChevronDown, ClipboardList, Package, Wrench, Trash2, RotateCcw } from 'lucide-react';
+import { Search, CalendarIcon, Download, TrendingUp, TrendingDown, AlertTriangle, Activity, ChevronDown, ClipboardList, Package, Wrench, Trash2, RotateCcw } from 'lucide-react';
 import { useIngredients } from '@/hooks/useInventory';
 import { InventoryTransactionDetail } from '@/components/admin/InventoryTransactionDetail';
 import { useInventoryHistory, type DatePreset } from '@/hooks/useInventoryHistory';
@@ -398,28 +399,67 @@ const InventoryHistory = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Page {filters.page + 1} of {totalPages} ({totalCount} total)
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={filters.page === 0}
-                  onClick={() => setPage(filters.page - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={filters.page >= totalPages - 1}
-                  onClick={() => setPage(filters.page + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-between">
+              <div className="text-sm text-muted-foreground whitespace-nowrap">
+                Page {filters.page + 1} of {totalPages}
               </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (filters.page > 0) setPage(filters.page - 1);
+                      }}
+                      className={filters.page <= 0 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      const currentPage = filters.page + 1;
+                      return page === 1 ||
+                        page === totalPages ||
+                        Math.abs(page - currentPage) <= 1;
+                    })
+                    .map((page, index, array) => {
+                      const shouldShowEllipsis = index > 0 && page - array[index - 1] > 1;
+                      return (
+                        <div key={page} className="flex items-center">
+                          {shouldShowEllipsis && (
+                            <PaginationItem>
+                              <span className="px-3 py-2 text-muted-foreground">...</span>
+                            </PaginationItem>
+                          )}
+                          <PaginationItem>
+                            <PaginationLink
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setPage(page - 1);
+                              }}
+                              isActive={page === filters.page + 1}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        </div>
+                      );
+                    })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (filters.page < totalPages - 1) setPage(filters.page + 1);
+                      }}
+                      className={filters.page >= totalPages - 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
         </>
