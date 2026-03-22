@@ -93,6 +93,31 @@ export const useInventoryHistory = (restaurantId: string) => {
 
   useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
 
+  // Realtime subscription for live updates
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel('inventory-history-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'inventory_transactions',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          fetchTransactions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, fetchTransactions]);
+
   // Client-side search on already-fetched page
   const filtered = useMemo(() => {
     if (!filters.search.trim()) return transactions;
